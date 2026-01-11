@@ -1,0 +1,76 @@
+{
+  "language": "javascript",
+  "version": "1.0",
+  "aliases": ["js", "node", "nodejs"],
+  "extensions": [".js", ".mjs", ".cjs"],
+  "mime_types": ["application/javascript", "text/javascript"],
+  "preferred_encodings": ["utf-8", "utf-8-sig"],
+  "type_aliases": {
+    "string": "type:string",
+    "number": "type:float",
+    "boolean": "type:bool",
+    "bigint": "type:int",
+    "any": "type:any",
+    "void": "type:void",
+    "never": "type:never",
+    "promise": "type:promise",
+    "array": "type:array"
+  },
+  "reverse_type_aliases": {
+    "type:string": "string",
+    "type:float": "number",
+    "type:int": "bigint",
+    "type:bool": "boolean",
+    "type:any": "any",
+    "type:void": "void",
+    "type:never": "never",
+    "type:promise": "Promise",
+    "type:array": "Array"
+  },
+  "binary_operators": {
+    "Add": "op:add",
+    "Sub": "op:sub",
+    "Mul": "op:mul",
+    "Div": "op:div",
+    "Mod": "op:mod",
+    "BitOr": "op:bit_or",
+    "BitAnd": "op:bit_and",
+    "BitXor": "op:bit_xor",
+    "LShift": "op:shift_left",
+    "RShift": "op:shift_right"
+  },
+  "unary_operators": {
+    "PrefixIncrement": "op:add",
+    "PrefixDecrement": "op:sub",
+    "Negate": "op:sub",
+    "Not": "op:not",
+    "BitNot": "op:bit_not"
+  },
+  "literals": {
+    "bool_true": "literal:bool_true",
+    "bool_false": "literal:bool_false",
+    "null": "literal:null",
+    "string": "literal:string",
+    "bytes": "literal:array",
+    "integer": "literal:int",
+    "float": "literal:float",
+    "template": "literal:template",
+    "fallback": "meta:unknown"
+  },
+  "template_payloads": {
+    "template": "literal:template",
+    "decorator": "structure:annotation",
+    "tagged_template": "literal:template"
+  },
+  "metadata": {
+    "canonicalization": {
+      "module": "esm",
+      "pragma": "use_strict"
+    },
+    "morpheme_mappings": {
+      "class": "structure:class",
+      "function": "structure:function",
+      "arrow_function": "structure:lambda"
+    }
+  }
+}

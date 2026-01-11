@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "synslide.input.schema.json",
+  "type": "object",
+  "properties": {
+    "storyboard": {
+      "type": "array"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+[package]
+name = "referee"
+version = "5.0.0"
+edition = "2021"
+authors = ["Eä Team"]
+description = "Secure UEFI bootloader with EaM6 cryptographic muscle isolation"
+license = "Apache-2.0 OR MIT"
+
+[[bin]]
+name = "referee"
+path = "src/main.rs"
+required-features = ["uefi"]
+
+[features]
+default = []
+uefi = ["dep:uefi", "dep:uefi-services"]
+
+[dependencies]
+uefi = { version = "0.24", default-features = false, features = ["alloc"], optional = true }
+uefi-services = { version = "0.21", default-features = false, optional = true }
+blake3 = { version = "1.5", default-features = false }
+aes-gcm-siv = { version = "0.11", default-features = false, features = ["aes", "alloc"] }
+subtle = { version = "2.5", default-features = false }
+zeroize = { version = "1.8", default-features = false }
+muscle-contract = { path = "../muscle-contract", default-features = false }
+
+[dev-dependencies]
+proptest = "1.4"
+
+[package.metadata.uefi]
+output = "referee.efi"

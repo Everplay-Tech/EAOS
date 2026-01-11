@@ -1,0 +1,26 @@
+all: muscle.img
+
+muscle.img: kernel/bzImage initramfs.cpio.gz
+	mkdir -p iso/boot/grub
+	cp kernel/bzImage iso/boot/
+	cp initramfs.cpio.gz iso/boot/
+	cat > iso/boot/grub/grub.cfg <<EOF
+set timeout=0
+menuentry "Muscle Linux" {
+    linux /boot/bzImage console=ttyS0
+    initrd /boot/initramfs.cpio.gz
+}
+EOF
+	grub-mkrescue -o muscle.iso iso
+	dd if=/dev/zero of=music.img bs=1M count=512
+	dd if=muscle.iso of=muscle.img conv=notrunc
+
+kernel/bzImage:
+	cd kernel && make bzImage -j$(nproc)
+
+initramfs.cpio.gz:
+	cd initramfs && find . | cpio -o -H newc | gzip > ../initramfs.cpio.gz
+
+clean:
+	cd kernel && make clean
+	rm -rf iso muscle.iso muscle.img initramfs.cpio.gz

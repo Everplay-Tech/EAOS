@@ -1,0 +1,13 @@
+[package]
+name = "pre-nucleus-loader"
+version = "0.1.0"
+description = "2KiB pre-nucleus loader - verifies and loads Nucleus Muscle"
+authors = ["Eä Foundation"]
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+name = "preloader"
+path = "src/lib.rs"
+
+[dependencies]

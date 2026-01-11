@@ -1,0 +1,480 @@
+---
+# Prometheus Alert Rules for BIOwerk Microservices
+# Enterprise-grade alerting for production environments
+# Severity levels: critical, warning, info
+
+groups:
+  # === SERVICE HEALTH & AVAILABILITY ===
+  - name: service_health
+    interval: 30s
+    rules:
+      # Service down
+      - alert: ServiceDown
+        expr: up{job=~"biowerk-.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: availability
+          component: "{{ $labels.service }}"
+        annotations:
+          summary: "Service {{ $labels.service }} is down"
+          description: "Service {{ $labels.service }} ({{ $labels.component }}) has been down for more than 2 minutes."
+          runbook_url: "https://runbooks.biowerk.io/ServiceDown"
+          dashboard_url: "https://grafana.biowerk.io/d/service-health"
+
+      # High error rate (5xx responses)
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum by (service) (rate(http_requests_total{status=~"5.."}[5m]))
+            /
+            sum by (service) (rate(http_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          category: error_rate
+          component: "{{ $labels.service }}"
+        annotations:
+          summary: "High error rate on {{ $labels.service }}"
+          description: "Service {{ $labels.service }} has an error rate of {{ $value | humanizePercentage }} over the last 5 minutes."
+          runbook_url: "https://runbooks.biowerk.io/HighErrorRate"
+
+      # High client error rate (4xx responses)
+      - alert: HighClientErrorRate
+        expr: |
+          (
+            sum by (service) (rate(http_requests_total{status=~"4.."}[5m]))
+            /
+            sum by (service) (rate(http_requests_total[5m]))
+          ) > 0.15
+        for: 10m
+        labels:
+          severity: warning
+          category: error_rate
+          component: "{{ $labels.service }}"
+        annotations:
+          summary: "High client error rate on {{ $labels.service }}"
+          description: "Service {{ $labels.service }} has a client error rate of {{ $value | humanizePercentage }} over the last 10 minutes."
+          runbook_url: "https://runbooks.biowerk.io/HighClientErrorRate"
+
+  # === LATENCY & PERFORMANCE ===
+  - name: latency_performance
+    interval: 30s
+    rules:
+      # High API latency (p95)
+      - alert: HighAPILatency
+        expr: |
+          histogram_quantile(0.95,
+            sum by (service, le) (rate(http_request_duration_seconds_bucket[5m]))
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          category: latency
+          component: "{{ $labels.service }}"
+        annotations:
+          summary: "High API latency on {{ $labels.service }}"
+          description: "95th percentile latency for {{ $labels.service }} is {{ $value | humanizeDuration }} over the last 10 minutes."
+          runbook_url: "https://runbooks.biowerk.io/HighAPILatency"
+
+      # Critical API latency (p99)
+      - alert: CriticalAPILatency
+        expr: |
+          histogram_quantile(0.99,
+            sum by (service, le) (rate(http_request_duration_seconds_bucket[5m]))
+          ) > 5
+        for: 5m
+        labels:
+          severity: critical
+          category: latency
+          component: "{{ $labels.service }}"
+        annotations:
+          summary: "Critical API latency on {{ $labels.service }}"
+          description: "99th percentile latency for {{ $labels.service }} is {{ $value | humanizeDuration }} over the last 5 minutes."
+          runbook_url: "https://runbooks.biowerk.io/CriticalAPILatency"
+
+      # Slow database queries
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            sum by (service, le) (rate(db_query_duration_seconds_bucket[5m]))
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          category: database
+          component: "{{ $labels.service }}"
+        annotations:
+          summary: "Slow database queries detected on {{ $labels.service }}"
+          description: "95th percentile database query time for {{ $labels.service }} is {{ $value | humanizeDuration }}."
+          runbook_url: "https://runbooks.biowerk.io/SlowDatabaseQueries"
+
+  # === DATABASE HEALTH ===
+  - name: database_health
+    interval: 30s
+    rules:
+      # PostgreSQL down
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: database
+          component: postgres
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database has been down for more than 1 minute."
+          runbook_url: "https://runbooks.biowerk.io/PostgreSQLDown"
+
+      # High database connections
+      - alert: HighDatabaseConnections
+        expr: |
+          (
+            sum(pg_stat_database_numbackends{datname!~"template.*|postgres"})
+            /
+            pg_settings_max_connections
+          ) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+          component: postgres
+        annotations:
+          summary: "High PostgreSQL connection usage"
+          description: "PostgreSQL is using {{ $value | humanizePercentage }} of available connections."
+          runbook_url: "https://runbooks.biowerk.io/HighDatabaseConnections"
+
+      # Database connection pool exhaustion
+      - alert: ConnectionPoolExhausted
+        expr: |
+          (
+            pgbouncer_pools_cl_active
+            /
+            pgbouncer_pools_maxwait
+          ) > 0.9
+        for: 3m
+        labels:
+          severity: critical
+          category: database
+          component: pgbouncer
+        annotations:
+          summary: "PgBouncer connection pool nearly exhausted"
+          description: "PgBouncer connection pool is {{ $value | humanizePercentage }} full."
+          runbook_url: "https://runbooks.biowerk.io/ConnectionPoolExhausted"
+
+      # High database replication lag
+      - alert: HighReplicationLag
+        expr: |
+          (pg_replication_lag_seconds > 30) and on(instance)
+          (pg_replication_is_replica == 1)
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+          component: postgres
+        annotations:
+          summary: "High PostgreSQL replication lag"
+          description: "PostgreSQL replica is lagging by {{ $value }} seconds."
+          runbook_url: "https://runbooks.biowerk.io/HighReplicationLag"
+
+      # MongoDB down
+      - alert: MongoDBDown
+        expr: up{job="mongodb"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: database
+          component: mongodb
+        annotations:
+          summary: "MongoDB is down"
+          description: "MongoDB database has been down for more than 1 minute."
+          runbook_url: "https://runbooks.biowerk.io/MongoDBDown"
+
+      # Redis down
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: cache
+          component: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache has been down for more than 1 minute."
+          runbook_url: "https://runbooks.biowerk.io/RedisDown"
+
+      # High Redis memory usage
+      - alert: HighRedisMemoryUsage
+        expr: |
+          (
+            redis_memory_used_bytes / redis_memory_max_bytes
+          ) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          category: cache
+          component: redis
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis is using {{ $value | humanizePercentage }} of available memory."
+          runbook_url: "https://runbooks.biowerk.io/HighRedisMemoryUsage"
+
+  # === RESOURCE UTILIZATION ===
+  - name: resource_utilization
+    interval: 30s
+    rules:
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: |
+          (
+            100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+          ) > 80
+        for: 10m
+        labels:
+          severity: warning
+          category: resources
+          component: cpu
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value | humanize }}% on {{ $labels.instance }}."
+          runbook_url: "https://runbooks.biowerk.io/HighCPUUsage"
+
+      # Critical CPU usage
+      - alert: CriticalCPUUsage
+        expr: |
+          (
+            100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+          ) > 95
+        for: 5m
+        labels:
+          severity: critical
+          category: resources
+          component: cpu
+        annotations:
+          summary: "Critical CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value | humanize }}% on {{ $labels.instance }}."
+          runbook_url: "https://runbooks.biowerk.io/CriticalCPUUsage"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)
+          ) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          category: resources
+          component: memory
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}."
+          runbook_url: "https://runbooks.biowerk.io/HighMemoryUsage"
+
+      # Critical memory usage
+      - alert: CriticalMemoryUsage
+        expr: |
+          (
+            1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)
+          ) > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          category: resources
+          component: memory
+        annotations:
+          summary: "Critical memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}."
+          runbook_url: "https://runbooks.biowerk.io/CriticalMemoryUsage"
+
+      # High disk usage
+      - alert: HighDiskUsage
+        expr: |
+          (
+            1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})
+          ) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          category: resources
+          component: disk
+        annotations:
+          summary: "High disk usage on {{ $labels.instance }}"
+          description: "Disk usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}."
+          runbook_url: "https://runbooks.biowerk.io/HighDiskUsage"
+
+      # Critical disk usage
+      - alert: CriticalDiskUsage
+        expr: |
+          (
+            1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})
+          ) > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          category: resources
+          component: disk
+        annotations:
+          summary: "Critical disk usage on {{ $labels.instance }}"
+          description: "Disk usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}."
+          runbook_url: "https://runbooks.biowerk.io/CriticalDiskUsage"
+
+  # === CIRCUIT BREAKER & RESILIENCE ===
+  - name: circuit_breaker
+    interval: 30s
+    rules:
+      # Circuit breaker open
+      - alert: CircuitBreakerOpen
+        expr: circuit_breaker_state{state="open"} == 1
+        for: 2m
+        labels:
+          severity: warning
+          category: resilience
+          component: "{{ $labels.service }}"
+        annotations:
+          summary: "Circuit breaker open for {{ $labels.service }}"
+          description: "Circuit breaker for {{ $labels.service }} has been open for more than 2 minutes."
+          runbook_url: "https://runbooks.biowerk.io/CircuitBreakerOpen"
+
+      # High circuit breaker failure rate
+      - alert: HighCircuitBreakerFailureRate
+        expr: |
+          rate(circuit_breaker_failures_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: resilience
+          component: "{{ $labels.service }}"
+        annotations:
+          summary: "High circuit breaker failure rate for {{ $labels.service }}"
+          description: "Circuit breaker for {{ $labels.service }} is experiencing {{ $value }} failures per second."
+          runbook_url: "https://runbooks.biowerk.io/HighCircuitBreakerFailureRate"
+
+      # High retry exhaustion rate
+      - alert: HighRetryExhaustionRate
+        expr: |
+          (
+            rate(resilience_retry_exhausted_total[5m])
+            /
+            rate(resilience_retry_attempts_total[5m])
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          category: resilience
+          component: "{{ $labels.service }}"
+        annotations:
+          summary: "High retry exhaustion rate for {{ $labels.service }}"
+          description: "{{ $value | humanizePercentage }} of retry attempts are being exhausted for {{ $labels.service }}."
+          runbook_url: "https://runbooks.biowerk.io/HighRetryExhaustionRate"
+
+      # Bulkhead rejection
+      - alert: BulkheadRejection
+        expr: |
+          rate(bulkhead_rejected_total[5m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          category: resilience
+          component: "{{ $labels.service }}"
+        annotations:
+          summary: "Bulkhead rejecting requests for {{ $labels.service }}"
+          description: "Bulkhead for {{ $labels.service }} is rejecting {{ $value }} requests per second."
+          runbook_url: "https://runbooks.biowerk.io/BulkheadRejection"
+
+  # === RATE LIMITING ===
+  - name: rate_limiting
+    interval: 30s
+    rules:
+      # High rate limit hits
+      - alert: HighRateLimitHits
+        expr: |
+          rate(rate_limit_exceeded_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: rate_limiting
+          component: "{{ $labels.service }}"
+        annotations:
+          summary: "High rate limit hits on {{ $labels.service }}"
+          description: "{{ $labels.service }} is experiencing {{ $value }} rate limit hits per second."
+          runbook_url: "https://runbooks.biowerk.io/HighRateLimitHits"
+
+  # === SECURITY & AUDIT ===
+  - name: security_audit
+    interval: 30s
+    rules:
+      # High authentication failure rate
+      - alert: HighAuthenticationFailureRate
+        expr: |
+          rate(auth_failures_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: security
+          component: auth
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Authentication failures are occurring at {{ $value }} per second."
+          runbook_url: "https://runbooks.biowerk.io/HighAuthenticationFailureRate"
+
+      # Potential brute force attack
+      - alert: PotentialBruteForceAttack
+        expr: |
+          rate(auth_failures_total[1m]) > 50
+        for: 2m
+        labels:
+          severity: critical
+          category: security
+          component: auth
+        annotations:
+          summary: "Potential brute force attack detected"
+          description: "Authentication failures are occurring at {{ $value }} per second, indicating a potential brute force attack."
+          runbook_url: "https://runbooks.biowerk.io/PotentialBruteForceAttack"
+
+      # High GDPR data access requests
+      - alert: HighGDPRDataAccessRate
+        expr: |
+          rate(gdpr_data_access_requests_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: info
+          category: compliance
+          component: gdpr
+        annotations:
+          summary: "High GDPR data access request rate"
+          description: "GDPR data access requests are occurring at {{ $value }} per second."
+          runbook_url: "https://runbooks.biowerk.io/HighGDPRDataAccessRate"
+
+  # === BUSINESS METRICS ===
+  - name: business_metrics
+    interval: 1m
+    rules:
+      # Low request throughput (traffic drop)
+      - alert: LowRequestThroughput
+        expr: |
+          sum(rate(http_requests_total[5m])) < 10
+        for: 10m
+        labels:
+          severity: warning
+          category: business
+          component: traffic
+        annotations:
+          summary: "Low request throughput detected"
+          description: "Request throughput has dropped to {{ $value }} requests per second."
+          runbook_url: "https://runbooks.biowerk.io/LowRequestThroughput"
+
+      # No requests (complete traffic loss)
+      - alert: NoTraffic
+        expr: |
+          sum(rate(http_requests_total[5m])) == 0
+        for: 5m
+        labels:
+          severity: critical
+          category: business
+          component: traffic
+        annotations:
+          summary: "No traffic detected"
+          description: "No HTTP requests have been received in the last 5 minutes."
+          runbook_url: "https://runbooks.biowerk.io/NoTraffic"

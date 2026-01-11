@@ -1,0 +1,90 @@
+{
+  "language": "go",
+  "version": "1.0",
+  "aliases": ["golang"],
+  "extensions": [".go"],
+  "mime_types": ["text/x-go", "text/go"],
+  "preferred_encodings": ["utf-8", "utf-8-sig"],
+  "type_aliases": {
+    "string": "type:string",
+    "byte": "type:byte",
+    "rune": "type:string",
+    "int": "type:int",
+    "int8": "type:int",
+    "int16": "type:int",
+    "int32": "type:int",
+    "int64": "type:int",
+    "uint": "type:int",
+    "uint8": "type:int",
+    "uint16": "type:int",
+    "uint32": "type:int",
+    "uint64": "type:int",
+    "float32": "type:float",
+    "float64": "type:float",
+    "complex64": "type:float",
+    "complex128": "type:float",
+    "bool": "type:bool",
+    "any": "type:any",
+    "interface": "type:any",
+    "chan": "structure:channel",
+    "map": "type:map",
+    "slice": "type:array"
+  },
+  "reverse_type_aliases": {
+    "type:string": "string",
+    "type:byte": "byte",
+    "type:int": "int",
+    "type:float": "float64",
+    "type:bool": "bool",
+    "type:any": "interface{}",
+    "type:map": "map",
+    "type:array": "[]"
+  },
+  "binary_operators": {
+    "Add": "op:add",
+    "Sub": "op:sub",
+    "Mul": "op:mul",
+    "Div": "op:div",
+    "Rem": "op:mod",
+    "BitOr": "op:bit_or",
+    "BitAnd": "op:bit_and",
+    "BitXor": "op:bit_xor",
+    "LShift": "op:shift_left",
+    "RShift": "op:shift_right",
+    "And": "op:bool_and",
+    "Or": "op:bool_or"
+  },
+  "unary_operators": {
+    "Add": "op:add",
+    "Sub": "op:sub",
+    "Not": "op:not",
+    "Invert": "op:bit_not"
+  },
+  "literals": {
+    "bool_true": "literal:bool_true",
+    "bool_false": "literal:bool_false",
+    "null": "literal:null",
+    "string": "literal:string",
+    "bytes": "literal:array",
+    "integer": "literal:int",
+    "float": "literal:float",
+    "template": "literal:template",
+    "fallback": "meta:unknown",
+    "wide_string": "literal:string"
+  },
+  "template_payloads": {
+    "format": "literal:template"
+  },
+  "metadata": {
+    "canonicalization": {
+      "receiver": "strip_pointer",
+      "package": "module_path"
+    },
+    "morpheme_mappings": {
+      "goroutine": "structure:async",
+      "channel": "structure:channel",
+      "interface": "structure:interface",
+      "struct": "structure:record"
+    }
+  }
+}

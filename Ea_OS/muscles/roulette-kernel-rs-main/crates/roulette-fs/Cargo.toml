@@ -1,0 +1,11 @@
+[package]
+name = "roulette-fs"
+version = "0.1.0"
+edition = "2021"
+license = "UNLICENSED"
+description = "Proprietary post-binary kernel component"
+repository = "none"
+publish = false
+
+[dependencies]
+roulette-core = { path = "../roulette-core" }

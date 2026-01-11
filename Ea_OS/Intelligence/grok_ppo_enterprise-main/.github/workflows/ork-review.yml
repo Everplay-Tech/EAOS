@@ -1,0 +1,61 @@
+name: Ork Code Review
+on: [pull_request]
+
+jobs:
+  ork-review:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install Ork
+      run: |
+        pip install -e .
+        echo "GROK_API_KEY=${{ secrets.GROK_API_KEY }}" >> $GITHUB_ENV
+    
+    - name: Review PR Changes
+      run: |
+        echo "🦍 Ork is reviewing PR changes..."
+        
+        # Get changed files
+        FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }})
+        
+        for file in $FILES; do
+          if [[ $file == *.py ]] || [[ $file == *.md ]]; then
+            echo "## Reviewing $file"
+            
+            # Get diff
+            DIFF=$(git diff ${{ github.event.pull_request.base.sha }} ${{ github.sha }} -- "$file")
+            
+            # Ask Ork for review
+            REVIEW=$(ork call "Review these changes for a file system project. 
+            Focus on architectural consistency and potential bugs:
+            
+            File: $file
+            Changes:
+            $DIFF")
+            
+            echo "$REVIEW"
+            echo ""
+          fi
+        done
+        
+        # Create review comment
+        echo "REVIEW_SUMMARY<<EOF" >> $GITHUB_ENV
+        echo "$REVIEW" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+    
+    - name: Post Review Comment
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `### 🦍 Ork Code Review\n\n${process.env.REVIEW_SUMMARY}`
+          })

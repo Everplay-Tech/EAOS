@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: biowerk
+  labels:
+    name: biowerk
+    environment: production
+    app.kubernetes.io/name: biowerk
+    app.kubernetes.io/part-of: biowerk-system

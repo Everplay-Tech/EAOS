@@ -1,0 +1,26 @@
+{
+  "project": "sample-monorepo",
+  "runs": [
+    {
+      "timestamp": "2024-04-01T10:00:00Z",
+      "hit_rate": 0.12,
+      "encoded": 420,
+      "reused": 57,
+      "notes": "Initial seeding run"
+    },
+    {
+      "timestamp": "2024-04-02T10:00:00Z",
+      "hit_rate": 0.68,
+      "encoded": 133,
+      "reused": 344,
+      "notes": "Hotfix release"
+    },
+    {
+      "timestamp": "2024-04-03T10:00:00Z",
+      "hit_rate": 0.91,
+      "encoded": 39,
+      "reused": 438,
+      "notes": "Documentation-only changes"
+    }
+  ]
+}

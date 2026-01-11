@@ -1,0 +1,46 @@
+[package]
+name = "muscle-compiler"
+version = "5.0.0"
+edition = "2021"
+authors = ["Eä Team"]
+description = "Secure muscle compiler for Referee ecosystem"
+license = "Apache-2.0 OR MIT"
+
+[[bin]]
+name = "muscle-compiler"
+path = "src/main.rs"
+
+[dependencies]
+# Core crypto
+aes-gcm-siv = { version = "0.11", features = ["aes"] }
+blake3 = "1.5"
+subtle = "2.5"
+zeroize = "1.8"
+
+# Optional post-quantum
+pqcrypto-kyber = { version = "0.8", optional = true }
+pqcrypto-traits = { version = "0.8", optional = true }
+
+# Utilities
+hex = "0.4"
+regex = "1.10"
+once_cell = "1.19"
+getopts = "0.2"
+bytemuck = "1.16"
+
+# Platform-specific codegen
+asminline = "0.1"
+
+[features]
+default = []
+pq = ["dep:pqcrypto-kyber", "dep:pqcrypto-traits"]
+
+[profile.release]
+opt-level = "z"
+lto = true
+panic = "abort"
+strip = true
+codegen-units = 1
+
+[profile.dev]
+panic = "abort"

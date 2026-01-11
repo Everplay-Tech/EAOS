@@ -1,0 +1,41 @@
+suite:
+  name: "BioAgent Suite"
+  version: "0.1.0"
+  bus:
+    kind: "http-jsonrpc"
+    gateway_url: "http://mesh:8080"
+  security:
+    offline_default: true
+    egress_policy: "explicit"
+    audit_log: true
+
+agents:
+  - id: nucleus
+    service: "nucleus"
+    endpoints: [plan, route, review, finalize]
+  - id: osteon
+    service: "osteon"
+    endpoints: [outline, draft, edit, summarize, export]
+  - id: myocyte
+    service: "myocyte"
+    endpoints: [ingest_table, formula_eval, model_forecast, export]
+  - id: synapse
+    service: "synapse"
+    endpoints: [storyboard, slide_make, visualize, export]
+  - id: circadian
+    service: "circadian"
+    endpoints: [plan_timeline, assign, track, remind]
+  - id: chaperone
+    service: "chaperone"
+    endpoints: [import_artifact, export_artifact]
+
+artifacts:
+  - kind: "osteon"
+    ext: ".osteon"
+    schema_ref: "schemas/osteon.artifact.schema.json"
+  - kind: "myotab"
+    ext: ".myotab"
+    schema_ref: "schemas/myotab.artifact.schema.json"
+  - kind: "synslide"
+    ext: ".synslide"
+    schema_ref: "schemas/synslide.artifact.schema.json"

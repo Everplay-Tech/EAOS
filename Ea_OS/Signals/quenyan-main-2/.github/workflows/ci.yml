@@ -1,0 +1,353 @@
+name: cross-platform-ci
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  python-tests:
+    name: Python ${{ matrix.python-version }} • ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.lock
+          python -m pip install .
+
+      - name: Run nox test suite
+        env:
+          PYTHONWARNINGS: default
+        run: |
+          nox --version
+          nox -s lint typecheck tests property coverage --python ${{ matrix.python-version }}
+
+      - name: Validate benchmark guard rails
+        run: python scripts/check_benchmark_thresholds.py
+
+      - name: Upload Python artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: python-${{ matrix.os }}-py${{ matrix.python-version }}-artifacts
+          path: |
+            .coverage
+            htmlcov
+            coverage.xml
+          if-no-files-found: warn
+
+  rust:
+    name: Rust • ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            reference/rust/target
+          key: rust-${{ matrix.os }}-${{ hashFiles('reference/rust/Cargo.lock') }}
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install llvm-tools (coverage instrumentation)
+        if: matrix.os == 'ubuntu-latest'
+        run: rustup component add llvm-tools-preview
+
+      - name: Cargo tests
+        run: cargo test --manifest-path reference/rust/Cargo.toml --all-targets
+
+      - name: Cargo benches (build only)
+        run: cargo bench --manifest-path reference/rust/Cargo.toml --no-run
+
+      - name: Collect Rust coverage (tarpaulin)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cargo install cargo-tarpaulin --locked --version "^0.31" --force
+          cargo tarpaulin \
+            --manifest-path reference/rust/Cargo.toml \
+            --all-targets \
+            --out Xml \
+            --output-dir reference/rust/target/tarpaulin
+
+      - name: Collect Rust coverage (llvm-cov)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cargo install cargo-llvm-cov --locked --force
+          cargo llvm-cov \
+            --manifest-path reference/rust/Cargo.toml \
+            --all-features \
+            --lcov \
+            --output-path reference/rust/target/llvm-cov/lcov.info
+
+      - name: Upload Rust artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rust-${{ matrix.os }}-artifacts
+          path: |
+            reference/rust/target/tarpaulin
+            reference/rust/target/llvm-cov
+            reference/rust/target/criterion
+            reference/rust/target/debug
+          if-no-files-found: warn
+
+  go:
+    name: Go • ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: reference/go/go.mod
+          cache: true
+
+      - name: Cache Go build outputs
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ${{ env.HOME }}/go/pkg/mod
+          key: go-${{ runner.os }}-${{ hashFiles('reference/go/go.sum') }}
+          restore-keys: |
+            go-${{ runner.os }}-
+
+      - name: Go build
+        working-directory: reference/go
+        run: go build ./...
+
+      - name: Go vet
+        working-directory: reference/go
+        run: go vet ./...
+
+      - name: Go tests with coverage
+        working-directory: reference/go
+        run: |
+          go test ./... -coverprofile=coverage.out -covermode=atomic -v
+          go tool cover -html=coverage.out -o coverage.html
+
+      - name: Upload Go artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: go-${{ matrix.os }}-artifacts
+          path: |
+            reference/go/coverage.out
+            reference/go/coverage.html
+          if-no-files-found: warn
+
+  javascript:
+    name: JavaScript • ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: |
+            reference/js/package-lock.json
+
+      - name: Cache npm directory
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('reference/js/package-lock.json', 'reference/js/package.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      - name: Install Node dependencies
+        working-directory: reference/js
+        run: npm install --ignore-scripts
+
+      - name: Install JavaScript coverage tooling
+        working-directory: reference/js
+        run: npm install --no-save nyc
+
+      - name: JavaScript coverage smoke test
+        shell: bash
+        env:
+          NODE_OPTIONS: --experimental-vm-modules
+        run: |
+          tmpdir=$(python - <<'PY'
+import pathlib, tempfile
+root = pathlib.Path(tempfile.mkdtemp(prefix='mcs-js-'))
+print(root)
+PY
+          )
+          cat <<'EOF' > "$tmpdir/.nycrc"
+          {
+            "all": false,
+            "temp-dir": "reference/js/.nyc_output",
+            "report-dir": "reference/js/coverage",
+            "include": ["reference/js/**/*.js"]
+          }
+          EOF
+          cat <<'EOF' > "$tmpdir/descriptor.json"
+          {
+            "wrapper_version": "1.0.0",
+            "payload_version": "1.0.0",
+            "metadata": {"id": "ci-smoke"},
+            "sections": {
+              "stream_header": {
+                "dictionary_version": "2024.01",
+                "encoder_version": "ci",
+                "source_language": "en",
+                "source_language_version": "1.0",
+                "symbol_count": 1,
+                "has_source_map": false
+              },
+              "compression": {
+                "backend": "none",
+                "symbol_count": 1,
+                "model": {"shape": "flat"},
+                "extras": {}
+              },
+              "tokens": "AAE=",
+              "string_table": "AAE=",
+              "payloads": [],
+              "source_map": null
+            },
+            "salt": "AAAAAAAAAAAAAAAAAAAAAA==",
+            "nonce": "AAAAAAAAAAAAAA=="
+          }
+          EOF
+
+          npx --yes --prefix reference/js nyc --nycrc-path "$tmpdir/.nycrc" node reference/js/mcs.js encode --passphrase secret --input "$tmpdir/descriptor.json" --output "$tmpdir/encoded.txt"
+          npx --yes --prefix reference/js nyc --nycrc-path "$tmpdir/.nycrc" node reference/js/mcs.js decode --passphrase secret --input "$tmpdir/encoded.txt" --output "$tmpdir/decoded.json"
+          npx --yes --prefix reference/js nyc --nycrc-path "$tmpdir/.nycrc" report --reporter=lcov --reporter=text-summary --report-dir reference/js/coverage
+
+      - name: Upload JavaScript artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: javascript-${{ matrix.os }}-artifacts
+          path: |
+            reference/js/.nyc_output
+            reference/js/coverage
+            reference/js/node_modules
+          if-no-files-found: warn
+
+  typescript:
+    name: TypeScript • ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: reference/js/package-lock.json
+
+      - name: Cache npm directory
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-ts-${{ runner.os }}-${{ hashFiles('reference/js/package-lock.json', 'reference/js/package.json') }}
+          restore-keys: |
+            npm-ts-${{ runner.os }}-
+
+      - name: Install TypeScript toolchain
+        run: npm install --global typescript ts-node nyc @types/node
+
+      - name: TypeScript type-check
+        shell: bash
+        run: |
+          export NODE_PATH=$(npm root -g)
+          tmpdir=$(python - <<'PY'
+import pathlib, tempfile
+root = pathlib.Path(tempfile.mkdtemp(prefix='mcs-ts-types-'))
+print(root)
+PY
+          )
+          cat <<'EOF' > "$tmpdir/ambient.d.ts"
+          declare const sealed: ClassDecorator;
+          declare function trace(label: string): MethodDecorator;
+          interface Gateway { lookup(id: string): Promise<Result<Record<string, unknown>> | null>; }
+          type Result<T> = T & { state?: string };
+          EOF
+          npx tsc --pretty false --noEmit --experimentalDecorators --lib es2020,dom --target es2020 --skipLibCheck "$tmpdir/ambient.d.ts" tests/language_roundtrip/decorator.ts
+
+      - name: TypeScript coverage smoke test
+        shell: bash
+        env:
+          TS_NODE_COMPILER_OPTIONS: '{"module":"esnext","target":"es2020","experimentalDecorators":true}'
+        run: |
+          export NODE_PATH=$(npm root -g)
+          mkdir -p reference/typescript/.nyc_output reference/typescript/coverage
+          npx nyc --silent --temp-dir reference/typescript/.nyc_output node --loader ts-node/esm <<'EOF'
+          globalThis.sealed = () => (target) => target;
+          globalThis.trace = () => (target, propertyKey, descriptor) => descriptor;
+          class DummyGateway {
+            async lookup(id) { return { id, state: 'ok' }; }
+          }
+          const { ExampleService } = await import('./tests/language_roundtrip/decorator.ts');
+          const service = new ExampleService(new DummyGateway());
+          await service.fetch('demo');
+          EOF
+          npx nyc --temp-dir reference/typescript/.nyc_output report --reporter=lcov --reporter=text-summary --report-dir reference/typescript/coverage
+
+      - name: Upload TypeScript artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: typescript-${{ matrix.os }}-artifacts
+          path: |
+            reference/typescript/.nyc_output
+            reference/typescript/coverage
+          if-no-files-found: warn

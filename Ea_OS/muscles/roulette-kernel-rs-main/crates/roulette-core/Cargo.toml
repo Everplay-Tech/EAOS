@@ -1,0 +1,37 @@
+[package]
+name = "roulette-core"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "Proprietary"
+authors = ["Everplay-Tech"]
+description = "Proprietary post-binary kernel component"
+repository = "none"
+
+[lib]
+crate-type = ["rlib"]
+path = "src/lib.rs"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[features]
+default = []
+std = ["alloc"]
+alloc = []
+secret = ["zeroize"]
+no_panic_handler = []
+
+[dependencies]
+# ZERO dependencies — this must stay pure
+zeroize = { version = "1.7", optional = true }
+# Type-level arithmetic for dependent types and braid invariants
+typenum = "1.17"
+# Procedural macros for mathematical invariants
+roulette-macros = { path = "../roulette-macros" }
+
+[dev-dependencies]
+proptest = "1.4"

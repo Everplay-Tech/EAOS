@@ -1,0 +1,30 @@
+name: Quenyan Cargo Project
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-encode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Cargo build
+        run: cargo build --locked --workspace
+      - name: Encode project descriptors
+        env:
+          QYN1_PASSPHRASE: ${{ secrets.QYN1_PASSPHRASE }}
+        run: >-
+          mcs-reference project batch-encode
+          --passphrase "${QYN1_PASSPHRASE}"
+          --project-root .
+          --output-dir target/quenyan-artifacts
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: quenyan-artifacts
+          path: target/quenyan-artifacts

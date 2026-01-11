@@ -1,0 +1,81 @@
+{
+  "language": "typescript",
+  "version": "1.0",
+  "aliases": ["ts", "typescriptreact"],
+  "extensions": [".ts", ".mts", ".cts", ".d.ts"],
+  "mime_types": ["text/x-typescript", "application/typescript", "application/x-typescript"],
+  "preferred_encodings": ["utf-8", "utf-8-sig"],
+  "type_aliases": {
+    "string": "type:string",
+    "number": "type:float",
+    "bigint": "type:int",
+    "boolean": "type:bool",
+    "any": "type:any",
+    "void": "type:void",
+    "never": "type:never",
+    "unknown": "type:any",
+    "promise": "type:promise",
+    "iterator": "type:iterator",
+    "array": "type:array",
+    "tuple": "type:tuple",
+    "readonly": "type:any"
+  },
+  "reverse_type_aliases": {
+    "type:string": "string",
+    "type:float": "number",
+    "type:int": "bigint",
+    "type:bool": "boolean",
+    "type:any": "any",
+    "type:void": "void",
+    "type:never": "never",
+    "type:promise": "Promise",
+    "type:iterator": "Iterable",
+    "type:array": "Array"
+  },
+  "binary_operators": {
+    "Add": "op:add",
+    "Sub": "op:sub",
+    "Mul": "op:mul",
+    "Div": "op:div",
+    "Mod": "op:mod",
+    "BitOr": "op:bit_or",
+    "BitAnd": "op:bit_and",
+    "BitXor": "op:bit_xor",
+    "LShift": "op:shift_left",
+    "RShift": "op:shift_right"
+  },
+  "unary_operators": {
+    "PrefixIncrement": "op:add",
+    "PrefixDecrement": "op:sub",
+    "Negate": "op:sub",
+    "Not": "op:not",
+    "BitNot": "op:bit_not"
+  },
+  "literals": {
+    "bool_true": "literal:bool_true",
+    "bool_false": "literal:bool_false",
+    "null": "literal:null",
+    "string": "literal:string",
+    "bytes": "literal:array",
+    "integer": "literal:int",
+    "float": "literal:float",
+    "template": "literal:template",
+    "fallback": "meta:unknown"
+  },
+  "template_payloads": {
+    "template": "literal:template",
+    "decorator": "structure:annotation"
+  },
+  "metadata": {
+    "canonicalization": {
+      "namespaces": "collapse",
+      "imports": "esm"
+    },
+    "morpheme_mappings": {
+      "interface": "structure:interface",
+      "type_alias": "structure:type_alias",
+      "enum": "structure:enum",
+      "decorator": "structure:annotation"
+    }
+  }
+}

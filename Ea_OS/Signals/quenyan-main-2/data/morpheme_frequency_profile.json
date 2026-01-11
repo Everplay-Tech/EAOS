@@ -1,0 +1,267 @@
+{
+  "sequence_length": 3,
+  "top_n": 10,
+  "languages": {
+    "python": {
+      "stream_count": 23,
+      "token_count": 2796,
+      "entropy_bits": 3.3035222905099375,
+      "conditional_entropy_bits": 1.4707992925067688,
+      "top_morphemes": [
+        {
+          "index": 200,
+          "key": "structure:identifier",
+          "morpheme": "esse",
+          "count": 893,
+          "probability": 0.31938483547925606
+        },
+        {
+          "index": 108,
+          "key": "op:call",
+          "morpheme": "tulya",
+          "count": 326,
+          "probability": 0.11659513590844063
+        },
+        {
+          "index": 222,
+          "key": "meta:unknown",
+          "morpheme": "\u00fament",
+          "count": 315,
+          "probability": 0.11266094420600858
+        },
+        {
+          "index": 92,
+          "key": "op:assign",
+          "morpheme": "antya",
+          "count": 314,
+          "probability": 0.1123032904148784
+        },
+        {
+          "index": 201,
+          "key": "structure:qualifier",
+          "morpheme": "essetil",
+          "count": 229,
+          "probability": 0.08190271816881259
+        },
+        {
+          "index": 192,
+          "key": "literal:string",
+          "morpheme": "quet",
+          "count": 192,
+          "probability": 0.06866952789699571
+        },
+        {
+          "index": 0,
+          "key": "construct:function",
+          "morpheme": "kar",
+          "count": 84,
+          "probability": 0.030042918454935622
+        },
+        {
+          "index": 9,
+          "key": "construct:import",
+          "morpheme": "tulpar",
+          "count": 68,
+          "probability": 0.024320457796852647
+        },
+        {
+          "index": 202,
+          "key": "structure:parameter",
+          "morpheme": "colma",
+          "count": 66,
+          "probability": 0.023605150214592276
+        },
+        {
+          "index": 69,
+          "key": "op:div",
+          "morpheme": "hehta",
+          "count": 64,
+          "probability": 0.022889842632331903
+        }
+      ],
+      "top_sequences": [
+        {
+          "indices": [
+            92,
+            200,
+            108
+          ],
+          "keys": [
+            "op:assign",
+            "structure:identifier",
+            "op:call"
+          ],
+          "morphemes": [
+            "antya",
+            "esse",
+            "tulya"
+          ],
+          "count": 208
+        },
+        {
+          "indices": [
+            108,
+            201,
+            200
+          ],
+          "keys": [
+            "op:call",
+            "structure:qualifier",
+            "structure:identifier"
+          ],
+          "morphemes": [
+            "tulya",
+            "essetil",
+            "esse"
+          ],
+          "count": 144
+        },
+        {
+          "indices": [
+            200,
+            108,
+            201
+          ],
+          "keys": [
+            "structure:identifier",
+            "op:call",
+            "structure:qualifier"
+          ],
+          "morphemes": [
+            "esse",
+            "tulya",
+            "essetil"
+          ],
+          "count": 127
+        },
+        {
+          "indices": [
+            200,
+            108,
+            200
+          ],
+          "keys": [
+            "structure:identifier",
+            "op:call",
+            "structure:identifier"
+          ],
+          "morphemes": [
+            "esse",
+            "tulya",
+            "esse"
+          ],
+          "count": 120
+        },
+        {
+          "indices": [
+            200,
+            92,
+            200
+          ],
+          "keys": [
+            "structure:identifier",
+            "op:assign",
+            "structure:identifier"
+          ],
+          "morphemes": [
+            "esse",
+            "antya",
+            "esse"
+          ],
+          "count": 89
+        },
+        {
+          "indices": [
+            108,
+            200,
+            200
+          ],
+          "keys": [
+            "op:call",
+            "structure:identifier",
+            "structure:identifier"
+          ],
+          "morphemes": [
+            "tulya",
+            "esse",
+            "esse"
+          ],
+          "count": 77
+        },
+        {
+          "indices": [
+            192,
+            92,
+            200
+          ],
+          "keys": [
+            "literal:string",
+            "op:assign",
+            "structure:identifier"
+          ],
+          "morphemes": [
+            "quet",
+            "antya",
+            "esse"
+          ],
+          "count": 68
+        },
+        {
+          "indices": [
+            200,
+            192,
+            92
+          ],
+          "keys": [
+            "structure:identifier",
+            "literal:string",
+            "op:assign"
+          ],
+          "morphemes": [
+            "esse",
+            "quet",
+            "antya"
+          ],
+          "count": 52
+        },
+        {
+          "indices": [
+            201,
+            200,
+            200
+          ],
+          "keys": [
+            "structure:qualifier",
+            "structure:identifier",
+            "structure:identifier"
+          ],
+          "morphemes": [
+            "essetil",
+            "esse",
+            "esse"
+          ],
+          "count": 51
+        },
+        {
+          "indices": [
+            92,
+            200,
+            69
+          ],
+          "keys": [
+            "op:assign",
+            "structure:identifier",
+            "op:div"
+          ],
+          "morphemes": [
+            "antya",
+            "esse",
+            "hehta"
+          ],
+          "count": 49
+        }
+      ],
+      "dictionary_version": "1.0"
+    }
+  }
+}

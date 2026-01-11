@@ -1,0 +1,70 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your release is named {{ .Release.Name }}.
+
+To learn more about the release, try:
+
+  $ helm status {{ .Release.Name }} -n {{ .Release.Namespace }}
+  $ helm get all {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+{{- if .Values.ingress.enabled }}
+
+1. Get the application URL by running these commands:
+{{- range .Values.ingress.hosts }}
+  https://{{ .host }}
+{{- end }}
+{{- else if contains "LoadBalancer" .Values.mesh.service.type }}
+
+1. Get the application URL by running these commands:
+     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+           You can watch the status by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "biowerk.fullname" . }}-mesh'
+
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "biowerk.fullname" . }}-mesh --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo http://$SERVICE_IP:{{ .Values.mesh.service.port }}
+{{- else }}
+
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "biowerk.name" . }},app.kubernetes.io/instance={{ .Release.Name }},app=mesh" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+{{- end }}
+
+{{- if .Values.monitoringIngress.enabled }}
+
+2. Access monitoring dashboards:
+{{- range .Values.monitoringIngress.hosts }}
+  https://{{ .host }}
+{{- end }}
+{{- end }}
+
+3. To view logs:
+  kubectl logs -f -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ include "biowerk.name" . }}
+
+4. To scale deployments:
+  kubectl scale deployment -n {{ .Release.Namespace }} {{ include "biowerk.fullname" . }}-mesh --replicas=5
+
+IMPORTANT NEXT STEPS:
+=====================
+
+1. UPDATE SECRETS:
+   All secrets use placeholder values. Update them before deploying to production:
+   - PostgreSQL password: kubectl create secret generic postgres-secret --from-literal=password=YOUR_PASSWORD -n {{ .Release.Namespace }}
+   - MongoDB password: kubectl create secret generic mongodb-secret --from-literal=password=YOUR_PASSWORD -n {{ .Release.Namespace }}
+   - JWT secret: kubectl create secret generic app-secrets --from-literal=jwt_secret_key=YOUR_SECRET -n {{ .Release.Namespace }}
+   - Grafana password: kubectl create secret generic grafana-secrets --from-literal=admin_password=YOUR_PASSWORD -n {{ .Release.Namespace }}
+
+2. CONFIGURE INGRESS:
+   Update ingress hosts in values.yaml to match your domain:
+   - biowerk.example.com → your-domain.com
+   - Install cert-manager for TLS certificates
+
+3. SET UP MONITORING:
+   - Create basic auth secret for monitoring access
+   - Configure alertmanager webhook URLs for notifications
+
+4. REVIEW RESOURCE LIMITS:
+   Adjust resource requests/limits based on your workload:
+   $ helm upgrade {{ .Release.Name }} ./helm/biowerk -f custom-values.yaml
+
+For more information, see the documentation at: https://github.com/E-TECH-PLAYTECH/BIOwerk

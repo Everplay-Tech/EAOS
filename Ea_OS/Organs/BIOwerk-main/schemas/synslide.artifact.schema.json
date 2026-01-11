@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "synslide.artifact.schema.json",
+  "type": "object",
+  "required": [
+    "kind",
+    "meta",
+    "body"
+  ],
+  "properties": {
+    "kind": {
+      "const": "synslide"
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string"
+        }
+      }
+    },
+    "body": {
+      "type": "object",
+      "properties": {
+        "slides": {
+          "type": "array"
+        },
+        "layout_graph": {
+          "type": "object"
+        },
+        "notes": {
+          "type": "array"
+        }
+      }
+    }
+  }
+}

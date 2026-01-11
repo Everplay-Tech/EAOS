@@ -1,0 +1,29 @@
+name: Fuzz Testing
+
+on:
+  schedule:
+    # Run nightly at 02:00 UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rustfmt, clippy
+      - name: Install cargo-fuzz
+        run: |
+          if ! command -v cargo-fuzz &> /dev/null; then
+            cargo install cargo-fuzz --locked
+          fi
+      - name: Run fuzz targets
+        working-directory: fuzz
+        run: |
+          cargo fuzz run capsule_roundtrip -- -max_total_time=300 || true
+          cargo fuzz run ciphertext -- -max_total_time=300 || true
+          cargo fuzz run nonce_mutation -- -max_total_time=300 || true
+          cargo fuzz run nonce -- -max_total_time=300 || true
+        continue-on-error: true # Don't fail CI on fuzz findings, but report them

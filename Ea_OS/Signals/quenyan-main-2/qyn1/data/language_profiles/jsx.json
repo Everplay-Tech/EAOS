@@ -1,0 +1,50 @@
+{
+  "language": "jsx",
+  "version": "1.0",
+  "aliases": ["tsx", "react", "javascriptreact"],
+  "extensions": [".jsx", ".tsx"],
+  "mime_types": ["text/jsx", "text/x-jsx"],
+  "preferred_encodings": ["utf-8", "utf-8-sig"],
+  "type_aliases": {
+    "string": "type:string",
+    "number": "type:float",
+    "boolean": "type:bool",
+    "any": "type:any",
+    "void": "type:void",
+    "never": "type:never"
+  },
+  "reverse_type_aliases": {
+    "type:string": "string",
+    "type:float": "number",
+    "type:bool": "boolean",
+    "type:any": "any",
+    "type:void": "void",
+    "type:never": "never"
+  },
+  "binary_operators": {
+    "Add": "op:add",
+    "Sub": "op:sub",
+    "Mul": "op:mul",
+    "Div": "op:div",
+    "Mod": "op:mod"
+  },
+  "unary_operators": {
+    "Negate": "op:sub",
+    "Not": "op:not"
+  },
+  "literals": {
+    "bool_true": "literal:bool_true",
+    "bool_false": "literal:bool_false",
+    "null": "literal:null",
+    "string": "literal:string",
+    "bytes": "literal:array",
+    "integer": "literal:int",
+    "float": "literal:float",
+    "template": "literal:template",
+    "fallback": "meta:unknown"
+  },
+  "template_payloads": {
+    "jsx": "literal:template",
+    "decorator": "structure:annotation"
+  }
+}

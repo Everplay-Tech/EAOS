@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+/.nox/
+/.tox/
+/dist/
+/build/
+/htmlcov/
+/coverage.xml
+/sbom.json

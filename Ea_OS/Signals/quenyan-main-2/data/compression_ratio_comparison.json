@@ -1,0 +1,830 @@
+{
+  "generated_at": "2025-11-12T21:37:14Z",
+  "project_count": 52,
+  "projects": [
+    {
+      "name": "python-web-01",
+      "language": "Python",
+      "category": "web",
+      "sizes": {
+        "source_bytes": 113890,
+        "gzip_bytes": 60756,
+        "brotli_bytes": 39406,
+        "binary_ast_bytes": 54952,
+        "mcs_balanced_bytes": 41407,
+        "mcs_maximum_bytes": 50342,
+        "mcs_security_bytes": 61038
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "python-web-02",
+      "language": "Python",
+      "category": "web",
+      "sizes": {
+        "source_bytes": 140021,
+        "gzip_bytes": 83189,
+        "brotli_bytes": 50528,
+        "binary_ast_bytes": 73731,
+        "mcs_balanced_bytes": 44407,
+        "mcs_maximum_bytes": 45940,
+        "mcs_security_bytes": 68805
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "python-web-03",
+      "language": "Python",
+      "category": "web",
+      "sizes": {
+        "source_bytes": 161323,
+        "gzip_bytes": 62330,
+        "brotli_bytes": 62548,
+        "binary_ast_bytes": 95981,
+        "mcs_balanced_bytes": 71108,
+        "mcs_maximum_bytes": 52994,
+        "mcs_security_bytes": 82792
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "python-web-04",
+      "language": "Python",
+      "category": "web",
+      "sizes": {
+        "source_bytes": 186945,
+        "gzip_bytes": 107355,
+        "brotli_bytes": 63852,
+        "binary_ast_bytes": 119971,
+        "mcs_balanced_bytes": 89276,
+        "mcs_maximum_bytes": 66338,
+        "mcs_security_bytes": 74857
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "python-web-05",
+      "language": "Python",
+      "category": "web",
+      "sizes": {
+        "source_bytes": 211172,
+        "gzip_bytes": 128758,
+        "brotli_bytes": 88857,
+        "binary_ast_bytes": 90344,
+        "mcs_balanced_bytes": 70365,
+        "mcs_maximum_bytes": 98500,
+        "mcs_security_bytes": 109169
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "python-web-06",
+      "language": "Python",
+      "category": "web",
+      "sizes": {
+        "source_bytes": 232317,
+        "gzip_bytes": 133282,
+        "brotli_bytes": 119674,
+        "binary_ast_bytes": 130299,
+        "mcs_balanced_bytes": 126275,
+        "mcs_maximum_bytes": 84395,
+        "mcs_security_bytes": 116978
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "python-web-07",
+      "language": "Python",
+      "category": "web",
+      "sizes": {
+        "source_bytes": 171057,
+        "gzip_bytes": 99051,
+        "brotli_bytes": 83551,
+        "binary_ast_bytes": 112643,
+        "mcs_balanced_bytes": 76730,
+        "mcs_maximum_bytes": 74410,
+        "mcs_security_bytes": 63618
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "python-data-science-01",
+      "language": "Python",
+      "category": "data-science",
+      "sizes": {
+        "source_bytes": 194129,
+        "gzip_bytes": 84387,
+        "brotli_bytes": 79486,
+        "binary_ast_bytes": 82298,
+        "mcs_balanced_bytes": 71025,
+        "mcs_maximum_bytes": 58669,
+        "mcs_security_bytes": 83916
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "python-data-science-02",
+      "language": "Python",
+      "category": "data-science",
+      "sizes": {
+        "source_bytes": 218146,
+        "gzip_bytes": 116176,
+        "brotli_bytes": 93270,
+        "binary_ast_bytes": 111484,
+        "mcs_balanced_bytes": 78594,
+        "mcs_maximum_bytes": 73893,
+        "mcs_security_bytes": 131657
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "python-data-science-03",
+      "language": "Python",
+      "category": "data-science",
+      "sizes": {
+        "source_bytes": 243353,
+        "gzip_bytes": 130322,
+        "brotli_bytes": 118316,
+        "binary_ast_bytes": 109835,
+        "mcs_balanced_bytes": 118023,
+        "mcs_maximum_bytes": 76887,
+        "mcs_security_bytes": 111615
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "python-data-science-04",
+      "language": "Python",
+      "category": "data-science",
+      "sizes": {
+        "source_bytes": 264856,
+        "gzip_bytes": 163544,
+        "brotli_bytes": 130732,
+        "binary_ast_bytes": 150195,
+        "mcs_balanced_bytes": 125623,
+        "mcs_maximum_bytes": 123271,
+        "mcs_security_bytes": 148785
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "python-data-science-05",
+      "language": "Python",
+      "category": "data-science",
+      "sizes": {
+        "source_bytes": 289195,
+        "gzip_bytes": 125791,
+        "brotli_bytes": 100554,
+        "binary_ast_bytes": 143046,
+        "mcs_balanced_bytes": 108233,
+        "mcs_maximum_bytes": 94397,
+        "mcs_security_bytes": 175008
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "python-data-science-06",
+      "language": "Python",
+      "category": "data-science",
+      "sizes": {
+        "source_bytes": 311905,
+        "gzip_bytes": 184126,
+        "brotli_bytes": 129603,
+        "binary_ast_bytes": 186092,
+        "mcs_balanced_bytes": 126306,
+        "mcs_maximum_bytes": 150088,
+        "mcs_security_bytes": 149496
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "python-data-science-07",
+      "language": "Python",
+      "category": "data-science",
+      "sizes": {
+        "source_bytes": 254564,
+        "gzip_bytes": 112917,
+        "brotli_bytes": 101619,
+        "binary_ast_bytes": 144696,
+        "mcs_balanced_bytes": 94967,
+        "mcs_maximum_bytes": 104017,
+        "mcs_security_bytes": 151066
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "javascript-frontend-01",
+      "language": "JavaScript",
+      "category": "frontend",
+      "sizes": {
+        "source_bytes": 277469,
+        "gzip_bytes": 132035,
+        "brotli_bytes": 108944,
+        "binary_ast_bytes": 194023,
+        "mcs_balanced_bytes": 119946,
+        "mcs_maximum_bytes": 83240,
+        "mcs_security_bytes": 103287,
+        "minified_bytes": 158692,
+        "minified_gzip_bytes": 86347
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "javascript-frontend-02",
+      "language": "JavaScript",
+      "category": "frontend",
+      "sizes": {
+        "source_bytes": 300434,
+        "gzip_bytes": 171277,
+        "brotli_bytes": 132587,
+        "binary_ast_bytes": 125899,
+        "mcs_balanced_bytes": 120650,
+        "mcs_maximum_bytes": 149960,
+        "mcs_security_bytes": 149486,
+        "minified_bytes": 223587,
+        "minified_gzip_bytes": 129483
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "javascript-frontend-03",
+      "language": "JavaScript",
+      "category": "frontend",
+      "sizes": {
+        "source_bytes": 323259,
+        "gzip_bytes": 123729,
+        "brotli_bytes": 165823,
+        "binary_ast_bytes": 195414,
+        "mcs_balanced_bytes": 141869,
+        "mcs_maximum_bytes": 109488,
+        "mcs_security_bytes": 170244,
+        "minified_bytes": 185004,
+        "minified_gzip_bytes": 95316
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "javascript-frontend-04",
+      "language": "JavaScript",
+      "category": "frontend",
+      "sizes": {
+        "source_bytes": 347331,
+        "gzip_bytes": 169807,
+        "brotli_bytes": 197602,
+        "binary_ast_bytes": 230195,
+        "mcs_balanced_bytes": 129628,
+        "mcs_maximum_bytes": 135503,
+        "mcs_security_bytes": 141172,
+        "minified_bytes": 254428,
+        "minified_gzip_bytes": 147715
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "javascript-frontend-05",
+      "language": "JavaScript",
+      "category": "frontend",
+      "sizes": {
+        "source_bytes": 370620,
+        "gzip_bytes": 167381,
+        "brotli_bytes": 182844,
+        "binary_ast_bytes": 215956,
+        "mcs_balanced_bytes": 128487,
+        "mcs_maximum_bytes": 165945,
+        "mcs_security_bytes": 185398,
+        "minified_bytes": 261555,
+        "minified_gzip_bytes": 138507
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "javascript-frontend-06",
+      "language": "JavaScript",
+      "category": "frontend",
+      "sizes": {
+        "source_bytes": 392705,
+        "gzip_bytes": 149281,
+        "brotli_bytes": 164071,
+        "binary_ast_bytes": 159376,
+        "mcs_balanced_bytes": 209305,
+        "mcs_maximum_bytes": 185874,
+        "mcs_security_bytes": 226289,
+        "minified_bytes": 240140,
+        "minified_gzip_bytes": 110149
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "javascript-frontend-07",
+      "language": "JavaScript",
+      "category": "frontend",
+      "sizes": {
+        "source_bytes": 335270,
+        "gzip_bytes": 198051,
+        "brotli_bytes": 190187,
+        "binary_ast_bytes": 142723,
+        "mcs_balanced_bytes": 143038,
+        "mcs_maximum_bytes": 98980,
+        "mcs_security_bytes": 186999,
+        "minified_bytes": 235750,
+        "minified_gzip_bytes": 110627
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "javascript-node-01",
+      "language": "JavaScript",
+      "category": "node",
+      "sizes": {
+        "source_bytes": 359070,
+        "gzip_bytes": 177404,
+        "brotli_bytes": 169464,
+        "binary_ast_bytes": 172180,
+        "mcs_balanced_bytes": 186495,
+        "mcs_maximum_bytes": 133965,
+        "mcs_security_bytes": 149038,
+        "minified_bytes": 236217,
+        "minified_gzip_bytes": 132160
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "javascript-node-02",
+      "language": "JavaScript",
+      "category": "node",
+      "sizes": {
+        "source_bytes": 379622,
+        "gzip_bytes": 162583,
+        "brotli_bytes": 157471,
+        "binary_ast_bytes": 265182,
+        "mcs_balanced_bytes": 176892,
+        "mcs_maximum_bytes": 142882,
+        "mcs_security_bytes": 187749,
+        "minified_bytes": 217979,
+        "minified_gzip_bytes": 105437
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "javascript-node-03",
+      "language": "JavaScript",
+      "category": "node",
+      "sizes": {
+        "source_bytes": 405554,
+        "gzip_bytes": 187017,
+        "brotli_bytes": 195150,
+        "binary_ast_bytes": 190218,
+        "mcs_balanced_bytes": 147156,
+        "mcs_maximum_bytes": 119889,
+        "mcs_security_bytes": 212545,
+        "minified_bytes": 241624,
+        "minified_gzip_bytes": 141546
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "javascript-node-04",
+      "language": "JavaScript",
+      "category": "node",
+      "sizes": {
+        "source_bytes": 428604,
+        "gzip_bytes": 251295,
+        "brotli_bytes": 153014,
+        "binary_ast_bytes": 202044,
+        "mcs_balanced_bytes": 201681,
+        "mcs_maximum_bytes": 140210,
+        "mcs_security_bytes": 169041,
+        "minified_bytes": 315925,
+        "minified_gzip_bytes": 169227
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "javascript-node-05",
+      "language": "JavaScript",
+      "category": "node",
+      "sizes": {
+        "source_bytes": 449034,
+        "gzip_bytes": 221571,
+        "brotli_bytes": 237228,
+        "binary_ast_bytes": 288391,
+        "mcs_balanced_bytes": 159720,
+        "mcs_maximum_bytes": 135305,
+        "mcs_security_bytes": 211976,
+        "minified_bytes": 285008,
+        "minified_gzip_bytes": 148219
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "javascript-node-06",
+      "language": "JavaScript",
+      "category": "node",
+      "sizes": {
+        "source_bytes": 473789,
+        "gzip_bytes": 262942,
+        "brotli_bytes": 237656,
+        "binary_ast_bytes": 329401,
+        "mcs_balanced_bytes": 158065,
+        "mcs_maximum_bytes": 174627,
+        "mcs_security_bytes": 212361,
+        "minified_bytes": 342234,
+        "minified_gzip_bytes": 166770
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "javascript-node-07",
+      "language": "JavaScript",
+      "category": "node",
+      "sizes": {
+        "source_bytes": 415716,
+        "gzip_bytes": 176949,
+        "brotli_bytes": 186102,
+        "binary_ast_bytes": 218901,
+        "mcs_balanced_bytes": 156662,
+        "mcs_maximum_bytes": 139247,
+        "mcs_security_bytes": 249449,
+        "minified_bytes": 265487,
+        "minified_gzip_bytes": 153770
+      },
+      "notes": "heavy string literals"
+    },
+    {
+      "name": "go-systems-01",
+      "language": "Go",
+      "category": "systems",
+      "sizes": {
+        "source_bytes": 437413,
+        "gzip_bytes": 223989,
+        "brotli_bytes": 154031,
+        "binary_ast_bytes": 306094,
+        "mcs_balanced_bytes": 223363,
+        "mcs_maximum_bytes": 215722,
+        "mcs_security_bytes": 262821
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "go-systems-02",
+      "language": "Go",
+      "category": "systems",
+      "sizes": {
+        "source_bytes": 459292,
+        "gzip_bytes": 268082,
+        "brotli_bytes": 174491,
+        "binary_ast_bytes": 250632,
+        "mcs_balanced_bytes": 165941,
+        "mcs_maximum_bytes": 169124,
+        "mcs_security_bytes": 172347
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "go-systems-03",
+      "language": "Go",
+      "category": "systems",
+      "sizes": {
+        "source_bytes": 485894,
+        "gzip_bytes": 228833,
+        "brotli_bytes": 280105,
+        "binary_ast_bytes": 233015,
+        "mcs_balanced_bytes": 242061,
+        "mcs_maximum_bytes": 184689,
+        "mcs_security_bytes": 228361
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "go-systems-04",
+      "language": "Go",
+      "category": "systems",
+      "sizes": {
+        "source_bytes": 509342,
+        "gzip_bytes": 310574,
+        "brotli_bytes": 294858,
+        "binary_ast_bytes": 288659,
+        "mcs_balanced_bytes": 245715,
+        "mcs_maximum_bytes": 159961,
+        "mcs_security_bytes": 222655
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "go-systems-05",
+      "language": "Go",
+      "category": "systems",
+      "sizes": {
+        "source_bytes": 529792,
+        "gzip_bytes": 324492,
+        "brotli_bytes": 253772,
+        "binary_ast_bytes": 298092,
+        "mcs_balanced_bytes": 259340,
+        "mcs_maximum_bytes": 155004,
+        "mcs_security_bytes": 271193
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "go-systems-06",
+      "language": "Go",
+      "category": "systems",
+      "sizes": {
+        "source_bytes": 553666,
+        "gzip_bytes": 277211,
+        "brotli_bytes": 301555,
+        "binary_ast_bytes": 247615,
+        "mcs_balanced_bytes": 299304,
+        "mcs_maximum_bytes": 164784,
+        "mcs_security_bytes": 226069
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "go-systems-07",
+      "language": "Go",
+      "category": "systems",
+      "sizes": {
+        "source_bytes": 494901,
+        "gzip_bytes": 258738,
+        "brotli_bytes": 248465,
+        "binary_ast_bytes": 232881,
+        "mcs_balanced_bytes": 167658,
+        "mcs_maximum_bytes": 235505,
+        "mcs_security_bytes": 209845
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "rust-systems-01",
+      "language": "Rust",
+      "category": "systems",
+      "sizes": {
+        "source_bytes": 518654,
+        "gzip_bytes": 271092,
+        "brotli_bytes": 253441,
+        "binary_ast_bytes": 272691,
+        "mcs_balanced_bytes": 233436,
+        "mcs_maximum_bytes": 204874,
+        "mcs_security_bytes": 312760
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "rust-systems-02",
+      "language": "Rust",
+      "category": "systems",
+      "sizes": {
+        "source_bytes": 542252,
+        "gzip_bytes": 232638,
+        "brotli_bytes": 277571,
+        "binary_ast_bytes": 255729,
+        "mcs_balanced_bytes": 219605,
+        "mcs_maximum_bytes": 231960,
+        "mcs_security_bytes": 237505
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "rust-systems-03",
+      "language": "Rust",
+      "category": "systems",
+      "sizes": {
+        "source_bytes": 563816,
+        "gzip_bytes": 257033,
+        "brotli_bytes": 293436,
+        "binary_ast_bytes": 237796,
+        "mcs_balanced_bytes": 236796,
+        "mcs_maximum_bytes": 281716,
+        "mcs_security_bytes": 348993
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "rust-systems-04",
+      "language": "Rust",
+      "category": "systems",
+      "sizes": {
+        "source_bytes": 587519,
+        "gzip_bytes": 233587,
+        "brotli_bytes": 229812,
+        "binary_ast_bytes": 281750,
+        "mcs_balanced_bytes": 313724,
+        "mcs_maximum_bytes": 278360,
+        "mcs_security_bytes": 345819
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "rust-systems-05",
+      "language": "Rust",
+      "category": "systems",
+      "sizes": {
+        "source_bytes": 611346,
+        "gzip_bytes": 286529,
+        "brotli_bytes": 231002,
+        "binary_ast_bytes": 397450,
+        "mcs_balanced_bytes": 292742,
+        "mcs_maximum_bytes": 253445,
+        "mcs_security_bytes": 377005
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "rust-systems-06",
+      "language": "Rust",
+      "category": "systems",
+      "sizes": {
+        "source_bytes": 637507,
+        "gzip_bytes": 342312,
+        "brotli_bytes": 217949,
+        "binary_ast_bytes": 411275,
+        "mcs_balanced_bytes": 243432,
+        "mcs_maximum_bytes": 271543,
+        "mcs_security_bytes": 385131
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "rust-systems-07",
+      "language": "Rust",
+      "category": "systems",
+      "sizes": {
+        "source_bytes": 574174,
+        "gzip_bytes": 236691,
+        "brotli_bytes": 211125,
+        "binary_ast_bytes": 248106,
+        "mcs_balanced_bytes": 254229,
+        "mcs_maximum_bytes": 195171,
+        "mcs_security_bytes": 296994
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "c++-embedded-01",
+      "language": "C++",
+      "category": "embedded",
+      "sizes": {
+        "source_bytes": 599176,
+        "gzip_bytes": 330881,
+        "brotli_bytes": 232997,
+        "binary_ast_bytes": 353676,
+        "mcs_balanced_bytes": 223706,
+        "mcs_maximum_bytes": 232166,
+        "mcs_security_bytes": 356741
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "c++-embedded-02",
+      "language": "C++",
+      "category": "embedded",
+      "sizes": {
+        "source_bytes": 621741,
+        "gzip_bytes": 362515,
+        "brotli_bytes": 225164,
+        "binary_ast_bytes": 327702,
+        "mcs_balanced_bytes": 234025,
+        "mcs_maximum_bytes": 174572,
+        "mcs_security_bytes": 348480
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "c++-embedded-03",
+      "language": "C++",
+      "category": "embedded",
+      "sizes": {
+        "source_bytes": 646638,
+        "gzip_bytes": 344598,
+        "brotli_bytes": 260510,
+        "binary_ast_bytes": 402447,
+        "mcs_balanced_bytes": 286074,
+        "mcs_maximum_bytes": 241901,
+        "mcs_security_bytes": 234415
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "c++-embedded-04",
+      "language": "C++",
+      "category": "embedded",
+      "sizes": {
+        "source_bytes": 668485,
+        "gzip_bytes": 266096,
+        "brotli_bytes": 368967,
+        "binary_ast_bytes": 448672,
+        "mcs_balanced_bytes": 294762,
+        "mcs_maximum_bytes": 309916,
+        "mcs_security_bytes": 341898
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "c++-embedded-05",
+      "language": "C++",
+      "category": "embedded",
+      "sizes": {
+        "source_bytes": 691091,
+        "gzip_bytes": 287177,
+        "brotli_bytes": 256109,
+        "binary_ast_bytes": 340346,
+        "mcs_balanced_bytes": 363344,
+        "mcs_maximum_bytes": 314547,
+        "mcs_security_bytes": 403446
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "c++-embedded-06",
+      "language": "C++",
+      "category": "embedded",
+      "sizes": {
+        "source_bytes": 715129,
+        "gzip_bytes": 426032,
+        "brotli_bytes": 279199,
+        "binary_ast_bytes": 339585,
+        "mcs_balanced_bytes": 239332,
+        "mcs_maximum_bytes": 322970,
+        "mcs_security_bytes": 421836
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "c++-embedded-07",
+      "language": "C++",
+      "category": "embedded",
+      "sizes": {
+        "source_bytes": 656997,
+        "gzip_bytes": 313736,
+        "brotli_bytes": 321244,
+        "binary_ast_bytes": 293261,
+        "mcs_balanced_bytes": 350292,
+        "mcs_maximum_bytes": 308928,
+        "mcs_security_bytes": 403273
+      },
+      "notes": "macro heavy"
+    },
+    {
+      "name": "c++-rendering-01",
+      "language": "C++",
+      "category": "rendering",
+      "sizes": {
+        "source_bytes": 680903,
+        "gzip_bytes": 391236,
+        "brotli_bytes": 375545,
+        "binary_ast_bytes": 277424,
+        "mcs_balanced_bytes": 331446,
+        "mcs_maximum_bytes": 240413,
+        "mcs_security_bytes": 409911
+      },
+      "notes": "balanced workload"
+    },
+    {
+      "name": "c++-rendering-02",
+      "language": "C++",
+      "category": "rendering",
+      "sizes": {
+        "source_bytes": 704002,
+        "gzip_bytes": 403066,
+        "brotli_bytes": 385353,
+        "binary_ast_bytes": 452831,
+        "mcs_balanced_bytes": 263320,
+        "mcs_maximum_bytes": 319069,
+        "mcs_security_bytes": 273226
+      },
+      "notes": "balanced workload"
+    },
+    {
+      "name": "c++-rendering-03",
+      "language": "C++",
+      "category": "rendering",
+      "sizes": {
+        "source_bytes": 726701,
+        "gzip_bytes": 428259,
+        "brotli_bytes": 396824,
+        "binary_ast_bytes": 339173,
+        "mcs_balanced_bytes": 367696,
+        "mcs_maximum_bytes": 277066,
+        "mcs_security_bytes": 319275
+      },
+      "notes": "balanced workload"
+    }
+  ],
+  "averages": {
+    "source_bytes": 432072.71153846156,
+    "gzip_bytes": 220167.36538461538,
+    "brotli_bytes": 197378.15384615384,
+    "binary_ast_bytes": 232161.0,
+    "mcs_balanced_bytes": 187947.61538461538,
+    "mcs_maximum_bytes": 169474.26923076922,
+    "mcs_security_bytes": 221035.25
+  },
+  "notes": {
+    "modes": {
+      "balanced": "Default local token optimisation",
+      "maximum": "Project-wide optimisation and shared tables",
+      "security": "Compression with minimal shared state"
+    }
+  }
+}

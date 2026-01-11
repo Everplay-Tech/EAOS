@@ -1,0 +1,333 @@
+---
+# Loki Alert Rules for BIOwerk
+# Log-based alerting for detecting patterns in application logs
+# These rules complement Prometheus metric-based alerts
+
+groups:
+  # === ERROR LOG PATTERNS ===
+  - name: error_logs
+    interval: 1m
+    rules:
+      # High error log rate
+      - alert: HighErrorLogRate
+        expr: |
+          sum by (service_name) (
+            rate({service_name=~".+"} |~ "(?i)error|exception|fatal" [5m])
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: logs
+          source: loki
+        annotations:
+          summary: "High error log rate for {{ $labels.service_name }}"
+          description: "Service {{ $labels.service_name }} is logging {{ $value }} errors per second."
+          runbook_url: "https://runbooks.biowerk.io/HighErrorLogRate"
+
+      # Critical error spike
+      - alert: ErrorLogSpike
+        expr: |
+          sum by (service_name) (
+            rate({service_name=~".+"} |~ "(?i)critical|fatal|panic" [5m])
+          ) > 5
+        for: 2m
+        labels:
+          severity: critical
+          category: logs
+          source: loki
+        annotations:
+          summary: "Critical error spike in {{ $labels.service_name }}"
+          description: "Service {{ $labels.service_name }} is logging {{ $value }} critical errors per second."
+          runbook_url: "https://runbooks.biowerk.io/ErrorLogSpike"
+
+      # Database connection errors
+      - alert: DatabaseConnectionErrors
+        expr: |
+          sum by (service_name) (
+            rate({service_name=~".+"} |~ "(?i)database.*connection.*error|could not connect to.*postgres|connection refused.*postgres" [5m])
+          ) > 1
+        for: 3m
+        labels:
+          severity: critical
+          category: database
+          source: loki
+        annotations:
+          summary: "Database connection errors in {{ $labels.service_name }}"
+          description: "Service {{ $labels.service_name }} is experiencing database connection errors at {{ $value }} per second."
+          runbook_url: "https://runbooks.biowerk.io/DatabaseConnectionErrors"
+
+      # OOM (Out of Memory) errors
+      - alert: OutOfMemoryErrors
+        expr: |
+          sum by (service_name) (
+            count_over_time({service_name=~".+"} |~ "(?i)out of memory|oom|memory.*exhausted|cannot allocate memory" [5m])
+          ) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: resources
+          source: loki
+        annotations:
+          summary: "Out of memory errors detected in {{ $labels.service_name }}"
+          description: "Service {{ $labels.service_name }} has {{ $value }} out of memory errors in the last 5 minutes."
+          runbook_url: "https://runbooks.biowerk.io/OutOfMemoryErrors"
+
+  # === SECURITY LOG PATTERNS ===
+  - name: security_logs
+    interval: 1m
+    rules:
+      # Authentication failures
+      - alert: HighAuthenticationFailures
+        expr: |
+          sum by (service_name) (
+            rate({service_name=~".+"} |~ "(?i)authentication.*failed|invalid.*credentials|unauthorized|401|403" [5m])
+          ) > 20
+        for: 5m
+        labels:
+          severity: warning
+          category: security
+          source: loki
+        annotations:
+          summary: "High authentication failure rate in {{ $labels.service_name }}"
+          description: "Service {{ $labels.service_name }} has {{ $value }} authentication failures per second."
+          runbook_url: "https://runbooks.biowerk.io/HighAuthenticationFailures"
+
+      # Potential SQL injection attempts
+      - alert: PotentialSQLInjection
+        expr: |
+          sum by (service_name) (
+            count_over_time({service_name=~".+"} |~ "(?i)sql.*injection|union.*select|drop.*table|exec.*xp_|;.*--|'.*or.*'.*=.*'" [5m])
+          ) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+          source: loki
+        annotations:
+          summary: "Potential SQL injection detected in {{ $labels.service_name }}"
+          description: "Service {{ $labels.service_name }} has {{ $value }} potential SQL injection attempts in the last 5 minutes."
+          runbook_url: "https://runbooks.biowerk.io/PotentialSQLInjection"
+
+      # Potential XSS attempts
+      - alert: PotentialXSSAttempt
+        expr: |
+          sum by (service_name) (
+            count_over_time({service_name=~".+"} |~ "(?i)<script|javascript:|onerror=|onload=|eval\\(|alert\\(" [5m])
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: security
+          source: loki
+        annotations:
+          summary: "Potential XSS attempts detected in {{ $labels.service_name }}"
+          description: "Service {{ $labels.service_name }} has {{ $value }} potential XSS attempts in the last 5 minutes."
+          runbook_url: "https://runbooks.biowerk.io/PotentialXSSAttempt"
+
+      # Suspicious IP activity
+      - alert: SuspiciousIPActivity
+        expr: |
+          sum by (service_name, ip_address) (
+            rate({service_name=~".+"} |~ "(?i)blocked.*ip|suspicious.*activity|rate.*limit.*exceeded" [5m])
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          category: security
+          source: loki
+        annotations:
+          summary: "Suspicious IP activity detected"
+          description: "IP {{ $labels.ip_address }} is triggering {{ $value }} security events per second in {{ $labels.service_name }}."
+          runbook_url: "https://runbooks.biowerk.io/SuspiciousIPActivity"
+
+  # === APPLICATION-SPECIFIC ERRORS ===
+  - name: application_errors
+    interval: 1m
+    rules:
+      # Timeout errors
+      - alert: HighTimeoutRate
+        expr: |
+          sum by (service_name) (
+            rate({service_name=~".+"} |~ "(?i)timeout|timed out|deadline exceeded" [5m])
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+          source: loki
+        annotations:
+          summary: "High timeout rate in {{ $labels.service_name }}"
+          description: "Service {{ $labels.service_name }} is experiencing {{ $value }} timeouts per second."
+          runbook_url: "https://runbooks.biowerk.io/HighTimeoutRate"
+
+      # Circuit breaker events in logs
+      - alert: CircuitBreakerTriggered
+        expr: |
+          sum by (service_name) (
+            count_over_time({service_name=~".+"} |~ "(?i)circuit.*breaker.*open|circuit.*breaker.*triggered" [5m])
+          ) > 0
+        for: 2m
+        labels:
+          severity: warning
+          category: resilience
+          source: loki
+        annotations:
+          summary: "Circuit breaker triggered in {{ $labels.service_name }}"
+          description: "Circuit breaker has been triggered {{ $value }} times in {{ $labels.service_name }}."
+          runbook_url: "https://runbooks.biowerk.io/CircuitBreakerTriggered"
+
+      # Dependency failures
+      - alert: DependencyFailures
+        expr: |
+          sum by (service_name) (
+            rate({service_name=~".+"} |~ "(?i)dependency.*failed|upstream.*error|service.*unavailable.*503" [5m])
+          ) > 3
+        for: 5m
+        labels:
+          severity: warning
+          category: dependencies
+          source: loki
+        annotations:
+          summary: "Dependency failures in {{ $labels.service_name }}"
+          description: "Service {{ $labels.service_name }} is experiencing {{ $value }} dependency failures per second."
+          runbook_url: "https://runbooks.biowerk.io/DependencyFailures"
+
+      # Data validation errors
+      - alert: HighValidationErrorRate
+        expr: |
+          sum by (service_name) (
+            rate({service_name=~".+"} |~ "(?i)validation.*error|invalid.*input|schema.*validation.*failed" [5m])
+          ) > 10
+        for: 10m
+        labels:
+          severity: info
+          category: data_quality
+          source: loki
+        annotations:
+          summary: "High validation error rate in {{ $labels.service_name }}"
+          description: "Service {{ $labels.service_name }} has {{ $value }} validation errors per second."
+          runbook_url: "https://runbooks.biowerk.io/HighValidationErrorRate"
+
+  # === GDPR & COMPLIANCE ===
+  - name: compliance_logs
+    interval: 5m
+    rules:
+      # Unusual data export volume
+      - alert: UnusualDataExportVolume
+        expr: |
+          sum by (service_name) (
+            count_over_time({service_name="gdpr"} |~ "(?i)data.*export|personal.*data.*download" [1h])
+          ) > 100
+        for: 10m
+        labels:
+          severity: warning
+          category: compliance
+          source: loki
+        annotations:
+          summary: "Unusual data export volume detected"
+          description: "{{ $value }} data export requests detected in the last hour."
+          runbook_url: "https://runbooks.biowerk.io/UnusualDataExportVolume"
+
+      # Data deletion requests
+      - alert: DataDeletionRequests
+        expr: |
+          sum by (service_name) (
+            count_over_time({service_name="gdpr"} |~ "(?i)data.*deletion|right.*to.*be.*forgotten|erasure.*request" [24h])
+          ) > 10
+        for: 1h
+        labels:
+          severity: info
+          category: compliance
+          source: loki
+        annotations:
+          summary: "Multiple data deletion requests received"
+          description: "{{ $value }} data deletion requests received in the last 24 hours."
+          runbook_url: "https://runbooks.biowerk.io/DataDeletionRequests"
+
+      # Unauthorized data access attempts
+      - alert: UnauthorizedDataAccess
+        expr: |
+          sum by (service_name) (
+            count_over_time({service_name=~".+"} |~ "(?i)unauthorized.*data.*access|access.*denied.*personal.*data" [5m])
+          ) > 0
+        for: 1m
+        labels:
+          severity: critical
+          category: security
+          source: loki
+        annotations:
+          summary: "Unauthorized data access attempts detected"
+          description: "{{ $value }} unauthorized data access attempts in {{ $labels.service_name }}."
+          runbook_url: "https://runbooks.biowerk.io/UnauthorizedDataAccess"
+
+  # === PERFORMANCE DEGRADATION ===
+  - name: performance_logs
+    interval: 1m
+    rules:
+      # Slow query warnings
+      - alert: SlowQueriesDetected
+        expr: |
+          sum by (service_name) (
+            rate({service_name=~".+"} |~ "(?i)slow.*query|query.*exceeded|query.*timeout" [5m])
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+          source: loki
+        annotations:
+          summary: "Slow queries detected in {{ $labels.service_name }}"
+          description: "Service {{ $labels.service_name }} is logging {{ $value }} slow queries per second."
+          runbook_url: "https://runbooks.biowerk.io/SlowQueriesDetected"
+
+      # Cache miss rate increase
+      - alert: HighCacheMissRate
+        expr: |
+          sum by (service_name) (
+            rate({service_name=~".+"} |~ "(?i)cache.*miss|cache.*not.*found" [5m])
+          ) > 50
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+          source: loki
+        annotations:
+          summary: "High cache miss rate in {{ $labels.service_name }}"
+          description: "Service {{ $labels.service_name }} has {{ $value }} cache misses per second."
+          runbook_url: "https://runbooks.biowerk.io/HighCacheMissRate"
+
+  # === SERVICE STARTUP & HEALTH ===
+  - name: service_health_logs
+    interval: 1m
+    rules:
+      # Service restart detected
+      - alert: ServiceRestart
+        expr: |
+          sum by (service_name) (
+            count_over_time({service_name=~".+"} |~ "(?i)starting.*service|initializing|startup.*complete" [5m])
+          ) > 0
+        for: 1m
+        labels:
+          severity: info
+          category: service_health
+          source: loki
+        annotations:
+          summary: "Service restart detected for {{ $labels.service_name }}"
+          description: "Service {{ $labels.service_name }} has restarted {{ $value }} times in the last 5 minutes."
+          runbook_url: "https://runbooks.biowerk.io/ServiceRestart"
+
+      # Health check failures
+      - alert: HealthCheckFailures
+        expr: |
+          sum by (service_name) (
+            rate({service_name=~".+"} |~ "(?i)health.*check.*failed|readiness.*probe.*failed" [5m])
+          ) > 0
+        for: 3m
+        labels:
+          severity: warning
+          category: service_health
+          source: loki
+        annotations:
+          summary: "Health check failures in {{ $labels.service_name }}"
+          description: "Service {{ $labels.service_name }} is failing health checks at {{ $value }} per second."
+          runbook_url: "https://runbooks.biowerk.io/HealthCheckFailures"

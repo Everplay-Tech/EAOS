@@ -1,0 +1,14 @@
+[workspace]
+resolver = "2"
+
+members = [
+    "permfs",
+]
+
+# Exclude non-Rust projects or those with custom build systems
+exclude = [
+    "muscles/musclekernel-main",
+    "muscles/referee-kernel-main",
+    "muscles/hyperbolic-chamber",
+    "signals/quenyan-main-2",
+]

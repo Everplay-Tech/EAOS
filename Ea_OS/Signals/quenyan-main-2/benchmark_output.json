@@ -1,0 +1,33 @@
+{
+  "sample_loc": 6,
+  "results": [
+    {
+      "name": "Quenya Morpheme",
+      "encode_time_us": 202.70500044716755,
+      "decode_time_us": 193.75200054128072,
+      "size_bytes": 100,
+      "deterministic": true
+    },
+    {
+      "name": "AST Dict (Proto-like)",
+      "encode_time_us": 109.05099998126389,
+      "decode_time_us": 129.0500003960915,
+      "size_bytes": 1474,
+      "deterministic": true
+    },
+    {
+      "name": "Opcode (marshal)",
+      "encode_time_us": 2.2845001694804523,
+      "decode_time_us": 5.234000127529725,
+      "size_bytes": 419,
+      "deterministic": true
+    },
+    {
+      "name": "S-expression JSON",
+      "encode_time_us": 131.69049998396076,
+      "decode_time_us": 107.60850000224309,
+      "size_bytes": 1372,
+      "deterministic": true
+    }
+  ]
+}

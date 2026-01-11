@@ -1,0 +1,35 @@
+name: Quenyan Node Project
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-encode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install --no-audit
+      - name: Build project
+        run: npm run build --if-present
+      - name: Incremental encode
+        env:
+          QYN1_PASSPHRASE: ${{ secrets.QYN1_PASSPHRASE }}
+        run: >-
+          mcs-reference project incremental-rebuild
+          --passphrase "${QYN1_PASSPHRASE}"
+          --project-root .
+          --output-dir build/quenyan-artifacts
+          --state-file .ci/quenyan-state.json
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: quenyan-artifacts
+          path: build/quenyan-artifacts

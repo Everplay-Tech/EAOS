@@ -1,0 +1,487 @@
+# Default values for biowerk
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Global configuration
+global:
+  imageRegistry: ""  # Override with your container registry
+  imagePullSecrets: []
+  storageClass: ""  # Override with your storage class
+
+# Environment
+environment: production
+
+# Image configuration
+image:
+  registry: docker.io
+  pullPolicy: IfNotPresent
+
+# Namespace
+namespace: biowerk
+
+# Service Account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Mesh (API Gateway)
+mesh:
+  enabled: true
+  replicaCount: 3
+  image:
+    repository: biowerk-mesh
+    tag: latest
+  service:
+    type: LoadBalancer
+    port: 80
+    httpsPort: 443
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+# Application Services
+osteon:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: biowerk-osteon
+    tag: latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+
+myocyte:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: biowerk-myocyte
+    tag: latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+
+synapse:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: biowerk-synapse
+    tag: latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+
+circadian:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: biowerk-circadian
+    tag: latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+
+nucleus:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: biowerk-nucleus
+    tag: latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+
+chaperone:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: biowerk-chaperone
+    tag: latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+
+gdpr:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: biowerk-gdpr
+    tag: latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+  persistence:
+    enabled: true
+    size: 100Gi
+    storageClass: ""
+
+# PHI2 Coordinators
+larry:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: biowerk-larry
+    tag: latest
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 8Gi
+
+moe:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: biowerk-moe
+    tag: latest
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 8Gi
+
+harry:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: biowerk-harry
+    tag: latest
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 8Gi
+
+# Infrastructure Services
+pgbouncer:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: biowerk-pgbouncer
+    tag: latest
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+ollama:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ollama/ollama
+    tag: latest
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 4Gi
+    limits:
+      cpu: 4000m
+      memory: 16Gi
+  persistence:
+    enabled: true
+    size: 100Gi
+    storageClass: ""
+
+# Databases
+postgresql:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: postgres
+    tag: 16-alpine
+  auth:
+    username: biowerk
+    password: ""  # Set via values override or secret
+    database: biowerk
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+
+mongodb:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: mongo
+    tag: "7.0"
+  auth:
+    rootUsername: biowerk
+    rootPassword: ""  # Set via values override or secret
+    database: biowerk
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+
+redis:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: redis
+    tag: 7-alpine
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+# Observability
+prometheus:
+  enabled: true
+  replicaCount: 1
+  persistence:
+    enabled: true
+    size: 100Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 8Gi
+
+grafana:
+  enabled: true
+  replicaCount: 1
+  admin:
+    user: admin
+    password: ""  # Set via values override or secret
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+loki:
+  enabled: true
+  replicaCount: 1
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+alertmanager:
+  enabled: true
+  replicaCount: 1
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: ""
+
+# Backup
+backupOrchestrator:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: biowerk-backup-orchestrator
+    tag: latest
+  persistence:
+    data:
+      enabled: true
+      size: 500Gi
+      storageClass: ""
+    keys:
+      enabled: true
+      size: 1Gi
+    logs:
+      enabled: true
+      size: 10Gi
+    metrics:
+      enabled: true
+      size: 10Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+# Ingress
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+  hosts:
+    - host: biowerk.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+    - host: api.biowerk.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: biowerk-tls-cert
+      hosts:
+        - biowerk.example.com
+        - api.biowerk.example.com
+
+# Monitoring Ingress (Internal)
+monitoringIngress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: monitoring-basic-auth
+    nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+  hosts:
+    - host: monitoring.biowerk.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: biowerk-monitoring-tls-cert
+      hosts:
+        - monitoring.biowerk.example.com
+
+# Security
+tls:
+  enabled: false
+  secretName: tls-certs
+
+# Pod Security
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: false
+
+# Node selection
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Network Policies
+networkPolicy:
+  enabled: false
+  policyTypes:
+    - Ingress
+    - Egress

@@ -1,0 +1,65 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: biowerk
+
+bases:
+  - ../../base
+
+commonLabels:
+  environment: production
+  app.kubernetes.io/environment: production
+
+# Production-specific patches
+patchesStrategicMerge:
+  - patches/increase-replicas.yaml
+  - patches/resource-limits.yaml
+  - patches/storage-class.yaml
+  - patches/environment-config.yaml
+
+# Production configuration overrides
+configMapGenerator:
+  - name: app-config
+    behavior: merge
+    literals:
+      - environment=production
+      - llm_provider=ollama
+      - tls_enabled=true
+      - require_auth=true
+
+# Production image tags (use immutable version tags)
+images:
+  - name: ${REGISTRY}/biowerk-mesh
+    newTag: v${VERSION:-1.0.0}
+  - name: ${REGISTRY}/biowerk-osteon
+    newTag: v${VERSION:-1.0.0}
+  - name: ${REGISTRY}/biowerk-myocyte
+    newTag: v${VERSION:-1.0.0}
+  - name: ${REGISTRY}/biowerk-synapse
+    newTag: v${VERSION:-1.0.0}
+  - name: ${REGISTRY}/biowerk-circadian
+    newTag: v${VERSION:-1.0.0}
+  - name: ${REGISTRY}/biowerk-nucleus
+    newTag: v${VERSION:-1.0.0}
+  - name: ${REGISTRY}/biowerk-chaperone
+    newTag: v${VERSION:-1.0.0}
+  - name: ${REGISTRY}/biowerk-gdpr
+    newTag: v${VERSION:-1.0.0}
+  - name: ${REGISTRY}/biowerk-larry
+    newTag: v${VERSION:-1.0.0}
+  - name: ${REGISTRY}/biowerk-moe
+    newTag: v${VERSION:-1.0.0}
+  - name: ${REGISTRY}/biowerk-harry
+    newTag: v${VERSION:-1.0.0}
+  - name: ${REGISTRY}/biowerk-pgbouncer
+    newTag: v${VERSION:-1.0.0}
+  - name: ${REGISTRY}/biowerk-backup-orchestrator
+    newTag: v${VERSION:-1.0.0}
+
+# Production metadata
+buildMetadata:
+  - name: build-metadata
+    literals:
+      - build.date=${BUILD_DATE}
+      - build.version=${VERSION}
+      - build.commit=${GIT_COMMIT}

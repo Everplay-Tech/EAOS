@@ -1,0 +1,21 @@
+[package]
+name = "ihp-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+libfuzzer-sys = { version = "0.4", features = ["arbitrary-derive"] }
+ihp = { path = ".." }
+rand = "0.8"
+
+[build-dependencies]
+cargo-fuzz = "0.12"
+
+[[bin]]
+name = "ciphertext"
+path = "fuzz_targets/ciphertext.rs"
+
+[[bin]]
+name = "nonce"
+path = "fuzz_targets/nonce.rs"

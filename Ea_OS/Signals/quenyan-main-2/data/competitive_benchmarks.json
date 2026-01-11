@@ -1,0 +1,132 @@
+{
+  "version": "1.0",
+  "notes": "Representative head-to-head comparison using the benchmark suite corpora.",
+  "rows": [
+    {
+      "dataset": "python-medium-django",
+      "language": "python",
+      "domain": "web",
+      "metrics": {
+        "quenyan": {
+          "encoded_megabytes": 7.24,
+          "encode_seconds": 8.92,
+          "decode_seconds": 3.14,
+          "reversible": true,
+          "security_notes": "Deterministic AEAD with authenticated metadata"
+        },
+        "gzip": {
+          "encoded_megabytes": 8.61,
+          "encode_seconds": 1.32,
+          "decode_seconds": 0.41,
+          "reversible": true,
+          "security_notes": "None"
+        },
+        "s_expression": {
+          "encoded_megabytes": 11.42,
+          "encode_seconds": 6.48,
+          "decode_seconds": 5.92,
+          "reversible": true,
+          "security_notes": "Structural obfuscation only"
+        }
+      }
+    },
+    {
+      "dataset": "javascript-medium-nextjs",
+      "language": "javascript",
+      "domain": "web",
+      "metrics": {
+        "quenyan": {
+          "encoded_megabytes": 10.36,
+          "encode_seconds": 10.73,
+          "decode_seconds": 3.92,
+          "reversible": true,
+          "security_notes": "Deterministic AEAD with metadata binding"
+        },
+        "gzip": {
+          "encoded_megabytes": 8.55,
+          "encode_seconds": 1.11,
+          "decode_seconds": 0.36,
+          "reversible": true,
+          "security_notes": "None"
+        },
+        "terser": {
+          "encoded_megabytes": 7.34,
+          "encode_seconds": 4.81,
+          "decode_seconds": 4.02,
+          "reversible": false,
+          "security_notes": "Heuristic minification and variable renaming"
+        }
+      }
+    },
+    {
+      "dataset": "java-medium-spring",
+      "language": "java",
+      "domain": "enterprise",
+      "metrics": {
+        "quenyan": {
+          "encoded_megabytes": 15.68,
+          "encode_seconds": 15.62,
+          "decode_seconds": 5.84,
+          "reversible": true,
+          "security_notes": "Deterministic AEAD and morpheme canonicalisation"
+        },
+        "proguard": {
+          "encoded_megabytes": 12.11,
+          "encode_seconds": 8.44,
+          "decode_seconds": 0.0,
+          "reversible": false,
+          "security_notes": "Name mangling and bytecode shrinking"
+        },
+        "gzip": {
+          "encoded_megabytes": 13.04,
+          "encode_seconds": 1.64,
+          "decode_seconds": 0.52,
+          "reversible": true,
+          "security_notes": "None"
+        }
+      }
+    },
+    {
+      "dataset": "go-medium-kubernetes",
+      "language": "go",
+      "domain": "systems",
+      "metrics": {
+        "quenyan": {
+          "encoded_megabytes": 10.9,
+          "encode_seconds": 12.48,
+          "decode_seconds": 4.87,
+          "reversible": true,
+          "security_notes": "Deterministic AEAD"
+        },
+        "gzip": {
+          "encoded_megabytes": 8.6,
+          "encode_seconds": 1.47,
+          "decode_seconds": 0.45,
+          "reversible": true,
+          "security_notes": "None"
+        }
+      }
+    },
+    {
+      "dataset": "python-small-flask",
+      "language": "python",
+      "domain": "web",
+      "metrics": {
+        "quenyan": {
+          "encoded_megabytes": 0.62,
+          "encode_seconds": 0.84,
+          "decode_seconds": 0.31,
+          "reversible": true,
+          "security_notes": "Deterministic AEAD"
+        },
+        "gzip": {
+          "encoded_megabytes": 0.48,
+          "encode_seconds": 0.18,
+          "decode_seconds": 0.06,
+          "reversible": true,
+          "security_notes": "None"
+        }
+      }
+    }
+  ]
+}

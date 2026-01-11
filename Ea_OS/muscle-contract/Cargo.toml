@@ -1,0 +1,24 @@
+[package]
+name = "muscle-contract"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Muscle blob contract definitions and compatibility harness"
+
+[dependencies]
+blake3 = { workspace = true }
+rand_core = { workspace = true }
+chacha20poly1305 = { version = "0.10.1", default-features = false, features = ["alloc"] }
+hex = "0.4"
+serde = { workspace = true, optional = true }
+serde_json = { version = "1.0", optional = true }
+
+[features]
+default = ["std"]
+std = []
+serde = ["dep:serde", "dep:serde_json"]
+
+[[bin]]
+name = "muscle-contract-gen"
+path = "src/bin/gen_vectors.rs"
+required-features = ["serde"]

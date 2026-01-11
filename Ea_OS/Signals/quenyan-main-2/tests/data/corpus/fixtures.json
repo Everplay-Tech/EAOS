@@ -1,0 +1,12 @@
+[
+  {
+    "language": "python",
+    "version": "3.11",
+    "path": "python_project/src/__init__.py"
+  },
+  {
+    "language": "python",
+    "version": "3.11",
+    "path": "python_project/src/math_utils.py"
+  }
+]

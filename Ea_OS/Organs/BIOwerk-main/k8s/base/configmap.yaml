@@ -1,0 +1,379 @@
+# Application Configuration
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: biowerk
+  labels:
+    app: biowerk
+data:
+  environment: "production"
+  llm_provider: "ollama"
+  tls_enabled: "false"
+  require_auth: "false"
+
+# PostgreSQL Configuration
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: biowerk
+  labels:
+    app: postgres
+data:
+  database: "biowerk"
+  port: "5432"
+
+# MongoDB Configuration
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongodb-config
+  namespace: biowerk
+  labels:
+    app: mongodb
+data:
+  database: "biowerk"
+  port: "27017"
+
+# Loki Configuration
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-config
+  namespace: biowerk
+  labels:
+    app: loki
+data:
+  config.yaml: |
+    auth_enabled: false
+
+    server:
+      http_listen_port: 3100
+      grpc_listen_port: 9096
+
+    common:
+      path_prefix: /loki
+      storage:
+        filesystem:
+          chunks_directory: /loki/chunks
+          rules_directory: /loki/rules
+      replication_factor: 1
+      ring:
+        instance_addr: 127.0.0.1
+        kvstore:
+          store: inmemory
+
+    schema_config:
+      configs:
+        - from: 2020-10-24
+          store: boltdb-shipper
+          object_store: filesystem
+          schema: v11
+          index:
+            prefix: index_
+            period: 24h
+
+    ruler:
+      alertmanager_url: http://alertmanager.biowerk.svc.cluster.local:9093
+
+    limits_config:
+      retention_period: 744h  # 31 days
+
+# Promtail Configuration
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: promtail-config
+  namespace: biowerk
+  labels:
+    app: promtail
+data:
+  config.yaml: |
+    server:
+      http_listen_port: 3101
+      grpc_listen_port: 0
+
+    positions:
+      filename: /tmp/positions.yaml
+
+    clients:
+      - url: http://loki.biowerk.svc.cluster.local:3100/loki/api/v1/push
+
+    scrape_configs:
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - biowerk
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            target_label: app
+          - source_labels: [__meta_kubernetes_pod_label_tier]
+            target_label: tier
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_pod_container_name]
+            target_label: container
+
+# Prometheus Configuration
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: biowerk
+  labels:
+    app: prometheus
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: 'biowerk'
+        environment: 'production'
+
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+                - alertmanager.biowerk.svc.cluster.local:9093
+
+    rule_files:
+      - /etc/prometheus/rules/*.yml
+
+    scrape_configs:
+      # Kubernetes API Server
+      - job_name: 'kubernetes-apiservers'
+        kubernetes_sd_configs:
+          - role: endpoints
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: default;kubernetes;https
+
+      # Kubernetes Nodes
+      - job_name: 'kubernetes-nodes'
+        kubernetes_sd_configs:
+          - role: node
+        scheme: https
+        tls_config:
+          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+          - target_label: __address__
+            replacement: kubernetes.default.svc:443
+          - source_labels: [__meta_kubernetes_node_name]
+            regex: (.+)
+            target_label: __metrics_path__
+            replacement: /api/v1/nodes/${1}/proxy/metrics
+
+      # Kubernetes Pods
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - biowerk
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+
+      # Database Exporters
+      - job_name: 'postgres-exporter'
+        static_configs:
+          - targets: ['postgres-exporter.biowerk.svc.cluster.local:9187']
+
+      - job_name: 'mongodb-exporter'
+        static_configs:
+          - targets: ['mongodb-exporter.biowerk.svc.cluster.local:9216']
+
+      - job_name: 'redis-exporter'
+        static_configs:
+          - targets: ['redis-exporter.biowerk.svc.cluster.local:9121']
+
+      - job_name: 'pgbouncer-exporter'
+        static_configs:
+          - targets: ['pgbouncer-exporter.biowerk.svc.cluster.local:9127']
+
+      # Node Exporter
+      - job_name: 'node-exporter'
+        kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+                - biowerk
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_endpoints_name]
+            action: keep
+            regex: node-exporter
+
+# Prometheus Rules
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: biowerk
+  labels:
+    app: prometheus
+data:
+  alerts.yml: |
+    groups:
+      - name: biowerk-alerts
+        interval: 30s
+        rules:
+          # High CPU Usage
+          - alert: HighCPUUsage
+            expr: rate(container_cpu_usage_seconds_total{namespace="biowerk"}[5m]) > 0.8
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High CPU usage detected"
+              description: "Container {{ $labels.container }} in pod {{ $labels.pod }} has CPU usage above 80%"
+
+          # High Memory Usage
+          - alert: HighMemoryUsage
+            expr: container_memory_usage_bytes{namespace="biowerk"} / container_spec_memory_limit_bytes{namespace="biowerk"} > 0.9
+            for: 5m
+            labels:
+              severity: warning
+              team: platform
+            annotations:
+              summary: "High memory usage detected"
+              description: "Container {{ $labels.container }} in pod {{ $labels.pod }} has memory usage above 90%"
+
+          # Pod CrashLooping
+          - alert: PodCrashLooping
+            expr: rate(kube_pod_container_status_restarts_total{namespace="biowerk"}[15m]) > 0
+            for: 5m
+            labels:
+              severity: critical
+              team: platform
+            annotations:
+              summary: "Pod is crash looping"
+              description: "Pod {{ $labels.pod }} is restarting frequently"
+
+          # Database Connection Issues
+          - alert: PostgreSQLDown
+            expr: up{job="postgres-exporter"} == 0
+            for: 5m
+            labels:
+              severity: critical
+              team: database
+            annotations:
+              summary: "PostgreSQL is down"
+              description: "PostgreSQL database is not responding"
+
+          - alert: MongoDBDown
+            expr: up{job="mongodb-exporter"} == 0
+            for: 5m
+            labels:
+              severity: critical
+              team: database
+            annotations:
+              summary: "MongoDB is down"
+              description: "MongoDB database is not responding"
+
+          - alert: RedisDown
+            expr: up{job="redis-exporter"} == 0
+            for: 5m
+            labels:
+              severity: critical
+              team: database
+            annotations:
+              summary: "Redis is down"
+              description: "Redis cache is not responding"
+
+# Grafana Provisioning
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-provisioning
+  namespace: biowerk
+  labels:
+    app: grafana
+data:
+  datasources.yml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus.biowerk.svc.cluster.local:9090
+        isDefault: true
+        editable: false
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki.biowerk.svc.cluster.local:3100
+        editable: false
+
+  dashboards.yml: |
+    apiVersion: 1
+    providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        options:
+          path: /var/lib/grafana/dashboards
+
+# Grafana Dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: biowerk
+  labels:
+    app: grafana
+data:
+  biowerk-overview.json: |
+    {
+      "dashboard": {
+        "title": "BIOwerk Overview",
+        "panels": [],
+        "schemaVersion": 16,
+        "version": 0
+      }
+    }

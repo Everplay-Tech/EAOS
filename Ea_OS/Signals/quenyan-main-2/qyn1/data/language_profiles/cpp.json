@@ -1,0 +1,65 @@
+{
+  "language": "cpp",
+  "version": "1.0",
+  "aliases": ["c++", "cpp17", "cpp20"],
+  "extensions": [".cpp", ".hpp", ".cc", ".cxx"],
+  "mime_types": ["text/x-c++src", "text/x-c++hdr"],
+  "preferred_encodings": ["utf-8", "utf-8-sig", "utf-16le", "utf-16be"],
+  "type_aliases": {
+    "int": "type:int",
+    "long": "type:int",
+    "short": "type:int",
+    "float": "type:float",
+    "double": "type:float",
+    "bool": "type:bool",
+    "char": "type:byte",
+    "wchar_t": "type:string",
+    "std::string": "type:string",
+    "std::wstring": "type:string",
+    "void": "type:void",
+    "auto": "type:any",
+    "template": "literal:template"
+  },
+  "reverse_type_aliases": {
+    "type:int": "int",
+    "type:float": "double",
+    "type:bool": "bool",
+    "type:byte": "char",
+    "type:string": "std::string",
+    "type:void": "void",
+    "type:any": "auto"
+  },
+  "binary_operators": {
+    "Add": "op:add",
+    "Sub": "op:sub",
+    "Mul": "op:mul",
+    "Div": "op:div",
+    "Mod": "op:mod",
+    "BitOr": "op:bit_or",
+    "BitAnd": "op:bit_and",
+    "BitXor": "op:bit_xor",
+    "LShift": "op:shift_left",
+    "RShift": "op:shift_right"
+  },
+  "unary_operators": {
+    "Neg": "op:sub",
+    "Not": "op:not",
+    "BitNot": "op:bit_not"
+  },
+  "literals": {
+    "bool_true": "literal:bool_true",
+    "bool_false": "literal:bool_false",
+    "null": "literal:null",
+    "string": "literal:string",
+    "bytes": "literal:array",
+    "integer": "literal:int",
+    "float": "literal:float",
+    "template": "literal:template",
+    "fallback": "meta:unknown",
+    "wide_string": "literal:string"
+  },
+  "template_payloads": {
+    "template": "literal:template",
+    "concept": "structure:type_constraint"
+  }
+}

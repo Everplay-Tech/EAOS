@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myocyte
+  namespace: biowerk
+  labels:
+    app: myocyte
+    tier: application
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: myocyte
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: myocyte
+        tier: application
+    spec:
+      containers:
+      - name: myocyte
+        image: ${REGISTRY}/biowerk-myocyte:latest
+        ports:
+        - containerPort: 8002
+          name: http
+        env:
+        - name: POSTGRES_HOST
+          value: pgbouncer.biowerk.svc.cluster.local
+        - name: POSTGRES_PORT
+          value: "6432"
+        - name: MONGO_HOST
+          value: mongodb.biowerk.svc.cluster.local
+        - name: REDIS_HOST
+          value: redis.biowerk.svc.cluster.local
+        - name: OLLAMA_BASE_URL
+          value: http://ollama.biowerk.svc.cluster.local:11434
+        - name: LLM_PROVIDER
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: llm_provider
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: llm-secrets
+              key: openai_api_key
+              optional: true
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: llm-secrets
+              key: anthropic_api_key
+              optional: true
+        - name: DEEPSEEK_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: llm-secrets
+              key: deepseek_api_key
+              optional: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: myocyte
+  namespace: biowerk
+  labels:
+    app: myocyte
+    tier: application
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8002
+    targetPort: 8002
+    protocol: TCP
+    name: http
+  selector:
+    app: myocyte

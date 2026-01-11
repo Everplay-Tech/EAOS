@@ -1,0 +1,22 @@
+site_name: Quenyan Developer Hub
+site_description: "Learn, integrate, and ship Quenyan encrypted projects"
+nav:
+  - Home: index.md
+  - Tutorial: tutorial.md
+  - Concepts:
+      - Overview: concepts.md
+      - Compression & Security: compression.md
+  - API Reference: api.md
+  - Tooling Videos: videos.md
+  - Comparisons: comparison.md
+  - FAQ: faq.md
+  - Examples:
+      - Python Web App: examples/python-web.md
+      - JavaScript React App: examples/js-react.md
+      - Go Microservice: examples/go-service.md
+theme:
+  name: material
+plugins:
+  - search
+extra:
+  repository_url: https://example.com/quenyan.git

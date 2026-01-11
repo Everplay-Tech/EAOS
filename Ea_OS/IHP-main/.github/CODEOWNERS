@@ -1,0 +1,25 @@
+# CODEOWNERS file for IHP repository
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Cryptographic core library - requires crypto reviewer approval
+/src/lib.rs @Everplay-Tech/crypto-reviewers
+
+# Server implementation - requires crypto reviewer + server engineer approval
+/src/server.rs @Everplay-Tech/crypto-reviewers @Everplay-Tech/server-engineers
+
+# Client helper utilities - requires crypto reviewer approval
+/src/client.rs @Everplay-Tech/crypto-reviewers
+
+# CI/CD workflows - requires CI engineer approval
+/.github/workflows/ @Everplay-Tech/ci-engineers
+
+# Dependency management - requires release manager approval
+/Cargo.toml @Everplay-Tech/release-managers
+/Cargo.lock @Everplay-Tech/release-managers
+
+# Security documentation - requires security team review
+/SECURITY.md @Everplay-Tech/security-team
+
+# Operational runbooks - requires operations team review
+/RUNBOOK.md @Everplay-Tech/operations-team
+/docs/RUNBOOK.md @Everplay-Tech/operations-team

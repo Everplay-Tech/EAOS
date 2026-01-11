@@ -1,0 +1,74 @@
+# Production-specific environment configuration
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: biowerk-ingress
+  annotations:
+    # Production-specific annotations
+    nginx.ingress.kubernetes.io/limit-rps: "1000"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "10"
+    nginx.ingress.kubernetes.io/limit-connections: "500"
+spec:
+  tls:
+  - hosts:
+    - biowerk.com
+    - api.biowerk.com
+    - www.biowerk.com
+    secretName: biowerk-prod-tls-cert
+  rules:
+  - host: biowerk.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mesh
+            port:
+              number: 80
+  - host: www.biowerk.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mesh
+            port:
+              number: 80
+  - host: api.biowerk.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mesh
+            port:
+              number: 80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: biowerk-monitoring-ingress
+  annotations:
+    # Strict IP whitelisting for production monitoring
+    nginx.ingress.kubernetes.io/whitelist-source-range: "YOUR_VPN_IP_RANGE"
+spec:
+  tls:
+  - hosts:
+    - monitoring.biowerk.com
+    secretName: biowerk-monitoring-prod-tls-cert
+  rules:
+  - host: monitoring.biowerk.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000

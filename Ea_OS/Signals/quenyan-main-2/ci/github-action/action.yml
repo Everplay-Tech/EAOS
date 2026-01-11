@@ -1,0 +1,146 @@
+name: "Quenyan Incremental Encoder"
+description: "Run the QYN-1 incremental encoder with cache-aware CI reporting."
+author: "Quenyan Project"
+branding:
+  icon: "zap"
+  color: "blue"
+inputs:
+  project-root:
+    description: "Directory containing the project source code"
+    required: false
+    default: "."
+  python-version:
+    description: "Python version to install"
+    required: false
+    default: "3.11"
+  passphrase:
+    description: "Encryption passphrase for packages"
+    required: true
+  output-dir:
+    description: "Directory to write encoded packages"
+    required: false
+    default: "build/mcs"
+  cache-dir:
+    description: "Directory storing incremental cache artifacts"
+    required: false
+    default: ".qyn-cache"
+  sources:
+    description: "Newline separated list of source files to encode"
+    required: true
+  compression-mode:
+    description: "Compression preset to use"
+    required: false
+    default: "balanced"
+  compression-backend:
+    description: "Compression backend override"
+    required: false
+    default: "preset"
+  manifest:
+    description: "Optional dependency manifest passed to the encoder"
+    required: false
+    default: ""
+  root:
+    description: "Override project root (defaults to common ancestor)"
+    required: false
+    default: ""
+  shard-index:
+    description: "Current CI shard index"
+    required: false
+    default: "0"
+  shard-count:
+    description: "Total number of CI shards"
+    required: false
+    default: "1"
+outputs:
+  hit-rate:
+    description: "Cache hit rate reported by the incremental encoder"
+  encoded-count:
+    description: "Number of files encoded in this run"
+  reused-count:
+    description: "Number of files reused from cache"
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Install quenyan
+      shell: bash
+      run: pip install .
+      working-directory: ${{ inputs.project-root }}
+    - name: Run Criterion benchmarks
+      shell: bash
+      working-directory: ${{ inputs.project-root }}/benches
+      run: |
+        if command -v cargo >/dev/null 2>&1; then
+          echo "running cargo bench to track performance regressions"
+          cargo bench --bench pipeline -- --warm-up-time 1 --measurement-time 5 || {
+            echo "Benchmark run failed" >&2
+            exit 1
+          }
+        else
+          echo "cargo is not available; skipping criterion benchmarks"
+        fi
+    - name: Run incremental encoder
+      shell: bash
+      working-directory: ${{ inputs.project-root }}
+      env:
+        QYN_PASS: ${{ inputs.passphrase }}
+        QYN_OUTPUT: ${{ inputs.output-dir }}
+        QYN_CACHE: ${{ inputs.cache-dir }}
+        QYN_MODE: ${{ inputs.compression-mode }}
+        QYN_BACKEND: ${{ inputs.compression-backend }}
+        QYN_MANIFEST: ${{ inputs.manifest }}
+        QYN_ROOT: ${{ inputs.root }}
+        QYN_SHARD_INDEX: ${{ inputs.shard-index }}
+        QYN_SHARD_COUNT: ${{ inputs.shard-count }}
+      run: |
+        set -euo pipefail
+        mapfile -t SOURCES <<< "${{ inputs.sources }}"
+        if [ ${#SOURCES[@]} -eq 0 ]; then
+          echo "No sources provided" >&2
+          exit 1
+        fi
+        ARGS=("encode-incremental" "${QYN_OUTPUT}")
+        for src in "${SOURCES[@]}"; do
+          if [ -n "$src" ]; then
+            ARGS+=("$src")
+          fi
+        done
+        ARGS+=("--passphrase" "${QYN_PASS}")
+        ARGS+=("--cache-dir" "${QYN_CACHE}")
+        ARGS+=("--compression-mode" "${QYN_MODE}")
+        ARGS+=("--compression-backend" "${QYN_BACKEND}")
+        ARGS+=("--shard-index" "${QYN_SHARD_INDEX}")
+        ARGS+=("--shard-count" "${QYN_SHARD_COUNT}")
+        if [ -n "${QYN_MANIFEST}" ]; then
+          ARGS+=("--manifest" "${QYN_MANIFEST}")
+        fi
+        if [ -n "${QYN_ROOT}" ]; then
+          ARGS+=("--root" "${QYN_ROOT}")
+        fi
+        RESULT=$(python -m qyn1.cli "${ARGS[@]}" --json)
+        echo "$RESULT"
+        HIT_RATE=$(python - <<'PY'
+import json,sys
+payload=json.loads(sys.argv[1])
+print(payload.get("cache_hit_rate", 0.0))
+PY
+"$RESULT")
+        ENCODED=$(python - <<'PY'
+import json,sys
+payload=json.loads(sys.argv[1])
+print(len(payload.get("encoded", [])))
+PY
+"$RESULT")
+        REUSED=$(python - <<'PY'
+import json,sys
+payload=json.loads(sys.argv[1])
+print(len(payload.get("reused", [])))
+PY
+"$RESULT")
+        {
+          echo "hit-rate=${HIT_RATE}"
+          echo "encoded-count=${ENCODED}"
+          echo "reused-count=${REUSED}"
+        } >> "$GITHUB_OUTPUT"

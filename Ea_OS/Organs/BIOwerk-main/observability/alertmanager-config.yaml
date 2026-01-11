@@ -1,0 +1,325 @@
+---
+# Alertmanager configuration for BIOwerk
+# Enterprise-grade alerting with PagerDuty, Slack, and email integrations
+# Includes routing, grouping, inhibition, and silence management
+
+global:
+  # Global timeout for API calls
+  resolve_timeout: 5m
+
+  # SMTP configuration for email alerts
+  smtp_from: 'biowerk-alerts@example.com'
+  smtp_smarthost: '${SMTP_HOST:-smtp.gmail.com:587}'
+  smtp_auth_username: '${SMTP_USERNAME}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_require_tls: true
+
+  # PagerDuty integration key (set via environment variable)
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+  # Slack webhook URL (set via environment variable)
+  slack_api_url: '${SLACK_WEBHOOK_URL}'
+
+# Templates for alert notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route tree for alert routing
+route:
+  # Default receiver
+  receiver: 'default-receiver'
+
+  # Group alerts by alertname, cluster, and service
+  group_by: ['alertname', 'cluster', 'service']
+
+  # How long to wait before sending a notification for a group of alerts
+  group_wait: 30s
+
+  # How long to wait before sending notification about new alerts added to a group
+  group_interval: 5m
+
+  # How long to wait before re-sending a notification
+  repeat_interval: 4h
+
+  # Child routes with specific routing rules
+  routes:
+    # Critical alerts -> PagerDuty (24/7 on-call)
+    - match:
+        severity: critical
+      receiver: 'pagerduty-critical'
+      continue: true  # Also send to Slack
+      group_wait: 10s
+      group_interval: 2m
+      repeat_interval: 1h
+
+    # Critical alerts -> Slack
+    - match:
+        severity: critical
+      receiver: 'slack-critical'
+      group_wait: 10s
+      group_interval: 2m
+      repeat_interval: 2h
+
+    # Warning alerts -> Slack only
+    - match:
+        severity: warning
+      receiver: 'slack-warnings'
+      group_wait: 5m
+      group_interval: 10m
+      repeat_interval: 12h
+
+    # Database alerts -> Database team
+    - match:
+        category: database
+      receiver: 'database-team'
+      group_by: ['alertname', 'component']
+      continue: true
+
+    # Security alerts -> Security team + PagerDuty
+    - match:
+        category: security
+      receiver: 'security-team-pagerduty'
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 30m
+      continue: true
+
+    - match:
+        category: security
+      receiver: 'security-team-slack'
+
+    # Compliance alerts (GDPR) -> Compliance team
+    - match:
+        category: compliance
+      receiver: 'compliance-team'
+      group_wait: 1h
+      group_interval: 24h
+      repeat_interval: 168h  # Weekly
+
+    # Business metrics alerts -> Product team
+    - match:
+        category: business
+      receiver: 'product-team-slack'
+      group_wait: 10m
+      group_interval: 1h
+      repeat_interval: 24h
+
+    # Info level alerts -> Low priority channel
+    - match:
+        severity: info
+      receiver: 'slack-info'
+      group_wait: 15m
+      group_interval: 1h
+      repeat_interval: 24h
+
+# Inhibition rules - prevent notification spam
+inhibition_rules:
+  # Inhibit warning if critical alert is firing for same service
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'service', 'instance']
+
+  # Inhibit info if warning or critical is firing for same service
+  - source_match_re:
+      severity: 'critical|warning'
+    target_match:
+      severity: 'info'
+    equal: ['alertname', 'service', 'instance']
+
+  # If service is down, inhibit other alerts from that service
+  - source_match:
+      alertname: 'ServiceDown'
+    target_match_re:
+      alertname: '.*'
+    equal: ['service']
+
+  # If database is down, inhibit slow query alerts
+  - source_match:
+      alertname: 'PostgreSQLDown'
+    target_match:
+      alertname: 'SlowDatabaseQueries'
+    equal: ['instance']
+
+  # If Redis is down, inhibit high memory alerts
+  - source_match:
+      alertname: 'RedisDown'
+    target_match:
+      alertname: 'HighRedisMemoryUsage'
+    equal: ['instance']
+
+# Receivers configuration
+receivers:
+  # Default receiver (catch-all)
+  - name: 'default-receiver'
+    email_configs:
+      - to: '${DEFAULT_EMAIL_TO:-ops-team@example.com}'
+        headers:
+          Subject: '[BIOwerk] {{ .GroupLabels.alertname }} - {{ .GroupLabels.severity | toUpper }}'
+
+  # PagerDuty for critical alerts
+  - name: 'pagerduty-critical'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY}'
+        severity: '{{ .GroupLabels.severity }}'
+        description: '{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}'
+        details:
+          summary: '{{ .CommonAnnotations.summary }}'
+          description: '{{ .CommonAnnotations.description }}'
+          cluster: '{{ .GroupLabels.cluster }}'
+          environment: '{{ .GroupLabels.environment }}'
+          service: '{{ .GroupLabels.service }}'
+          component: '{{ .GroupLabels.component }}'
+          runbook_url: '{{ .CommonAnnotations.runbook_url }}'
+          dashboard_url: '{{ .CommonAnnotations.dashboard_url }}'
+          num_firing: '{{ .Alerts.Firing | len }}'
+          num_resolved: '{{ .Alerts.Resolved | len }}'
+        client: 'BIOwerk Alertmanager'
+        client_url: 'http://alertmanager:9093'
+
+  # Slack for critical alerts
+  - name: 'slack-critical'
+    slack_configs:
+      - api_url: '${SLACK_CRITICAL_WEBHOOK_URL}'
+        channel: '${SLACK_CRITICAL_CHANNEL:-#biowerk-critical-alerts}'
+        username: 'BIOwerk Alerting'
+        icon_emoji: ':rotating_light:'
+        title: ':rotating_light: CRITICAL: {{ .GroupLabels.alertname }}'
+        title_link: '{{ .CommonAnnotations.dashboard_url }}'
+        text: |
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Description:* {{ .CommonAnnotations.description }}
+          *Service:* {{ .GroupLabels.service }}
+          *Component:* {{ .GroupLabels.component }}
+          *Environment:* {{ .GroupLabels.environment }}
+          *Severity:* {{ .GroupLabels.severity | toUpper }}
+          *Firing:* {{ .Alerts.Firing | len }} | *Resolved:* {{ .Alerts.Resolved | len }}
+        color: 'danger'
+        send_resolved: true
+        actions:
+          - type: button
+            text: 'View Runbook :book:'
+            url: '{{ .CommonAnnotations.runbook_url }}'
+          - type: button
+            text: 'View Dashboard :chart_with_upwards_trend:'
+            url: '{{ .CommonAnnotations.dashboard_url }}'
+          - type: button
+            text: 'Silence :mute:'
+            url: '{{ .ExternalURL }}/#/silences/new?filter=%7Balertname%3D%22{{ .GroupLabels.alertname }}%22%7D'
+
+  # Slack for warnings
+  - name: 'slack-warnings'
+    slack_configs:
+      - api_url: '${SLACK_WARNINGS_WEBHOOK_URL}'
+        channel: '${SLACK_WARNINGS_CHANNEL:-#biowerk-warnings}'
+        username: 'BIOwerk Alerting'
+        icon_emoji: ':warning:'
+        title: ':warning: WARNING: {{ .GroupLabels.alertname }}'
+        title_link: '{{ .CommonAnnotations.dashboard_url }}'
+        text: |
+          *Summary:* {{ .CommonAnnotations.summary }}
+          *Description:* {{ .CommonAnnotations.description }}
+          *Service:* {{ .GroupLabels.service }}
+          *Environment:* {{ .GroupLabels.environment }}
+        color: 'warning'
+        send_resolved: true
+
+  # Slack for info alerts
+  - name: 'slack-info'
+    slack_configs:
+      - api_url: '${SLACK_INFO_WEBHOOK_URL}'
+        channel: '${SLACK_INFO_CHANNEL:-#biowerk-info}'
+        username: 'BIOwerk Alerting'
+        icon_emoji: ':information_source:'
+        title: ':information_source: INFO: {{ .GroupLabels.alertname }}'
+        text: '{{ .CommonAnnotations.summary }}'
+        color: 'good'
+        send_resolved: true
+
+  # Database team notifications
+  - name: 'database-team'
+    email_configs:
+      - to: '${DATABASE_TEAM_EMAIL:-database-team@example.com}'
+        headers:
+          Subject: '[BIOwerk Database] {{ .GroupLabels.alertname }}'
+    slack_configs:
+      - api_url: '${SLACK_DATABASE_WEBHOOK_URL}'
+        channel: '${SLACK_DATABASE_CHANNEL:-#biowerk-database}'
+        username: 'BIOwerk Database Alerts'
+        icon_emoji: ':floppy_disk:'
+        title: 'Database Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ .CommonAnnotations.summary }}'
+        send_resolved: true
+
+  # Security team - PagerDuty
+  - name: 'security-team-pagerduty'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SECURITY_SERVICE_KEY}'
+        severity: '{{ .GroupLabels.severity }}'
+        description: 'SECURITY ALERT: {{ .CommonAnnotations.summary }}'
+        details:
+          summary: '{{ .CommonAnnotations.summary }}'
+          description: '{{ .CommonAnnotations.description }}'
+
+  # Security team - Slack
+  - name: 'security-team-slack'
+    slack_configs:
+      - api_url: '${SLACK_SECURITY_WEBHOOK_URL}'
+        channel: '${SLACK_SECURITY_CHANNEL:-#biowerk-security}'
+        username: 'BIOwerk Security Alerts'
+        icon_emoji: ':shield:'
+        title: ':shield: SECURITY: {{ .GroupLabels.alertname }}'
+        text: '{{ .CommonAnnotations.summary }}'
+        color: 'danger'
+        send_resolved: true
+
+  # Compliance team notifications
+  - name: 'compliance-team'
+    email_configs:
+      - to: '${COMPLIANCE_TEAM_EMAIL:-compliance-team@example.com}'
+        headers:
+          Subject: '[BIOwerk Compliance] {{ .GroupLabels.alertname }}'
+    slack_configs:
+      - api_url: '${SLACK_COMPLIANCE_WEBHOOK_URL}'
+        channel: '${SLACK_COMPLIANCE_CHANNEL:-#biowerk-compliance}'
+        username: 'BIOwerk Compliance Alerts'
+        icon_emoji: ':memo:'
+        title: 'Compliance Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ .CommonAnnotations.summary }}'
+        send_resolved: true
+
+  # Product team notifications
+  - name: 'product-team-slack'
+    slack_configs:
+      - api_url: '${SLACK_PRODUCT_WEBHOOK_URL}'
+        channel: '${SLACK_PRODUCT_CHANNEL:-#biowerk-product}'
+        username: 'BIOwerk Product Metrics'
+        icon_emoji: ':chart_with_upwards_trend:'
+        title: 'Business Metric Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ .CommonAnnotations.summary }}'
+        send_resolved: true
+
+# Time intervals for muting alerts during maintenance windows
+time_intervals:
+  # Weekday business hours (09:00-17:00 UTC Monday-Friday)
+  - name: business-hours
+    time_intervals:
+      - weekdays: ['monday:friday']
+        times:
+          - start_time: '09:00'
+            end_time: '17:00'
+        location: 'UTC'
+
+  # Weekend maintenance window
+  - name: weekend-maintenance
+    time_intervals:
+      - weekdays: ['saturday', 'sunday']
+        times:
+          - start_time: '02:00'
+            end_time: '06:00'
+        location: 'UTC'
+
+  # Planned maintenance windows
+  - name: planned-maintenance
+    time_intervals: []  # Configure via API during planned maintenance

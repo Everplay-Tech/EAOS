@@ -1,0 +1,28 @@
+[package]
+name = "roulette-bootloader"
+version = "0.1.0"
+edition = "2021"
+license = "Proprietary"
+authors = ["Everplay-Tech"]
+description = "Topos-theoretic bootloader for Roulette Kernel"
+repository = "none"
+publish = false
+
+[dependencies]
+
+[[bin]]
+name = "roulette-bootloader"
+path = "src/main.rs"
+test = false
+
+[build-dependencies]
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+lto = true
+codegen-units = 1
+debug = false
+strip = true

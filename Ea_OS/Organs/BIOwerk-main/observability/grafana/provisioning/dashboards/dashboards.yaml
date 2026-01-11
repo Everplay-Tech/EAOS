@@ -1,0 +1,39 @@
+---
+# Grafana dashboard provisioning
+# Automatically loads dashboards from the specified folders
+apiVersion: 1
+
+providers:
+  # BIOwerk application dashboards
+  - name: 'BIOwerk Dashboards'
+    orgId: 1
+    folder: 'BIOwerk'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/biowerk
+      foldersFromFilesStructure: true
+
+  # Infrastructure dashboards
+  - name: 'Infrastructure'
+    orgId: 1
+    folder: 'Infrastructure'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/infrastructure
+
+  # Database dashboards
+  - name: 'Database'
+    orgId: 1
+    folder: 'Database'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/database

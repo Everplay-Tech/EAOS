@@ -1,0 +1,85 @@
+{
+  "language": "rust",
+  "version": "1.0",
+  "aliases": ["rs", "rustlang"],
+  "extensions": [".rs"],
+  "mime_types": ["text/x-rust", "text/rust"],
+  "preferred_encodings": ["utf-8", "utf-8-sig"],
+  "type_aliases": {
+    "u8": "type:int",
+    "u16": "type:int",
+    "u32": "type:int",
+    "u64": "type:int",
+    "usize": "type:int",
+    "i8": "type:int",
+    "i16": "type:int",
+    "i32": "type:int",
+    "i64": "type:int",
+    "isize": "type:int",
+    "f32": "type:float",
+    "f64": "type:float",
+    "bool": "type:bool",
+    "str": "type:string",
+    "string": "type:string",
+    "char": "type:byte",
+    "option": "type:any",
+    "result": "type:result",
+    "vec": "type:array",
+    "slice": "type:array",
+    "array": "type:array"
+  },
+  "reverse_type_aliases": {
+    "type:int": "i32",
+    "type:float": "f64",
+    "type:bool": "bool",
+    "type:string": "String",
+    "type:byte": "u8",
+    "type:any": "Option",
+    "type:result": "Result",
+    "type:array": "Vec"
+  },
+  "binary_operators": {
+    "Add": "op:add",
+    "Sub": "op:sub",
+    "Mul": "op:mul",
+    "Div": "op:div",
+    "Rem": "op:mod",
+    "BitOr": "op:bit_or",
+    "BitAnd": "op:bit_and",
+    "BitXor": "op:bit_xor",
+    "Shl": "op:shift_left",
+    "Shr": "op:shift_right"
+  },
+  "unary_operators": {
+    "Neg": "op:sub",
+    "Not": "op:not"
+  },
+  "literals": {
+    "bool_true": "literal:bool_true",
+    "bool_false": "literal:bool_false",
+    "null": "literal:null",
+    "string": "literal:string",
+    "bytes": "literal:array",
+    "integer": "literal:int",
+    "float": "literal:float",
+    "template": "literal:template",
+    "fallback": "meta:unknown",
+    "wide_string": "literal:string"
+  },
+  "template_payloads": {
+    "macro": "structure:macro",
+    "format": "literal:template"
+  },
+  "metadata": {
+    "canonicalization": {
+      "lifetimes": "strip_tick",
+      "modules": "module::path"
+    },
+    "morpheme_mappings": {
+      "match": "structure:match",
+      "trait": "structure:interface",
+      "struct": "structure:record",
+      "enum": "structure:enum"
+    }
+  }
+}

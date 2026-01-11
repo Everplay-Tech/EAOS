@@ -1,0 +1,9 @@
+{
+  "timestamp": "20251123T234510Z",
+  "kernel_binary": "/Users/magus/Desktop/roulette-kernel-rs/target/x86_64-unknown-none/release/roulette-kernel",
+  "boot_binary": "/Users/magus/Desktop/roulette-kernel-rs/bootloader/src/boot.bin",
+  "image_path": "/Users/magus/Desktop/roulette-kernel-rs/logs/20251123T234510Z/roulette-os.img",
+  "serial_log": "/Users/magus/Desktop/roulette-kernel-rs/logs/20251123T234510Z/serial.log",
+  "qemu_log": "/Users/magus/Desktop/roulette-kernel-rs/logs/20251123T234510Z/qemu.log",
+  "qemu_exit_code": 0
+}

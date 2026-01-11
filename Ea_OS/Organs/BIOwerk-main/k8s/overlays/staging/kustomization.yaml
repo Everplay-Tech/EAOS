@@ -1,0 +1,70 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: biowerk-staging
+
+bases:
+  - ../../base
+
+nameSuffix: -staging
+
+commonLabels:
+  environment: staging
+  app.kubernetes.io/environment: staging
+
+# Staging-specific patches
+patchesStrategicMerge:
+  - patches/reduce-replicas.yaml
+  - patches/resource-limits.yaml
+  - patches/environment-config.yaml
+
+# Staging configuration overrides
+configMapGenerator:
+  - name: app-config
+    behavior: merge
+    literals:
+      - environment=staging
+      - llm_provider=ollama
+      - tls_enabled=false
+      - require_auth=true
+
+# Staging image tags (use specific versions, not latest)
+images:
+  - name: ${REGISTRY}/biowerk-mesh
+    newTag: staging-${BUILD_VERSION:-latest}
+  - name: ${REGISTRY}/biowerk-osteon
+    newTag: staging-${BUILD_VERSION:-latest}
+  - name: ${REGISTRY}/biowerk-myocyte
+    newTag: staging-${BUILD_VERSION:-latest}
+  - name: ${REGISTRY}/biowerk-synapse
+    newTag: staging-${BUILD_VERSION:-latest}
+  - name: ${REGISTRY}/biowerk-circadian
+    newTag: staging-${BUILD_VERSION:-latest}
+  - name: ${REGISTRY}/biowerk-nucleus
+    newTag: staging-${BUILD_VERSION:-latest}
+  - name: ${REGISTRY}/biowerk-chaperone
+    newTag: staging-${BUILD_VERSION:-latest}
+  - name: ${REGISTRY}/biowerk-gdpr
+    newTag: staging-${BUILD_VERSION:-latest}
+  - name: ${REGISTRY}/biowerk-larry
+    newTag: staging-${BUILD_VERSION:-latest}
+  - name: ${REGISTRY}/biowerk-moe
+    newTag: staging-${BUILD_VERSION:-latest}
+  - name: ${REGISTRY}/biowerk-harry
+    newTag: staging-${BUILD_VERSION:-latest}
+  - name: ${REGISTRY}/biowerk-pgbouncer
+    newTag: staging-${BUILD_VERSION:-latest}
+  - name: ${REGISTRY}/biowerk-backup-orchestrator
+    newTag: staging-${BUILD_VERSION:-latest}
+
+# Replacements for staging URLs
+replacements:
+  - source:
+      kind: ConfigMap
+      name: app-config
+      fieldPath: data.environment
+    targets:
+      - select:
+          kind: Ingress
+        fieldPaths:
+          - metadata.annotations.[nginx.ingress.kubernetes.io/configuration-snippet]

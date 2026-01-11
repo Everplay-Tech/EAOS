@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grok-ppo-enterprise"
+version = "1.0.0"
+description = "Smart API caller that learns to avoid rate limits using RLHF"
+readme = "README.md"
+authors = [
+    {name = "Grok PPO Team", email = "team@grok-ppo.example.com"}
+]
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "torch>=2.0.0",
+    "requests>=2.28.0",
+    "structlog>=23.0.0",
+    "typing-extensions>=4.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0",
+    "flake8>=6.0.0",
+]
+cli = [
+    "rich>=13.0.0",
+]
+
+[project.scripts]
+grok-ppo = "grok_ppo_enterprise.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/grok-ppo-enterprise"
+Repository = "https://github.com/yourusername/grok-ppo-enterprise"
+Issues = "https://github.com/yourusername/grok-ppo-enterprise/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["grok_ppo_enterprise*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.isort]
+profile = "black"
+line_length = 88

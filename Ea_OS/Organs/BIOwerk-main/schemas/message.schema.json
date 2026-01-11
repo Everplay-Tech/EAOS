@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "message.schema.json",
+  "type": "object",
+  "required": [
+    "id",
+    "ts",
+    "origin",
+    "target",
+    "intent",
+    "input"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "ts": {
+      "type": "number"
+    },
+    "origin": {
+      "type": "string"
+    },
+    "target": {
+      "type": "string"
+    },
+    "intent": {
+      "type": "string"
+    },
+    "input": {
+      "type": "object"
+    }
+  }
+}

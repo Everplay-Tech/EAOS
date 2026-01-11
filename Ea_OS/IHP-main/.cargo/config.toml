@@ -1,0 +1,10 @@
+[source.crates-io]
+# Default to the sparse index for crates.io; CI can override `replace-with` to
+# point at `source.local-mirror` when a registry mirror is provided.
+registry = "sparse+https://github.com/rust-lang/crates.io-index/"
+
+[source.local-mirror]
+# Override this to `registry = "registry+file:///path/to/mirror/index"` or an
+# internal registry URL (e.g., Artifactory) when outbound egress is blocked.
+# For vendored builds, use `--config source.local-mirror.directory="<vendor>"`.
+registry = "registry+https://crates.local-mirror.invalid/index"

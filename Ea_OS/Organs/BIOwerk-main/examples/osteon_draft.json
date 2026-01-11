@@ -1,0 +1,16 @@
+{
+  "id": "test-1",
+  "ts": 1763058871.2262156,
+  "origin": "client",
+  "target": "osteon",
+  "intent": "draft",
+  "input": {
+    "goal": "Write an intro about our suite",
+    "audience": "internal",
+    "voice": "concise",
+    "constraints": [
+      "<=150 words"
+    ]
+  },
+  "api_version": "v1"
+}

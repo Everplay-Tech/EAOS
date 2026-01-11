@@ -1,0 +1,33 @@
+name: Quenyan Maven Project
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  package-and-encode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: 'maven'
+      - name: Package application
+        run: mvn --batch-mode -DskipTests package
+      - name: Batch encode descriptors
+        env:
+          QYN1_PASSPHRASE: ${{ secrets.QYN1_PASSPHRASE }}
+        run: >-
+          mcs-reference project batch-encode
+          --passphrase "${QYN1_PASSPHRASE}"
+          --project-root .
+          --output-dir target/quenyan-artifacts
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: quenyan-artifacts
+          path: target/quenyan-artifacts

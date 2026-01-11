@@ -1,0 +1,92 @@
+[
+  {
+    "function": "/workspace/quenyan/scripts/profile_pipeline.py:run_workload",
+    "callcount": 1,
+    "totaltime": 0.251053333,
+    "inlinetime": 6.2549e-05
+  },
+  {
+    "function": "/workspace/quenyan/qyn1/package.py:to_bytes",
+    "callcount": 1,
+    "totaltime": 0.22843739300000002,
+    "inlinetime": 4.1221000000000004e-05
+  },
+  {
+    "function": "/workspace/quenyan/qyn1/crypto.py:encrypt",
+    "callcount": 1,
+    "totaltime": 0.22796691900000002,
+    "inlinetime": 4.7329e-05
+  },
+  {
+    "function": "/workspace/quenyan/qyn1/crypto.py:derive_key_from_passphrase",
+    "callcount": 1,
+    "totaltime": 0.20240411000000003,
+    "inlinetime": 1.1223e-05
+  },
+  {
+    "function": "<built-in method _hashlib.pbkdf2_hmac>",
+    "callcount": 1,
+    "totaltime": 0.20239246100000002,
+    "inlinetime": 0.20239246100000002
+  },
+  {
+    "function": "/workspace/quenyan/qyn1/crypto.py:_chacha20_poly1305_encrypt",
+    "callcount": 1,
+    "totaltime": 0.025498008000000003,
+    "inlinetime": 3.2148000000000005e-05
+  },
+  {
+    "function": "/workspace/quenyan/qyn1/crypto.py:_chacha20_stream_xor",
+    "callcount": 1,
+    "totaltime": 0.024605752,
+    "inlinetime": 0.000257856
+  },
+  {
+    "function": "/workspace/quenyan/qyn1/crypto.py:_chacha20_block",
+    "callcount": 66,
+    "totaltime": 0.023026367000000002,
+    "inlinetime": 0.0027453910000000002
+  },
+  {
+    "function": "/workspace/quenyan/qyn1/crypto.py:_chacha20_round",
+    "callcount": 5280,
+    "totaltime": 0.020092314,
+    "inlinetime": 0.020092314
+  },
+  {
+    "function": "<string>:__init__",
+    "callcount": 1,
+    "totaltime": 0.017140131,
+    "inlinetime": 6.248e-06
+  },
+  {
+    "function": "/workspace/quenyan/qyn1/encoder.py:__post_init__",
+    "callcount": 1,
+    "totaltime": 0.017133883000000003,
+    "inlinetime": 4.7604e-05
+  },
+  {
+    "function": "/workspace/quenyan/qyn1/dictionary.py:load_dictionary",
+    "callcount": 1,
+    "totaltime": 0.017086279,
+    "inlinetime": 4.4756e-05
+  },
+  {
+    "function": "/workspace/quenyan/qyn1/dictionary.py:_load_json",
+    "callcount": 1,
+    "totaltime": 0.014617296,
+    "inlinetime": 3.414e-05
+  },
+  {
+    "function": "/root/.pyenv/versions/3.11.12/lib/python3.11/importlib/resources/_common.py:files",
+    "callcount": 1,
+    "totaltime": 0.009816992,
+    "inlinetime": 6.3420000000000004e-06
+  },
+  {
+    "function": "<frozen importlib._bootstrap>:_find_and_load",
+    "callcount": 7,
+    "totaltime": 0.009502086,
+    "inlinetime": 9.5029e-05
+  }
+]

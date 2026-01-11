@@ -1,0 +1,24 @@
+;; ============================================================================
+;; PgBouncer User Authentication File
+;; Format: "username" "password_hash"
+;; ============================================================================
+;;
+;; IMPORTANT: This file contains hashed passwords in MD5 format
+;; Format: "username" "md5<md5_hash_of_password+username>"
+;;
+;; To generate password hash:
+;; echo -n "passwordusername" | md5sum
+;; Then prepend with "md5"
+;;
+;; Example for user 'biowerk' with password 'biowerk_dev_password':
+;; echo -n "biowerk_dev_passwordbiowerk" | md5sum
+;; Result: md5d1f4e4c8b6f8a3e2d1f4e4c8b6f8a3e2
+;;
+;; For production, this file will be generated dynamically from environment
+;; variables by the entrypoint script for security.
+;;
+;; DO NOT commit actual production passwords to version control!
+;; ============================================================================
+
+;; This placeholder will be replaced by entrypoint.sh
+;; Format: "biowerk" "md5<hash>"

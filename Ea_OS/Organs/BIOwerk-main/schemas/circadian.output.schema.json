@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "circadian.output.schema.json",
+  "type": "object",
+  "properties": {
+    "timeline": {
+      "type": "array"
+    },
+    "assignments": {
+      "type": "array"
+    },
+    "risks": {
+      "type": "array"
+    },
+    "next_actions": {
+      "type": "array"
+    }
+  }
+}

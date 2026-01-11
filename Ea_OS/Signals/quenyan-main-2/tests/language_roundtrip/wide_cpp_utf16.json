@@ -1,0 +1,5 @@
+{
+  "filename": "wide.cpp",
+  "encoding": "utf-16",
+  "source": "#include <string>\n#include <locale>\nint main() {\n    std::wstring greeting = L\"\\u3053\\u3093\\u306b\\u3061\\u306f\";\n    std::wstring punctuation = L\"\\u4e16\\u754c\";\n    return static_cast<int>(greeting.size() + punctuation.size());\n}\n"
+}

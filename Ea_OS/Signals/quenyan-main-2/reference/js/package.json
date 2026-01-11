@@ -1,0 +1,9 @@
+{
+  "name": "mcs-reference",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "mcs-reference-js": "./mcs.js"
+  },
+  "dependencies": {}
+}

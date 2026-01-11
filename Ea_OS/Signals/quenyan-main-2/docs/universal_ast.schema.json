@@ -1,0 +1,628 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://quenyan.dev/schema/universal-ast.json",
+  "title": "Universal Abstract Syntax Tree",
+  "description": "Language-agnostic AST schema for Python, JavaScript, Go, Rust, and C++.",
+  "$defs": {
+    "Node": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {"type": "string"},
+        "leadingComments": {
+          "type": ["array", "null"],
+          "items": {"type": "string"},
+          "description": "Optional comments that appear before the node. Use null when absent to maintain deterministic serialization."
+        },
+        "trailingComments": {
+          "type": ["array", "null"],
+          "items": {"type": "string"},
+          "description": "Optional comments that appear after the node. Use null when absent to maintain deterministic serialization."
+        },
+        "loc": {
+          "type": ["object", "null"],
+          "description": "Source location info with zero-based line/column offsets.",
+          "required": ["start", "end"],
+          "properties": {
+            "start": {"$ref": "#/$defs/Position"},
+            "end": {"$ref": "#/$defs/Position"}
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "Position": {
+      "type": "object",
+      "required": ["line", "column"],
+      "properties": {
+        "line": {"type": "integer", "minimum": 0},
+        "column": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "Identifier": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "Identifier"},
+            "name": {"type": "string"}
+          },
+          "required": ["name"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Literal": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "Literal"},
+            "literalType": {"enum": ["Null", "Boolean", "Number", "String", "Bytes"]},
+            "value": {}
+          },
+          "required": ["literalType", "value"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Program": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "Program"},
+            "language": {
+              "type": "string",
+              "enum": ["python", "javascript", "typescript", "go", "rust", "cpp"],
+              "description": "Indicates the originating language when known."
+            },
+            "body": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/Statement"},
+              "description": "Ordered list of module-level declarations and statements."
+            }
+          },
+          "required": ["body"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Statement": {
+      "oneOf": [
+        {"$ref": "#/$defs/BlockStatement"},
+        {"$ref": "#/$defs/ExpressionStatement"},
+        {"$ref": "#/$defs/ReturnStatement"},
+        {"$ref": "#/$defs/IfStatement"},
+        {"$ref": "#/$defs/WhileStatement"},
+        {"$ref": "#/$defs/ForStatement"},
+        {"$ref": "#/$defs/BreakStatement"},
+        {"$ref": "#/$defs/ContinueStatement"},
+        {"$ref": "#/$defs/VariableDeclaration"},
+        {"$ref": "#/$defs/FunctionDeclaration"},
+        {"$ref": "#/$defs/ClassDeclaration"}
+      ]
+    },
+    "BlockStatement": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "BlockStatement"},
+            "body": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/Statement"}
+            }
+          },
+          "required": ["body"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ExpressionStatement": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "ExpressionStatement"},
+            "expression": {"$ref": "#/$defs/Expression"}
+          },
+          "required": ["expression"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ReturnStatement": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "ReturnStatement"},
+            "argument": {"anyOf": [{"$ref": "#/$defs/Expression"}, {"type": "null"}]}
+          },
+          "required": ["argument"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "IfStatement": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "IfStatement"},
+            "test": {"$ref": "#/$defs/Expression"},
+            "consequent": {"$ref": "#/$defs/BlockStatement"},
+            "alternate": {
+              "anyOf": [
+                {"$ref": "#/$defs/BlockStatement"},
+                {"$ref": "#/$defs/IfStatement"},
+                {"type": "null"}
+              ]
+            }
+          },
+          "required": ["test", "consequent", "alternate"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "WhileStatement": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "WhileStatement"},
+            "test": {"$ref": "#/$defs/Expression"},
+            "body": {"$ref": "#/$defs/BlockStatement"}
+          },
+          "required": ["test", "body"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ForStatement": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "ForStatement"},
+            "forKind": {
+              "type": "string",
+              "enum": ["CStyle", "ForIn", "ForOf", "Range"],
+              "description": "Indicates the canonical loop variety."
+            },
+            "init": {
+              "anyOf": [
+                {"$ref": "#/$defs/VariableDeclaration"},
+                {"$ref": "#/$defs/Expression"},
+                {"type": "null"}
+              ]
+            },
+            "test": {"anyOf": [{"$ref": "#/$defs/Expression"}, {"type": "null"}]},
+            "update": {"anyOf": [{"$ref": "#/$defs/Expression"}, {"type": "null"}]},
+            "iterable": {"anyOf": [{"$ref": "#/$defs/Expression"}, {"type": "null"}]},
+            "body": {"$ref": "#/$defs/BlockStatement"}
+          },
+          "required": ["forKind", "init", "test", "update", "iterable", "body"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "BreakStatement": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "BreakStatement"},
+            "label": {"anyOf": [{"$ref": "#/$defs/Identifier"}, {"type": "null"}]}
+          },
+          "required": ["label"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ContinueStatement": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "ContinueStatement"},
+            "label": {"anyOf": [{"$ref": "#/$defs/Identifier"}, {"type": "null"}]}
+          },
+          "required": ["label"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "VariableDeclaration": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "VariableDeclaration"},
+            "declarationKind": {
+              "type": "string",
+              "enum": ["Var", "Let", "Const", "Auto", "Static", "Mutable"],
+              "description": "Canonical storage class or mutability modifier."
+            },
+            "declarators": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/VariableDeclarator"}
+            }
+          },
+          "required": ["declarationKind", "declarators"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "VariableDeclarator": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "VariableDeclarator"},
+            "id": {"$ref": "#/$defs/Identifier"},
+            "typeAnnotation": {"anyOf": [{"$ref": "#/$defs/TypeAnnotation"}, {"type": "null"}]},
+            "init": {"anyOf": [{"$ref": "#/$defs/Expression"}, {"type": "null"}]}
+          },
+          "required": ["id", "typeAnnotation", "init"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "FunctionDeclaration": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "FunctionDeclaration"},
+            "name": {"anyOf": [{"$ref": "#/$defs/Identifier"}, {"type": "null"}]},
+            "parameters": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/Parameter"}
+            },
+            "returnType": {"anyOf": [{"$ref": "#/$defs/TypeAnnotation"}, {"type": "null"}]},
+            "typeParameters": {
+              "anyOf": [
+                {"type": "array", "items": {"$ref": "#/$defs/TypeParameter"}},
+                {"type": "null"}
+              ]
+            },
+            "body": {"$ref": "#/$defs/BlockStatement"},
+            "decorators": {
+              "anyOf": [
+                {"type": "array", "items": {"$ref": "#/$defs/Expression"}},
+                {"type": "null"}
+              ]
+            },
+            "async": {"type": "boolean"},
+            "generator": {"type": "boolean"},
+            "visibility": {
+              "anyOf": [
+                {"type": "string", "enum": ["Public", "Protected", "Private"]},
+                {"type": "null"}
+              ]
+            }
+          },
+          "required": [
+            "name",
+            "parameters",
+            "returnType",
+            "typeParameters",
+            "body",
+            "decorators",
+            "async",
+            "generator",
+            "visibility"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Parameter": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "Parameter"},
+            "name": {"$ref": "#/$defs/Identifier"},
+            "typeAnnotation": {"anyOf": [{"$ref": "#/$defs/TypeAnnotation"}, {"type": "null"}]},
+            "defaultValue": {"anyOf": [{"$ref": "#/$defs/Expression"}, {"type": "null"}]},
+            "variadic": {"type": "boolean"}
+          },
+          "required": ["name", "typeAnnotation", "defaultValue", "variadic"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "TypeParameter": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "TypeParameter"},
+            "name": {"$ref": "#/$defs/Identifier"},
+            "constraint": {"anyOf": [{"$ref": "#/$defs/TypeAnnotation"}, {"type": "null"}]},
+            "defaultType": {"anyOf": [{"$ref": "#/$defs/TypeAnnotation"}, {"type": "null"}]}
+          },
+          "required": ["name", "constraint", "defaultType"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "TypeAnnotation": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "TypeAnnotation"},
+            "typeName": {"type": "string"},
+            "typeArguments": {
+              "anyOf": [
+                {"type": "array", "items": {"$ref": "#/$defs/TypeAnnotation"}},
+                {"type": "null"}
+              ]
+            },
+            "optional": {"type": "boolean"}
+          },
+          "required": ["typeName", "typeArguments", "optional"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ClassDeclaration": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "ClassDeclaration"},
+            "name": {"$ref": "#/$defs/Identifier"},
+            "typeParameters": {
+              "anyOf": [
+                {"type": "array", "items": {"$ref": "#/$defs/TypeParameter"}},
+                {"type": "null"}
+              ]
+            },
+            "superClass": {"anyOf": [{"$ref": "#/$defs/Expression"}, {"type": "null"}]},
+            "implements": {
+              "anyOf": [
+                {"type": "array", "items": {"$ref": "#/$defs/TypeAnnotation"}},
+                {"type": "null"}
+              ]
+            },
+            "body": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/ClassMember"}
+            }
+          },
+          "required": ["name", "typeParameters", "superClass", "implements", "body"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ClassMember": {
+      "oneOf": [
+        {"$ref": "#/$defs/MethodDeclaration"},
+        {"$ref": "#/$defs/FieldDeclaration"}
+      ]
+    },
+    "MethodDeclaration": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "MethodDeclaration"},
+            "name": {"anyOf": [{"$ref": "#/$defs/Identifier"}, {"type": "null"}]},
+            "parameters": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/Parameter"}
+            },
+            "returnType": {"anyOf": [{"$ref": "#/$defs/TypeAnnotation"}, {"type": "null"}]},
+            "body": {"$ref": "#/$defs/BlockStatement"},
+            "kind": {
+              "type": "string",
+              "enum": ["Method", "Getter", "Setter", "Operator", "Constructor", "Destructor"]
+            },
+            "isStatic": {"type": "boolean"},
+            "isAsync": {"type": "boolean"},
+            "visibility": {
+              "anyOf": [
+                {"type": "string", "enum": ["Public", "Protected", "Private"]},
+                {"type": "null"}
+              ]
+            }
+          },
+          "required": [
+            "name",
+            "parameters",
+            "returnType",
+            "body",
+            "kind",
+            "isStatic",
+            "isAsync",
+            "visibility"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "FieldDeclaration": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "FieldDeclaration"},
+            "name": {"$ref": "#/$defs/Identifier"},
+            "typeAnnotation": {"anyOf": [{"$ref": "#/$defs/TypeAnnotation"}, {"type": "null"}]},
+            "initializer": {"anyOf": [{"$ref": "#/$defs/Expression"}, {"type": "null"}]},
+            "isStatic": {"type": "boolean"},
+            "isMutable": {"type": "boolean"},
+            "visibility": {
+              "anyOf": [
+                {"type": "string", "enum": ["Public", "Protected", "Private"]},
+                {"type": "null"}
+              ]
+            }
+          },
+          "required": [
+            "name",
+            "typeAnnotation",
+            "initializer",
+            "isStatic",
+            "isMutable",
+            "visibility"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Expression": {
+      "oneOf": [
+        {"$ref": "#/$defs/Identifier"},
+        {"$ref": "#/$defs/Literal"},
+        {"$ref": "#/$defs/CallExpression"},
+        {"$ref": "#/$defs/MemberExpression"},
+        {"$ref": "#/$defs/BinaryExpression"},
+        {"$ref": "#/$defs/UnaryExpression"},
+        {"$ref": "#/$defs/AssignmentExpression"},
+        {"$ref": "#/$defs/LambdaExpression"}
+      ]
+    },
+    "CallExpression": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "CallExpression"},
+            "callee": {"$ref": "#/$defs/Expression"},
+            "arguments": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/Expression"}
+            },
+            "typeArguments": {
+              "anyOf": [
+                {"type": "array", "items": {"$ref": "#/$defs/TypeAnnotation"}},
+                {"type": "null"}
+              ]
+            }
+          },
+          "required": ["callee", "arguments", "typeArguments"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "MemberExpression": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "MemberExpression"},
+            "object": {"$ref": "#/$defs/Expression"},
+            "property": {"$ref": "#/$defs/Expression"},
+            "computed": {"type": "boolean"}
+          },
+          "required": ["object", "property", "computed"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "BinaryExpression": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "BinaryExpression"},
+            "operator": {
+              "type": "string",
+              "enum": [
+                "Add",
+                "Sub",
+                "Mul",
+                "Div",
+                "Mod",
+                "Pow",
+                "BitAnd",
+                "BitOr",
+                "BitXor",
+                "ShiftLeft",
+                "ShiftRight",
+                "LogicalAnd",
+                "LogicalOr",
+                "Equal",
+                "NotEqual",
+                "Less",
+                "LessOrEqual",
+                "Greater",
+                "GreaterOrEqual"
+              ]
+            },
+            "left": {"$ref": "#/$defs/Expression"},
+            "right": {"$ref": "#/$defs/Expression"}
+          },
+          "required": ["operator", "left", "right"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "UnaryExpression": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "UnaryExpression"},
+            "operator": {
+              "type": "string",
+              "enum": ["Negate", "LogicalNot", "BitNot", "Reference", "Dereference"]
+            },
+            "argument": {"$ref": "#/$defs/Expression"},
+            "prefix": {"type": "boolean"}
+          },
+          "required": ["operator", "argument", "prefix"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "AssignmentExpression": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "AssignmentExpression"},
+            "operator": {
+              "type": "string",
+              "enum": ["Assign", "AddAssign", "SubAssign", "MulAssign", "DivAssign", "ModAssign", "AndAssign", "OrAssign", "XorAssign", "ShlAssign", "ShrAssign"]
+            },
+            "target": {"$ref": "#/$defs/Expression"},
+            "value": {"$ref": "#/$defs/Expression"}
+          },
+          "required": ["operator", "target", "value"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "LambdaExpression": {
+      "allOf": [
+        {"$ref": "#/$defs/Node"},
+        {
+          "properties": {
+            "type": {"const": "LambdaExpression"},
+            "parameters": {
+              "type": "array",
+              "items": {"$ref": "#/$defs/Parameter"}
+            },
+            "body": {
+              "anyOf": [
+                {"$ref": "#/$defs/Expression"},
+                {"$ref": "#/$defs/BlockStatement"}
+              ]
+            }
+          },
+          "required": ["parameters", "body"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "$ref": "#/$defs/Program"
+}

@@ -1,0 +1,19 @@
+# Exclude version control and local development artifacts
+.git
+.gitignore
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.env
+.venv/
+*.swp
+.DS_Store
+
+# Archive assets not needed in build context
+codex_bio_office_suite.zip
+
+# Keep schemas/ available for schema validation inside containers
+# (previously excluded)

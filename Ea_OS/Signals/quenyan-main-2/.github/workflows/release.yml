@@ -1,0 +1,93 @@
+name: secure-release
+
+on:
+  workflow_dispatch:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.lock
+
+      - name: Install release toolchain
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.lock
+          python -m pip install .
+
+      - name: Verify lockfile is up to date
+        run: nox -s lockcheck
+
+      - name: Static analysis and type safety
+        run: nox -s lint typecheck
+
+      - name: Unit and property-based tests with coverage
+        run: nox -s tests property coverage
+
+      - name: Benchmark guard rails
+        run: python scripts/check_benchmark_thresholds.py
+
+      - name: Software Bill of Materials
+        run: nox -s sbom
+
+      - name: Dependency audit
+        run: nox -s audit
+
+      - name: Build distribution artifacts
+        run: nox -s build
+
+      - name: Sign artifacts with Sigstore
+        env:
+          SIGSTORE_ID_TOKEN: ${{ secrets.SIGSTORE_ID_TOKEN }}
+        run: nox -s sign
+
+      - name: Publish to internal index
+        env:
+          TWINE_USERNAME: ${{ secrets.INTERNAL_PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.INTERNAL_PYPI_PASSWORD }}
+          INTERNAL_PYPI_URL: ${{ secrets.INTERNAL_PYPI_URL }}
+        run: |
+          twine upload --repository-url "${INTERNAL_PYPI_URL}" dist/*
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: |
+            dist/*
+            sbom.json
+            benchmark_output.json
+            coverage.xml
+          if-no-files-found: error
+
+      - name: Attach artifacts to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*
+            sbom.json
+            benchmark_output.json
+            coverage.xml
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: "dist/*"

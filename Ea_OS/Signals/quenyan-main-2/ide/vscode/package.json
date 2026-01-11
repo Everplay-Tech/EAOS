@@ -1,0 +1,98 @@
+{
+  "name": "qyn1-tools",
+  "displayName": "QYN-1 Tools",
+  "description": "Prototype VS Code integration for QYN-1 encrypted packages.",
+  "version": "0.1.0",
+  "publisher": "quenyan",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "activationEvents": [
+    "onLanguage:quenyan",
+    "onCommand:qyn.inspectMetadata",
+    "onCommand:qyn.exportSourceMap",
+    "onCommand:qyn.decodePackage",
+    "onCommand:qyn.diffPackages",
+    "onCommand:qyn.openTerminal",
+    "onCommand:qyn.generateKey",
+    "onCommand:qyn.importKey",
+    "onCommand:qyn.exportKey",
+    "onCommand:qyn.verifyPackage"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "quenyan",
+        "aliases": ["QYN-1 Package"],
+        "extensions": [".qyn1"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "quenyan",
+        "scopeName": "source.quenyan",
+        "path": "./syntaxes/quenyan.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "qyn.inspectMetadata",
+        "title": "QYN: Inspect Package Metadata"
+      },
+      {
+        "command": "qyn.exportSourceMap",
+        "title": "QYN: Export Source Map"
+      },
+      {
+        "command": "qyn.decodePackage",
+        "title": "QYN: Open Decrypted View"
+      },
+      {
+        "command": "qyn.diffPackages",
+        "title": "QYN: Diff Packages"
+      },
+      {
+        "command": "qyn.openTerminal",
+        "title": "QYN: Open CLI Terminal"
+      },
+      {
+        "command": "qyn.generateKey",
+        "title": "QYN: Generate New Key"
+      },
+      {
+        "command": "qyn.importKey",
+        "title": "QYN: Import Existing Key"
+      },
+      {
+        "command": "qyn.exportKey",
+        "title": "QYN: Export Stored Passphrase"
+      },
+      {
+        "command": "qyn.verifyPackage",
+        "title": "QYN: Verify Package Integrity"
+      }
+    ],
+    "configuration": {
+      "title": "Quenyan",
+      "properties": {
+        "quenyan.cliCommand": {
+          "type": "string",
+          "default": "",
+          "description": "Override command used to invoke the Quenyan CLI (default: python3 -m qyn1.cli)"
+        },
+        "quenyan.keyFile": {
+          "type": "string",
+          "default": "",
+          "description": "Path to a key file used for decoding and encoding packages"
+        }
+      }
+    }
+  },
+  "categories": ["Other"],
+  "repository": {
+    "type": "git",
+    "url": "https://example.com/quenyan.git"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "python_ast_mb_s": 0.27198509372384955,
+  "gzip": {
+    "compress_mb_s": 141.40805095190606,
+    "decompress_mb_s": 844.2454963697128,
+    "compressed_size": 429
+  },
+  "aead": {
+    "encrypt_mb_s": 0.16929669929173072,
+    "decrypt_mb_s": 0.16326995611646816
+  },
+  "pipeline": {
+    "file_count": 4,
+    "total_duration_s": 4.441445859999476,
+    "throughput_mb_s": 0.017177727190061706,
+    "average_duration_s": 0.0760173069998018,
+    "peak_rss_mb": 34.78125
+  },
+  "sample_size_bytes": 116734
+}

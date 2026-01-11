@@ -1,0 +1,81 @@
+[flake8]
+# Maximum line length
+max-line-length = 120
+
+# Extend default ignore list
+extend-ignore =
+    # E203: whitespace before ':' (conflicts with black)
+    E203,
+    # W503: line break before binary operator (conflicts with black)
+    W503,
+    # E501: line too long (handled by black)
+    E501,
+    # E402: module level import not at top of file
+    # E402,
+    # W504: line break after binary operator
+    # W504,
+
+# Exclude directories
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    ENV,
+    env,
+    .eggs,
+    *.egg,
+    build,
+    dist,
+    .pytest_cache,
+    .mypy_cache,
+    .tox,
+    alembic/versions,
+    node_modules,
+    .vscode,
+    .idea
+
+# Maximum complexity for McCabe
+max-complexity = 15
+
+# Docstring conventions
+docstring-convention = google
+
+# Per-file ignores
+per-file-ignores =
+    # Ignore import errors in __init__.py files
+    __init__.py:F401,F403
+    # Ignore complexity in test files
+    tests/*:E501,C901
+    # Ignore some checks in alembic migration files
+    alembic/env.py:E402
+    # Ignore complexity in configuration files
+    */config.py:C901
+
+# Enable specific checks
+select =
+    # Pycodestyle errors
+    E,
+    # Pycodestyle warnings
+    W,
+    # Pyflakes
+    F,
+    # McCabe complexity
+    C90,
+    # flake8-bugbear
+    B,
+    # flake8-comprehensions
+    C4,
+    # flake8-simplify
+    SIM,
+
+# Import order style (for flake8-import-order if installed)
+import-order-style = google
+application-import-names = matrix,services,mesh
+
+# Show source code for errors
+show-source = true
+
+# Show statistics
+count = true
+statistics = true

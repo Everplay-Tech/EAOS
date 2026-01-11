@@ -1,0 +1,506 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: ["main", "develop", "claude/**"]
+  pull_request:
+    branches: ["main", "develop"]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+  # ====================
+  # Unit & Integration Tests
+  # ====================
+  unit-tests:
+    name: Unit & Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: biowerk
+          POSTGRES_PASSWORD: biowerk_test_password
+          POSTGRES_DB: biowerk_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+      mongodb:
+        image: mongo:7.0
+        env:
+          MONGO_INITDB_ROOT_USERNAME: biowerk
+          MONGO_INITDB_ROOT_PASSWORD: biowerk_test_password
+          MONGO_INITDB_DATABASE: biowerk_test
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 27017:27017
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+          pip install pytest-cov pytest-xdist pytest-timeout
+
+      - name: Run unit tests with coverage
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: biowerk
+          POSTGRES_PASSWORD: biowerk_test_password
+          POSTGRES_DB: biowerk_test
+          REDIS_HOST: localhost
+          MONGO_HOST: localhost
+        run: |
+          pytest tests/ \
+            --cov=matrix \
+            --cov=mesh \
+            --cov=services \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term-missing \
+            --cov-fail-under=80 \
+            --junit-xml=junit-results.xml \
+            --timeout=300 \
+            -v
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-results
+          path: |
+            junit-results.xml
+            htmlcov/
+          retention-days: 30
+
+  # ====================
+  # Integration Tests
+  # ====================
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [unit-tests]
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-timeout pytest-xdist
+
+      - name: Create test environment file
+        run: |
+          cat > .env.test <<EOF
+          POSTGRES_HOST=localhost
+          POSTGRES_PORT=5432
+          POSTGRES_USER=biowerk
+          POSTGRES_PASSWORD=biowerk_test_password
+          POSTGRES_DB=biowerk_test
+          MONGO_HOST=localhost
+          REDIS_HOST=localhost
+          OLLAMA_BASE_URL=http://localhost:11434
+          LLM_PROVIDER=ollama
+          ENVIRONMENT=test
+          JWT_SECRET_KEY=test-secret-key-for-ci-only
+          REQUIRE_AUTH=false
+          EOF
+
+      - name: Start infrastructure services
+        run: |
+          docker compose up -d postgres mongodb redis pgbouncer
+          sleep 10
+
+      - name: Wait for infrastructure to be healthy
+        run: |
+          timeout 60 bash -c 'until docker compose ps postgres | grep -q "healthy"; do sleep 2; done'
+          timeout 60 bash -c 'until docker compose ps mongodb | grep -q "healthy"; do sleep 2; done'
+
+      - name: Build application services
+        run: |
+          docker compose build mesh osteon myocyte synapse circadian nucleus chaperone larry moe harry gdpr
+
+      - name: Start application services
+        run: |
+          docker compose up -d
+          sleep 20
+
+      - name: Check services are running
+        run: |
+          docker compose ps
+          echo "=== Service Health Check ==="
+          curl -f http://localhost:8080/health || echo "Mesh not ready yet"
+          sleep 5
+
+      - name: Wait for mesh to be ready
+        run: |
+          timeout 120 bash -c 'until curl -f http://localhost:8080/health 2>/dev/null; do echo "Waiting for mesh..."; sleep 3; done'
+          echo "✓ Mesh is ready"
+
+      - name: Run integration tests
+        run: |
+          pytest tests/integration/ \
+            --junit-xml=junit-integration-results.xml \
+            --timeout=300 \
+            -v \
+            -m integration
+        env:
+          MESH_URL: http://localhost:8080
+
+      - name: Collect service logs on failure
+        if: failure()
+        run: |
+          mkdir -p logs
+          docker compose logs > logs/docker-compose-integration.log
+          docker compose logs mesh > logs/mesh-integration.log
+          docker compose logs osteon > logs/osteon-integration.log
+          docker compose logs postgres > logs/postgres-integration.log
+
+      - name: Upload service logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-service-logs
+          path: logs/
+          retention-days: 7
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: junit-integration-results.xml
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
+
+  # ====================
+  # E2E Workflow Tests
+  # ====================
+  e2e-tests:
+    name: E2E Workflow Tests
+    runs-on: ubuntu-latest
+    needs: [unit-tests]
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest-timeout pytest-xdist
+
+      - name: Create test environment file
+        run: |
+          cat > .env.test <<EOF
+          POSTGRES_HOST=localhost
+          POSTGRES_PORT=5432
+          POSTGRES_USER=biowerk
+          POSTGRES_PASSWORD=biowerk_test_password
+          POSTGRES_DB=biowerk_test
+          MONGO_HOST=localhost
+          REDIS_HOST=localhost
+          OLLAMA_BASE_URL=http://localhost:11434
+          LLM_PROVIDER=ollama
+          ENVIRONMENT=test
+          JWT_SECRET_KEY=test-secret-key-for-ci-only
+          REQUIRE_AUTH=false
+          EOF
+
+      - name: Start services with Docker Compose
+        run: |
+          docker compose up -d postgres mongodb redis pgbouncer
+          sleep 10
+
+      - name: Wait for services to be healthy
+        run: |
+          timeout 60 bash -c 'until docker compose ps | grep -q "healthy"; do sleep 2; done'
+
+      - name: Build application services
+        run: |
+          docker compose build mesh osteon myocyte synapse circadian nucleus chaperone
+
+      - name: Start application services
+        run: |
+          docker compose up -d
+          sleep 15
+
+      - name: Check services are running
+        run: |
+          docker compose ps
+          docker compose logs --tail=50
+
+      - name: Run E2E workflow tests
+        run: |
+          pytest tests/e2e/ \
+            --junit-xml=junit-e2e-results.xml \
+            --timeout=600 \
+            -v
+        env:
+          MESH_URL: http://localhost:8080
+
+      - name: Collect service logs on failure
+        if: failure()
+        run: |
+          mkdir -p logs
+          docker compose logs > logs/docker-compose.log
+          docker compose logs mesh > logs/mesh.log
+          docker compose logs postgres > logs/postgres.log
+
+      - name: Upload service logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-service-logs
+          path: logs/
+          retention-days: 7
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-results
+          path: junit-e2e-results.xml
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v
+
+  # ====================
+  # Docker Build & Security Scan
+  # ====================
+  docker-build:
+    name: Build & Scan Docker Images
+    runs-on: ubuntu-latest
+    needs: [unit-tests]
+    timeout-minutes: 45
+
+    strategy:
+      matrix:
+        service: [mesh, osteon, myocyte, synapse, circadian, nucleus, chaperone, gdpr]
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache-${{ matrix.service }}
+          key: ${{ runner.os }}-buildx-${{ matrix.service }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-${{ matrix.service }}-
+
+      - name: Build Docker image
+        run: |
+          if [ "${{ matrix.service }}" = "mesh" ]; then
+            CONTEXT="."
+            DOCKERFILE="mesh/Dockerfile"
+          elif [ "${{ matrix.service }}" = "gdpr" ]; then
+            CONTEXT="."
+            DOCKERFILE="services/gdpr/Dockerfile"
+          else
+            CONTEXT="."
+            DOCKERFILE="services/${{ matrix.service }}/Dockerfile"
+          fi
+
+          docker buildx build \
+            --cache-from type=local,src=/tmp/.buildx-cache-${{ matrix.service }} \
+            --cache-to type=local,dest=/tmp/.buildx-cache-${{ matrix.service }}-new,mode=max \
+            --load \
+            --tag biowerk-${{ matrix.service }}:${{ github.sha }} \
+            --tag biowerk-${{ matrix.service }}:latest \
+            --file "$DOCKERFILE" \
+            "$CONTEXT"
+
+          # Move cache
+          rm -rf /tmp/.buildx-cache-${{ matrix.service }}
+          if [ -d "/tmp/.buildx-cache-${{ matrix.service }}-new" ]; then
+            mv /tmp/.buildx-cache-${{ matrix.service }}-new /tmp/.buildx-cache-${{ matrix.service }}
+          fi
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: biowerk-${{ matrix.service }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.service }}.sarif'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results-${{ matrix.service }}.sarif'
+          category: 'trivy-${{ matrix.service }}'
+
+      - name: Run Trivy (detailed report)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: biowerk-${{ matrix.service }}:${{ github.sha }}
+          format: 'table'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+  # ====================
+  # Code Quality & Security Checks
+  # ====================
+  code-quality:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install code quality tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit flake8 pylint black isort mypy safety pip-audit
+
+      - name: Run Black formatting check
+        run: |
+          black --check --diff matrix/ mesh/ services/ tests/ || true
+
+      - name: Run isort import check
+        run: |
+          isort --check-only --diff matrix/ mesh/ services/ tests/ || true
+
+      - name: Run Flake8 linter
+        run: |
+          flake8 matrix/ mesh/ services/ \
+            --max-line-length=120 \
+            --exclude=__pycache__,venv,.venv \
+            --count \
+            --statistics || true
+
+      - name: Run Bandit security linter
+        run: |
+          bandit -r matrix/ mesh/ services/ \
+            -f json \
+            -o bandit-report.json || true
+          bandit -r matrix/ mesh/ services/ || true
+
+      - name: Run MyPy type checking
+        run: |
+          mypy matrix/ mesh/ --ignore-missing-imports --no-strict-optional || true
+
+      - name: Upload Bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-security-report
+          path: bandit-report.json
+          retention-days: 30
+
+  # ====================
+  # Final Status Check
+  # ====================
+  ci-status:
+    name: CI Status Summary
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, e2e-tests, docker-build, code-quality]
+    if: always()
+
+    steps:
+      - name: Check CI status
+        run: |
+          echo "## CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Pipeline completed for commit: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Job Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Unit Tests: ${{ needs.unit-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Integration Tests: ${{ needs.integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- E2E Tests: ${{ needs.e2e-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker Build: ${{ needs.docker-build.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Code Quality: ${{ needs.code-quality.result }}" >> $GITHUB_STEP_SUMMARY
+
+          # Fail if any critical job failed
+          if [ "${{ needs.unit-tests.result }}" != "success" ] || \
+             [ "${{ needs.integration-tests.result }}" != "success" ] || \
+             [ "${{ needs.e2e-tests.result }}" != "success" ] || \
+             [ "${{ needs.docker-build.result }}" != "success" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ **CI Pipeline Failed** - Please review the failed jobs above" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **All CI Checks Passed**" >> $GITHUB_STEP_SUMMARY

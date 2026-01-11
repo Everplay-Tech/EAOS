@@ -1,0 +1,21 @@
+{
+  "scopeName": "source.quenyan",
+  "patterns": [
+    {
+      "name": "support.type.quenyan",
+      "match": "\\bmeta:[a-z_]+\\b"
+    },
+    {
+      "name": "entity.name.type.quenyan",
+      "match": "\\bconstruct:[a-z_]+\\b"
+    },
+    {
+      "name": "keyword.control.quenyan",
+      "match": "\\b(flow|op|type|lit):[a-z_]+\\b"
+    },
+    {
+      "name": "string.quoted.double.quenyan",
+      "match": "\"[^\"]*\""
+    }
+  ]
+}

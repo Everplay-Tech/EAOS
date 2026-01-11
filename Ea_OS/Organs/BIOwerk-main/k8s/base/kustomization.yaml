@@ -1,0 +1,108 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: biowerk
+
+resources:
+  # Namespace
+  - ../namespace.yaml
+
+  # Database StatefulSets
+  - postgres-statefulset.yaml
+  - mongodb-statefulset.yaml
+  - redis-statefulset.yaml
+
+  # Infrastructure Services
+  - pgbouncer-deployment.yaml
+  - ollama-deployment.yaml
+
+  # Application Services
+  - mesh-deployment.yaml
+  - osteon-deployment.yaml
+  - myocyte-deployment.yaml
+  - synapse-deployment.yaml
+  - circadian-deployment.yaml
+  - nucleus-deployment.yaml
+  - chaperone-deployment.yaml
+  - gdpr-deployment.yaml
+
+  # PHI2 Coordinators
+  - larry-deployment.yaml
+  - moe-deployment.yaml
+  - harry-deployment.yaml
+
+  # Observability Stack
+  - observability-deployments.yaml
+  - monitoring-exporters.yaml
+
+  # Backup Service
+  - backup-orchestrator-deployment.yaml
+
+  # Configuration
+  - configmap.yaml
+  - secrets.yaml
+
+  # Autoscaling
+  - hpa.yaml
+
+  # Ingress
+  - ingress.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: biowerk
+  app.kubernetes.io/managed-by: kustomize
+
+# Global resource configurations
+configMapGenerator:
+  - name: build-metadata
+    literals:
+      - build.date=undefined
+      - build.version=undefined
+      - build.commit=undefined
+    options:
+      disableNameSuffixHash: true
+
+# Image transformation (can be overridden in overlays)
+images:
+  - name: ${REGISTRY}/biowerk-mesh
+    newName: ${REGISTRY}/biowerk-mesh
+    newTag: latest
+  - name: ${REGISTRY}/biowerk-osteon
+    newName: ${REGISTRY}/biowerk-osteon
+    newTag: latest
+  - name: ${REGISTRY}/biowerk-myocyte
+    newName: ${REGISTRY}/biowerk-myocyte
+    newTag: latest
+  - name: ${REGISTRY}/biowerk-synapse
+    newName: ${REGISTRY}/biowerk-synapse
+    newTag: latest
+  - name: ${REGISTRY}/biowerk-circadian
+    newName: ${REGISTRY}/biowerk-circadian
+    newTag: latest
+  - name: ${REGISTRY}/biowerk-nucleus
+    newName: ${REGISTRY}/biowerk-nucleus
+    newTag: latest
+  - name: ${REGISTRY}/biowerk-chaperone
+    newName: ${REGISTRY}/biowerk-chaperone
+    newTag: latest
+  - name: ${REGISTRY}/biowerk-gdpr
+    newName: ${REGISTRY}/biowerk-gdpr
+    newTag: latest
+  - name: ${REGISTRY}/biowerk-larry
+    newName: ${REGISTRY}/biowerk-larry
+    newTag: latest
+  - name: ${REGISTRY}/biowerk-moe
+    newName: ${REGISTRY}/biowerk-moe
+    newTag: latest
+  - name: ${REGISTRY}/biowerk-harry
+    newName: ${REGISTRY}/biowerk-harry
+    newTag: latest
+  - name: ${REGISTRY}/biowerk-pgbouncer
+    newName: ${REGISTRY}/biowerk-pgbouncer
+    newTag: latest
+  - name: ${REGISTRY}/biowerk-backup-orchestrator
+    newName: ${REGISTRY}/biowerk-backup-orchestrator
+    newTag: latest
+
+# Validation
+# Run: kubectl kustomize k8s/base | kubectl apply --dry-run=client -f -

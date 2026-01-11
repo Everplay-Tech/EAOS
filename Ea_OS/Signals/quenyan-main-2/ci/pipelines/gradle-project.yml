@@ -1,0 +1,27 @@
+name: Quenyan Gradle Project
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-graph:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: 'gradle'
+      - name: Gradle assemble
+        run: ./gradlew --no-daemon assemble
+      - name: Generate dependency graph
+        run: mcs-reference project dependency-graph --project-root . --json > quenyan-dependency-graph.json
+      - name: Upload graph
+        uses: actions/upload-artifact@v4
+        with:
+          name: quenyan-dependency-graph
+          path: quenyan-dependency-graph.json

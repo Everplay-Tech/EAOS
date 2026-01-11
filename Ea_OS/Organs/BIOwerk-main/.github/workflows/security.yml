@@ -1,0 +1,240 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: ["main", "develop", "claude/**"]
+  pull_request:
+    branches: ["main", "develop"]
+  schedule:
+    # Run security scan daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # Allow manual triggers
+
+jobs:
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety pip-audit
+
+      - name: Run Safety vulnerability scan
+        continue-on-error: true
+        run: |
+          echo "Running Safety vulnerability scan..."
+          safety check --file requirements.txt --json --output safety-report.json || true
+          safety check --file requirements.txt || true
+
+      - name: Run pip-audit scan
+        continue-on-error: true
+        run: |
+          echo "Running pip-audit vulnerability scan..."
+          pip-audit --requirement requirements.txt --format json --output pip-audit-report.json || true
+          pip-audit --requirement requirements.txt || true
+
+      - name: Upload Safety report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: safety-report
+          path: safety-report.json
+          retention-days: 30
+
+      - name: Upload pip-audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-report
+          path: pip-audit-report.json
+          retention-days: 30
+
+  docker-scan:
+    name: Docker Image Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    strategy:
+      matrix:
+        service: [mesh, osteon, myocyte, synapse, circadian, nucleus, chaperone]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          if [ "${{ matrix.service }}" = "mesh" ]; then
+            docker build -t biowerk-${{ matrix.service }}:test -f mesh/Dockerfile .
+          else
+            docker build -t biowerk-${{ matrix.service }}:test -f services/${{ matrix.service }}/Dockerfile .
+          fi
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: biowerk-${{ matrix.service }}:test
+          format: 'sarif'
+          output: 'trivy-results-${{ matrix.service }}.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results-${{ matrix.service }}.sarif'
+          category: 'trivy-${{ matrix.service }}'
+
+      - name: Run Trivy (Table format for summary)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: biowerk-${{ matrix.service }}:test
+          format: 'table'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+
+  secrets-scan:
+    name: Secrets Scanning
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for secret scanning
+
+      - name: Check for hardcoded secrets (custom validation)
+        run: |
+          echo "Running BIOwerk custom secrets validation..."
+          chmod +x scripts/check_secrets.sh
+          ./scripts/check_secrets.sh
+
+      - name: Verify no default passwords in docker-compose.yml
+        run: |
+          echo "Checking docker-compose.yml for default passwords..."
+          if grep -E "biowerk_dev_password|dev-secret-key|changeme|admin:admin" docker-compose.yml; then
+            echo "❌ ERROR: Found hardcoded default passwords in docker-compose.yml"
+            exit 1
+          fi
+          echo "✅ No default passwords found"
+
+      - name: Verify .env.example exists and is clean
+        run: |
+          echo "Checking .env.example..."
+          if [ ! -f ".env.example" ]; then
+            echo "❌ ERROR: .env.example not found"
+            exit 1
+          fi
+          if grep -E "biowerk_dev_password|changeme" .env.example; then
+            echo "❌ ERROR: .env.example contains real secrets"
+            exit 1
+          fi
+          echo "✅ .env.example is properly configured"
+
+      - name: Run TruffleHog secrets scanner
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+
+  code-quality:
+    name: Code Quality & Security Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit flake8 pylint
+
+      - name: Run Bandit security linter
+        continue-on-error: true
+        run: |
+          echo "Running Bandit security analysis..."
+          bandit -r matrix/ mesh/ services/ -f json -o bandit-report.json || true
+          bandit -r matrix/ mesh/ services/ || true
+
+      - name: Upload Bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.json
+          retention-days: 30
+
+      - name: Run Flake8 linter
+        continue-on-error: true
+        run: |
+          echo "Running Flake8 code quality analysis..."
+          flake8 matrix/ mesh/ services/ --max-line-length=120 --exclude=__pycache__,venv,.venv || true
+
+  security-summary:
+    name: Security Scan Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-scan, docker-scan, secrets-scan, code-quality]
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate security summary
+        run: |
+          echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Security scans completed for commit ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Dependency Scan: ${{ needs.dependency-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Docker Image Scan: ${{ needs.docker-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Secrets Scan (incl. hardcoded password check): ${{ needs.secrets-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Code Quality: ${{ needs.code-quality.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Additional Security Testing" >> $GITHUB_STEP_SUMMARY
+          echo "🔒 **OWASP ZAP Security Testing**: Available via separate workflow" >> $GITHUB_STEP_SUMMARY
+          echo "   - Baseline scans run on every push" >> $GITHUB_STEP_SUMMARY
+          echo "   - Full scans run weekly (Sundays at 3 AM UTC)" >> $GITHUB_STEP_SUMMARY
+          echo "   - API scans available via manual workflow dispatch" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Recommendations" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review all security findings in the Actions artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "2. Update vulnerable dependencies to patched versions" >> $GITHUB_STEP_SUMMARY
+          echo "3. Address any HIGH or CRITICAL vulnerabilities immediately" >> $GITHUB_STEP_SUMMARY
+          echo "4. Check OWASP ZAP workflow for web application security findings" >> $GITHUB_STEP_SUMMARY
+          echo "5. Run local security scans with: \`python scripts/security_scan.py --full\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "For more information, see the [Security Documentation](docs/SECURITY.md)" >> $GITHUB_STEP_SUMMARY

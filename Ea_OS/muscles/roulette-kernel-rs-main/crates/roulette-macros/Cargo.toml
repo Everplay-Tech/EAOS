@@ -1,0 +1,15 @@
+[package]
+name = "roulette-macros"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "Proprietary"
+authors = ["Everplay-Tech"]
+description = "Procedural macros for Roulette kernel invariants"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2.0", features = ["full"] }
+quote = "1.0"

@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: moe
+  namespace: biowerk
+  labels:
+    app: moe
+    tier: phi2-coordinator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: moe
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: moe
+        tier: phi2-coordinator
+    spec:
+      containers:
+      - name: moe
+        image: ${REGISTRY}/biowerk-moe:latest
+        ports:
+        - containerPort: 8008
+          name: http
+        env:
+        - name: POSTGRES_HOST
+          value: pgbouncer.biowerk.svc.cluster.local
+        - name: POSTGRES_PORT
+          value: "6432"
+        - name: LLM_PROVIDER
+          value: local
+        - name: LOCAL_MODEL_PATH
+          value: ./models
+        - name: LOCAL_MODEL_NAME
+          value: phi2
+        resources:
+          requests:
+            cpu: 500m
+            memory: 2Gi
+          limits:
+            cpu: 2000m
+            memory: 8Gi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8008
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8008
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8008
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: moe
+  namespace: biowerk
+  labels:
+    app: moe
+    tier: phi2-coordinator
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8008
+    targetPort: 8008
+    protocol: TCP
+    name: http
+  selector:
+    app: moe

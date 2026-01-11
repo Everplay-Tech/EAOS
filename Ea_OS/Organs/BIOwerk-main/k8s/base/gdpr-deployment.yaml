@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gdpr
+  namespace: biowerk
+  labels:
+    app: gdpr
+    tier: application
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gdpr
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: gdpr
+        tier: application
+    spec:
+      containers:
+      - name: gdpr
+        image: ${REGISTRY}/biowerk-gdpr:latest
+        ports:
+        - containerPort: 8010
+          name: http
+        env:
+        - name: POSTGRES_HOST
+          value: pgbouncer.biowerk.svc.cluster.local
+        - name: POSTGRES_PORT
+          value: "6432"
+        - name: MONGO_HOST
+          value: mongodb.biowerk.svc.cluster.local
+        - name: REDIS_HOST
+          value: redis.biowerk.svc.cluster.local
+        - name: ENCRYPTION_MASTER_KEY
+          valueFrom:
+            secretKeyRef:
+              name: gdpr-secrets
+              key: encryption_master_key
+        - name: ENCRYPTION_KEY_ROTATION_DAYS
+          value: "90"
+        - name: GDPR_EXPORT_BASE_PATH
+          value: /var/gdpr_exports
+        - name: GDPR_SLA_DAYS
+          value: "30"
+        - name: GDPR_EXPORT_EXPIRY_DAYS
+          value: "30"
+        - name: GDPR_AUTO_RETENTION_ENABLED
+          value: "true"
+        - name: AUDIT_ENABLED
+          value: "true"
+        - name: AUDIT_ENCRYPT_SENSITIVE
+          value: "true"
+        - name: AUDIT_RETENTION_DAYS
+          value: "365"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        volumeMounts:
+        - name: gdpr-exports
+          mountPath: /var/gdpr_exports
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8010
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8010
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8010
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+      volumes:
+      - name: gdpr-exports
+        persistentVolumeClaim:
+          claimName: gdpr-exports-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gdpr-exports-pvc
+  namespace: biowerk
+  labels:
+    app: gdpr
+spec:
+  accessModes:
+  - ReadWriteMany  # Multiple pods may need to access exports
+  resources:
+    requests:
+      storage: 100Gi
+  # storageClassName: standard  # Uncomment and configure for production
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gdpr
+  namespace: biowerk
+  labels:
+    app: gdpr
+    tier: application
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8010
+    targetPort: 8010
+    protocol: TCP
+    name: http
+  selector:
+    app: gdpr

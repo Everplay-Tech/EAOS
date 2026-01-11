@@ -1,0 +1,87 @@
+# Production storage class configuration for high performance
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+spec:
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      storageClassName: fast-ssd  # Use high-performance SSD storage
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 200Gi  # Larger storage for production
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+spec:
+  volumeClaimTemplates:
+  - metadata:
+      name: mongodb-data
+    spec:
+      storageClassName: fast-ssd
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 200Gi
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+spec:
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      storageClassName: fast-ssd
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 50Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-pvc
+spec:
+  storageClassName: fast-ssd
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Gi  # Large storage for models
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+spec:
+  storageClassName: fast-ssd
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Gi  # Large storage for metrics retention
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backup-data-pvc
+spec:
+  storageClassName: standard  # Can use standard storage for backups
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Ti  # Very large storage for backups

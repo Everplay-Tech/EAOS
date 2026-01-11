@@ -1,0 +1,31 @@
+[workspace]
+members = [
+    "crates/roulette-core",
+    "crates/roulette-vm",
+    "crates/roulette-fs",
+    "crates/roulette-macros",
+    "kernel",
+    "bootloader",
+]
+resolver = "2"
+
+# Explicit empty dependencies — no accidental pulls
+[workspace.dependencies]
+
+# Add workspace package defaults
+[workspace.package]
+license = "Proprietary"
+
+# Production kernel profiles — non-negotiable
+[profile.dev]
+panic = "abort"
+opt-level = 1
+debug = true
+
+[profile.release]
+panic = "abort"
+opt-level = 3
+lto = true
+codegen-units = 1
+debug = false
+strip = true

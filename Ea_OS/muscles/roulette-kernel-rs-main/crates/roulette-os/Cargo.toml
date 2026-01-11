@@ -1,0 +1,11 @@
+[package]
+name = "roulette-os"
+version = "0.1.0"
+edition = "2021"
+authors = ["E-TECH-PLAYTECH"]
+description = "Production-grade OS core for the roulette kernel."
+
+[dependencies]
+roulette-core = { path = "../roulette-core" }
+roulette-fs = { path = "../roulette-fs" }
+roulette-vm = { path = "../roulette-vm" }

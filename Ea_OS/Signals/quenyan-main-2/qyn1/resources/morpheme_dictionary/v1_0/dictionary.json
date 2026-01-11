@@ -1,0 +1,4078 @@
+{
+  "version": "1.0",
+  "entries": [
+    {
+      "key": "construct:function",
+      "morpheme": "kar",
+      "quenya_root": "kar-",
+      "gloss": "to make or do",
+      "linguistic_justification": "The Quenya root 'kar-' conveys 'to make or do' which aligns with construct function semantics across target languages.",
+      "ast_nodes": [
+        "FunctionDeclaration",
+        "FunctionDef",
+        "FuncDecl"
+      ],
+      "frequency_per_10k_loc": 2400,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000000000"
+      }
+    },
+    {
+      "key": "construct:async_function",
+      "morpheme": "karilya",
+      "quenya_root": "karilya-",
+      "gloss": "to do with swiftness",
+      "linguistic_justification": "The Quenya root 'karilya-' conveys 'to do with swiftness' which aligns with construct async_function semantics across target languages.",
+      "ast_nodes": [
+        "AsyncFunctionDeclaration",
+        "AsyncFunctionDef"
+      ],
+      "frequency_per_10k_loc": 2393,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000000001"
+      }
+    },
+    {
+      "key": "construct:lambda",
+      "morpheme": "karmin",
+      "quenya_root": "karmin-",
+      "gloss": "to fashion briefly",
+      "linguistic_justification": "The Quenya root 'karmin-' conveys 'to fashion briefly' which aligns with construct lambda semantics across target languages.",
+      "ast_nodes": [
+        "LambdaExpression",
+        "Lambda"
+      ],
+      "frequency_per_10k_loc": 2386,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000000010"
+      }
+    },
+    {
+      "key": "construct:method",
+      "morpheme": "karno",
+      "quenya_root": "karno-",
+      "gloss": "an act performed within",
+      "linguistic_justification": "The Quenya root 'karno-' conveys 'an act performed within' which aligns with construct method semantics across target languages.",
+      "ast_nodes": [
+        "MethodDeclaration",
+        "FunctionMember"
+      ],
+      "frequency_per_10k_loc": 2379,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000000011"
+      }
+    },
+    {
+      "key": "construct:class",
+      "morpheme": "noss",
+      "quenya_root": "noss-",
+      "gloss": "kindred or clan",
+      "linguistic_justification": "The Quenya root 'noss-' conveys 'kindred or clan' which aligns with construct class semantics across target languages.",
+      "ast_nodes": [
+        "ClassDeclaration",
+        "StructDeclaration"
+      ],
+      "frequency_per_10k_loc": 2372,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000000100"
+      }
+    },
+    {
+      "key": "construct:interface",
+      "morpheme": "nossiel",
+      "quenya_root": "nossiël-",
+      "gloss": "kindred-path",
+      "linguistic_justification": "The Quenya root 'nossiël-' conveys 'kindred-path' which aligns with construct interface semantics across target languages.",
+      "ast_nodes": [
+        "InterfaceDeclaration",
+        "ProtocolDeclaration"
+      ],
+      "frequency_per_10k_loc": 2365,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000000101"
+      }
+    },
+    {
+      "key": "construct:struct",
+      "morpheme": "nort",
+      "quenya_root": "norto-",
+      "gloss": "thing made firm",
+      "linguistic_justification": "The Quenya root 'norto-' conveys 'thing made firm' which aligns with construct struct semantics across target languages.",
+      "ast_nodes": [
+        "StructDeclaration",
+        "RecordStruct"
+      ],
+      "frequency_per_10k_loc": 2358,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000000110"
+      }
+    },
+    {
+      "key": "construct:enum",
+      "morpheme": "host",
+      "quenya_root": "hosta-",
+      "gloss": "assembled group",
+      "linguistic_justification": "The Quenya root 'hosta-' conveys 'assembled group' which aligns with construct enum semantics across target languages.",
+      "ast_nodes": [
+        "EnumDeclaration"
+      ],
+      "frequency_per_10k_loc": 2351,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000000111"
+      }
+    },
+    {
+      "key": "construct:module",
+      "morpheme": "parma",
+      "quenya_root": "parma-",
+      "gloss": "book or collection",
+      "linguistic_justification": "The Quenya root 'parma-' conveys 'book or collection' which aligns with construct module semantics across target languages.",
+      "ast_nodes": [
+        "Module",
+        "Namespace"
+      ],
+      "frequency_per_10k_loc": 2344,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000001000"
+      }
+    },
+    {
+      "key": "construct:import",
+      "morpheme": "tulpar",
+      "quenya_root": "tul-",
+      "gloss": "come to gather",
+      "linguistic_justification": "The Quenya root 'tul-' conveys 'come to gather' which aligns with construct import semantics across target languages.",
+      "ast_nodes": [
+        "ImportStatement",
+        "UseDeclaration",
+        "IncludeDirective"
+      ],
+      "frequency_per_10k_loc": 2337,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000001001"
+      }
+    },
+    {
+      "key": "construct:export",
+      "morpheme": "auta",
+      "quenya_root": "auta-",
+      "gloss": "to go away",
+      "linguistic_justification": "The Quenya root 'auta-' conveys 'to go away' which aligns with construct export semantics across target languages.",
+      "ast_nodes": [
+        "ExportStatement"
+      ],
+      "frequency_per_10k_loc": 2330,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000001010"
+      }
+    },
+    {
+      "key": "construct:block",
+      "morpheme": "sand",
+      "quenya_root": "sand-",
+      "gloss": "shielded place",
+      "linguistic_justification": "The Quenya root 'sand-' conveys 'shielded place' which aligns with construct block semantics across target languages.",
+      "ast_nodes": [
+        "BlockStatement",
+        "Suite"
+      ],
+      "frequency_per_10k_loc": 2323,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000001011"
+      }
+    },
+    {
+      "key": "construct:if",
+      "morpheme": "ce",
+      "quenya_root": "ce-",
+      "gloss": "if, maybe",
+      "linguistic_justification": "The Quenya root 'ce-' conveys 'if, maybe' which aligns with construct if semantics across target languages.",
+      "ast_nodes": [
+        "IfStatement",
+        "ConditionalExpression"
+      ],
+      "frequency_per_10k_loc": 2316,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000001100"
+      }
+    },
+    {
+      "key": "construct:elif",
+      "morpheme": "cepen",
+      "quenya_root": "cepen-",
+      "gloss": "if again",
+      "linguistic_justification": "The Quenya root 'cepen-' conveys 'if again' which aligns with construct elif semantics across target languages.",
+      "ast_nodes": [
+        "ElifClause"
+      ],
+      "frequency_per_10k_loc": 2309,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000001101"
+      }
+    },
+    {
+      "key": "construct:else",
+      "morpheme": "epesse",
+      "quenya_root": "epessë-",
+      "gloss": "otherwise",
+      "linguistic_justification": "The Quenya root 'epessë-' conveys 'otherwise' which aligns with construct else semantics across target languages.",
+      "ast_nodes": [
+        "ElseClause"
+      ],
+      "frequency_per_10k_loc": 2302,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000001110"
+      }
+    },
+    {
+      "key": "construct:while",
+      "morpheme": "yor",
+      "quenya_root": "yor-",
+      "gloss": "to do repeatedly",
+      "linguistic_justification": "The Quenya root 'yor-' conveys 'to do repeatedly' which aligns with construct while semantics across target languages.",
+      "ast_nodes": [
+        "WhileStatement"
+      ],
+      "frequency_per_10k_loc": 2295,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000001111"
+      }
+    },
+    {
+      "key": "construct:for",
+      "morpheme": "lenda",
+      "quenya_root": "lend-",
+      "gloss": "go, travel",
+      "linguistic_justification": "The Quenya root 'lend-' conveys 'go, travel' which aligns with construct for semantics across target languages.",
+      "ast_nodes": [
+        "ForStatement",
+        "ForInStatement",
+        "RangeStatement"
+      ],
+      "frequency_per_10k_loc": 2288,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000010000"
+      }
+    },
+    {
+      "key": "construct:foreach",
+      "morpheme": "lendor",
+      "quenya_root": "lend-",
+      "gloss": "go among",
+      "linguistic_justification": "The Quenya root 'lend-' conveys 'go among' which aligns with construct foreach semantics across target languages.",
+      "ast_nodes": [
+        "ForeachStatement",
+        "ForEachStatement"
+      ],
+      "frequency_per_10k_loc": 2281,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000010001"
+      }
+    },
+    {
+      "key": "construct:loop_generic",
+      "morpheme": "yorna",
+      "quenya_root": "yorna-",
+      "gloss": "to repeat",
+      "linguistic_justification": "The Quenya root 'yorna-' conveys 'to repeat' which aligns with construct loop_generic semantics across target languages.",
+      "ast_nodes": [
+        "LoopStatement",
+        "Loop"
+      ],
+      "frequency_per_10k_loc": 2274,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000010010"
+      }
+    },
+    {
+      "key": "construct:do_while",
+      "morpheme": "yornal",
+      "quenya_root": "yor-",
+      "gloss": "repeat until",
+      "linguistic_justification": "The Quenya root 'yor-' conveys 'repeat until' which aligns with construct do_while semantics across target languages.",
+      "ast_nodes": [
+        "DoWhileStatement"
+      ],
+      "frequency_per_10k_loc": 2267,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000010011"
+      }
+    },
+    {
+      "key": "construct:switch",
+      "morpheme": "tenya",
+      "quenya_root": "tenya-",
+      "gloss": "to denote",
+      "linguistic_justification": "The Quenya root 'tenya-' conveys 'to denote' which aligns with construct switch semantics across target languages.",
+      "ast_nodes": [
+        "SwitchStatement",
+        "MatchStatement"
+      ],
+      "frequency_per_10k_loc": 2260,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000010100"
+      }
+    },
+    {
+      "key": "construct:case",
+      "morpheme": "tenar",
+      "quenya_root": "tenar-",
+      "gloss": "marked choice",
+      "linguistic_justification": "The Quenya root 'tenar-' conveys 'marked choice' which aligns with construct case semantics across target languages.",
+      "ast_nodes": [
+        "CaseClause",
+        "MatchCase"
+      ],
+      "frequency_per_10k_loc": 2253,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000010101"
+      }
+    },
+    {
+      "key": "construct:default",
+      "morpheme": "tenarwa",
+      "quenya_root": "tenarwa-",
+      "gloss": "the marked remainder",
+      "linguistic_justification": "The Quenya root 'tenarwa-' conveys 'the marked remainder' which aligns with construct default semantics across target languages.",
+      "ast_nodes": [
+        "DefaultClause"
+      ],
+      "frequency_per_10k_loc": 2246,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000010110"
+      }
+    },
+    {
+      "key": "construct:try",
+      "morpheme": "valya",
+      "quenya_root": "valya-",
+      "gloss": "to dare",
+      "linguistic_justification": "The Quenya root 'valya-' conveys 'to dare' which aligns with construct try semantics across target languages.",
+      "ast_nodes": [
+        "TryStatement"
+      ],
+      "frequency_per_10k_loc": 2239,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000010111"
+      }
+    },
+    {
+      "key": "construct:catch",
+      "morpheme": "mapa",
+      "quenya_root": "mapa-",
+      "gloss": "to seize",
+      "linguistic_justification": "The Quenya root 'mapa-' conveys 'to seize' which aligns with construct catch semantics across target languages.",
+      "ast_nodes": [
+        "CatchClause",
+        "ExceptHandler"
+      ],
+      "frequency_per_10k_loc": 2232,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000011000"
+      }
+    },
+    {
+      "key": "construct:finally",
+      "morpheme": "metta",
+      "quenya_root": "metta-",
+      "gloss": "end or finish",
+      "linguistic_justification": "The Quenya root 'metta-' conveys 'end or finish' which aligns with construct finally semantics across target languages.",
+      "ast_nodes": [
+        "FinallyClause"
+      ],
+      "frequency_per_10k_loc": 2225,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000011001"
+      }
+    },
+    {
+      "key": "construct:throw",
+      "morpheme": "hat",
+      "quenya_root": "hat-",
+      "gloss": "to hurl",
+      "linguistic_justification": "The Quenya root 'hat-' conveys 'to hurl' which aligns with construct throw semantics across target languages.",
+      "ast_nodes": [
+        "ThrowStatement",
+        "RaiseStatement"
+      ],
+      "frequency_per_10k_loc": 2218,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000011010"
+      }
+    },
+    {
+      "key": "construct:yield",
+      "morpheme": "anta",
+      "quenya_root": "anta-",
+      "gloss": "to give",
+      "linguistic_justification": "The Quenya root 'anta-' conveys 'to give' which aligns with construct yield semantics across target languages.",
+      "ast_nodes": [
+        "YieldExpression",
+        "YieldFrom"
+      ],
+      "frequency_per_10k_loc": 2211,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000011011"
+      }
+    },
+    {
+      "key": "construct:return",
+      "morpheme": "ent",
+      "quenya_root": "ent-",
+      "gloss": "to give back",
+      "linguistic_justification": "The Quenya root 'ent-' conveys 'to give back' which aligns with construct return semantics across target languages.",
+      "ast_nodes": [
+        "ReturnStatement"
+      ],
+      "frequency_per_10k_loc": 2204,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000011100"
+      }
+    },
+    {
+      "key": "construct:break",
+      "morpheme": "rup",
+      "quenya_root": "rúpa-",
+      "gloss": "to break",
+      "linguistic_justification": "The Quenya root 'rúpa-' conveys 'to break' which aligns with construct break semantics across target languages.",
+      "ast_nodes": [
+        "BreakStatement"
+      ],
+      "frequency_per_10k_loc": 2197,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000011101"
+      }
+    },
+    {
+      "key": "construct:continue",
+      "morpheme": "vesta",
+      "quenya_root": "vesta-",
+      "gloss": "to endure",
+      "linguistic_justification": "The Quenya root 'vesta-' conveys 'to endure' which aligns with construct continue semantics across target languages.",
+      "ast_nodes": [
+        "ContinueStatement"
+      ],
+      "frequency_per_10k_loc": 2190,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000011110"
+      }
+    },
+    {
+      "key": "construct:pass",
+      "morpheme": "sesta",
+      "quenya_root": "sesta-",
+      "gloss": "to let go",
+      "linguistic_justification": "The Quenya root 'sesta-' conveys 'to let go' which aligns with construct pass semantics across target languages.",
+      "ast_nodes": [
+        "PassStatement"
+      ],
+      "frequency_per_10k_loc": 2183,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000011111"
+      }
+    },
+    {
+      "key": "construct:annotation",
+      "morpheme": "tenca",
+      "quenya_root": "tenca-",
+      "gloss": "to write, sign",
+      "linguistic_justification": "The Quenya root 'tenca-' conveys 'to write, sign' which aligns with construct annotation semantics across target languages.",
+      "ast_nodes": [
+        "Annotation",
+        "Decorator"
+      ],
+      "frequency_per_10k_loc": 2176,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000100000"
+      }
+    },
+    {
+      "key": "construct:comment",
+      "morpheme": "quetta",
+      "quenya_root": "quetta-",
+      "gloss": "word or saying",
+      "linguistic_justification": "The Quenya root 'quetta-' conveys 'word or saying' which aligns with construct comment semantics across target languages.",
+      "ast_nodes": [
+        "Comment"
+      ],
+      "frequency_per_10k_loc": 2169,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000100001"
+      }
+    },
+    {
+      "key": "construct:directive",
+      "morpheme": "narma",
+      "quenya_root": "narma-",
+      "gloss": "instruction",
+      "linguistic_justification": "The Quenya root 'narma-' conveys 'instruction' which aligns with construct directive semantics across target languages.",
+      "ast_nodes": [
+        "PragmaDirective",
+        "CompilerDirective"
+      ],
+      "frequency_per_10k_loc": 2162,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000100010"
+      }
+    },
+    {
+      "key": "type:int",
+      "morpheme": "nelya",
+      "quenya_root": "nelya-",
+      "gloss": "third, counting number",
+      "linguistic_justification": "The Quenya root 'nelya-' conveys 'third, counting number' which aligns with type int semantics across target languages.",
+      "ast_nodes": [
+        "IntType",
+        "i32",
+        "int"
+      ],
+      "frequency_per_10k_loc": 2155,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000100011"
+      }
+    },
+    {
+      "key": "type:float",
+      "morpheme": "linga",
+      "quenya_root": "linga-",
+      "gloss": "to float or hang",
+      "linguistic_justification": "The Quenya root 'linga-' conveys 'to float or hang' which aligns with type float semantics across target languages.",
+      "ast_nodes": [
+        "FloatType",
+        "f64",
+        "double"
+      ],
+      "frequency_per_10k_loc": 2148,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000100100"
+      }
+    },
+    {
+      "key": "type:string",
+      "morpheme": "lambre",
+      "quenya_root": "lambë-",
+      "gloss": "tongue, language",
+      "linguistic_justification": "The Quenya root 'lambë-' conveys 'tongue, language' which aligns with type string semantics across target languages.",
+      "ast_nodes": [
+        "StringType",
+        "str"
+      ],
+      "frequency_per_10k_loc": 2141,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000100101"
+      }
+    },
+    {
+      "key": "type:bool",
+      "morpheme": "nanwa",
+      "quenya_root": "nanwa-",
+      "gloss": "true/affirmed",
+      "linguistic_justification": "The Quenya root 'nanwa-' conveys 'true/affirmed' which aligns with type bool semantics across target languages.",
+      "ast_nodes": [
+        "BoolType"
+      ],
+      "frequency_per_10k_loc": 2134,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000100110"
+      }
+    },
+    {
+      "key": "type:char",
+      "morpheme": "telpe",
+      "quenya_root": "tyelpë-",
+      "gloss": "symbol",
+      "linguistic_justification": "The Quenya root 'tyelpë-' conveys 'symbol' which aligns with type char semantics across target languages.",
+      "ast_nodes": [
+        "CharType"
+      ],
+      "frequency_per_10k_loc": 2127,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000100111"
+      }
+    },
+    {
+      "key": "type:array",
+      "morpheme": "hostar",
+      "quenya_root": "hosta-",
+      "gloss": "collection",
+      "linguistic_justification": "The Quenya root 'hosta-' conveys 'collection' which aligns with type array semantics across target languages.",
+      "ast_nodes": [
+        "ArrayType",
+        "SliceType",
+        "ListType"
+      ],
+      "frequency_per_10k_loc": 2120,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000101000"
+      }
+    },
+    {
+      "key": "type:tuple",
+      "morpheme": "veri",
+      "quenya_root": "verya-",
+      "gloss": "to join",
+      "linguistic_justification": "The Quenya root 'verya-' conveys 'to join' which aligns with type tuple semantics across target languages.",
+      "ast_nodes": [
+        "TupleType"
+      ],
+      "frequency_per_10k_loc": 2113,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000101001"
+      }
+    },
+    {
+      "key": "type:object",
+      "morpheme": "sana",
+      "quenya_root": "sana-",
+      "gloss": "thing",
+      "linguistic_justification": "The Quenya root 'sana-' conveys 'thing' which aligns with type object semantics across target languages.",
+      "ast_nodes": [
+        "ObjectType",
+        "ClassType"
+      ],
+      "frequency_per_10k_loc": 2106,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000101010"
+      }
+    },
+    {
+      "key": "type:map",
+      "morpheme": "nore",
+      "quenya_root": "nórë-",
+      "gloss": "land, domain",
+      "linguistic_justification": "The Quenya root 'nórë-' conveys 'land, domain' which aligns with type map semantics across target languages.",
+      "ast_nodes": [
+        "MapType",
+        "DictionaryType"
+      ],
+      "frequency_per_10k_loc": 2099,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000101011"
+      }
+    },
+    {
+      "key": "type:set",
+      "morpheme": "osta",
+      "quenya_root": "osta-",
+      "gloss": "assembly",
+      "linguistic_justification": "The Quenya root 'osta-' conveys 'assembly' which aligns with type set semantics across target languages.",
+      "ast_nodes": [
+        "SetType"
+      ],
+      "frequency_per_10k_loc": 2092,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000101100"
+      }
+    },
+    {
+      "key": "type:option",
+      "morpheme": "mara",
+      "quenya_root": "mára-",
+      "gloss": "good/possible",
+      "linguistic_justification": "The Quenya root 'mára-' conveys 'good/possible' which aligns with type option semantics across target languages.",
+      "ast_nodes": [
+        "OptionalType",
+        "OptionType"
+      ],
+      "frequency_per_10k_loc": 2085,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000101101"
+      }
+    },
+    {
+      "key": "type:result",
+      "morpheme": "turma",
+      "quenya_root": "turma-",
+      "gloss": "victory result",
+      "linguistic_justification": "The Quenya root 'turma-' conveys 'victory result' which aligns with type result semantics across target languages.",
+      "ast_nodes": [
+        "ResultType"
+      ],
+      "frequency_per_10k_loc": 2078,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000101110"
+      }
+    },
+    {
+      "key": "type:void",
+      "morpheme": "lusta",
+      "quenya_root": "lussa-",
+      "gloss": "empty",
+      "linguistic_justification": "The Quenya root 'lussa-' conveys 'empty' which aligns with type void semantics across target languages.",
+      "ast_nodes": [
+        "VoidType",
+        "NoneType",
+        "UnitType"
+      ],
+      "frequency_per_10k_loc": 2071,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000101111"
+      }
+    },
+    {
+      "key": "type:any",
+      "morpheme": "ilya",
+      "quenya_root": "ilya-",
+      "gloss": "all",
+      "linguistic_justification": "The Quenya root 'ilya-' conveys 'all' which aligns with type any semantics across target languages.",
+      "ast_nodes": [
+        "AnyType"
+      ],
+      "frequency_per_10k_loc": 2064,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000110000"
+      }
+    },
+    {
+      "key": "type:never",
+      "morpheme": "umbar",
+      "quenya_root": "umbar-",
+      "gloss": "doom, never occurs",
+      "linguistic_justification": "The Quenya root 'umbar-' conveys 'doom, never occurs' which aligns with type never semantics across target languages.",
+      "ast_nodes": [
+        "NeverType"
+      ],
+      "frequency_per_10k_loc": 2057,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000110001"
+      }
+    },
+    {
+      "key": "type:byte",
+      "morpheme": "peke",
+      "quenya_root": "pecë-",
+      "gloss": "small piece",
+      "linguistic_justification": "The Quenya root 'pecë-' conveys 'small piece' which aligns with type byte semantics across target languages.",
+      "ast_nodes": [
+        "ByteType"
+      ],
+      "frequency_per_10k_loc": 2050,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000110010"
+      }
+    },
+    {
+      "key": "type:short",
+      "morpheme": "titta",
+      "quenya_root": "titta-",
+      "gloss": "small",
+      "linguistic_justification": "The Quenya root 'titta-' conveys 'small' which aligns with type short semantics across target languages.",
+      "ast_nodes": [
+        "ShortType",
+        "i16"
+      ],
+      "frequency_per_10k_loc": 2043,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000110011"
+      }
+    },
+    {
+      "key": "type:long",
+      "morpheme": "anda",
+      "quenya_root": "anda-",
+      "gloss": "long",
+      "linguistic_justification": "The Quenya root 'anda-' conveys 'long' which aligns with type long semantics across target languages.",
+      "ast_nodes": [
+        "LongType",
+        "i64",
+        "long"
+      ],
+      "frequency_per_10k_loc": 2036,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000110100"
+      }
+    },
+    {
+      "key": "type:decimal",
+      "morpheme": "mindor",
+      "quenya_root": "mindor-",
+      "gloss": "numerical detail",
+      "linguistic_justification": "The Quenya root 'mindor-' conveys 'numerical detail' which aligns with type decimal semantics across target languages.",
+      "ast_nodes": [
+        "DecimalType"
+      ],
+      "frequency_per_10k_loc": 2029,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000110101"
+      }
+    },
+    {
+      "key": "type:bigint",
+      "morpheme": "alta",
+      "quenya_root": "alta-",
+      "gloss": "great",
+      "linguistic_justification": "The Quenya root 'alta-' conveys 'great' which aligns with type bigint semantics across target languages.",
+      "ast_nodes": [
+        "BigIntType",
+        "BigInteger"
+      ],
+      "frequency_per_10k_loc": 2022,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000110110"
+      }
+    },
+    {
+      "key": "type:promise",
+      "morpheme": "estel",
+      "quenya_root": "estel-",
+      "gloss": "hope/trust",
+      "linguistic_justification": "The Quenya root 'estel-' conveys 'hope/trust' which aligns with type promise semantics across target languages.",
+      "ast_nodes": [
+        "PromiseType",
+        "FutureType"
+      ],
+      "frequency_per_10k_loc": 2015,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000110111"
+      }
+    },
+    {
+      "key": "type:iterator",
+      "morpheme": "rehta",
+      "quenya_root": "rehta-",
+      "gloss": "to trail",
+      "linguistic_justification": "The Quenya root 'rehta-' conveys 'to trail' which aligns with type iterator semantics across target languages.",
+      "ast_nodes": [
+        "IteratorType",
+        "GeneratorType"
+      ],
+      "frequency_per_10k_loc": 2008,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000111000"
+      }
+    },
+    {
+      "key": "type:channel",
+      "morpheme": "sirya",
+      "quenya_root": "sirya-",
+      "gloss": "flowing river",
+      "linguistic_justification": "The Quenya root 'sirya-' conveys 'flowing river' which aligns with type channel semantics across target languages.",
+      "ast_nodes": [
+        "ChannelType",
+        "StreamType"
+      ],
+      "frequency_per_10k_loc": 2001,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000111001"
+      }
+    },
+    {
+      "key": "type:pointer",
+      "morpheme": "tiel",
+      "quenya_root": "tië-",
+      "gloss": "path",
+      "linguistic_justification": "The Quenya root 'tië-' conveys 'path' which aligns with type pointer semantics across target languages.",
+      "ast_nodes": [
+        "PointerType",
+        "ReferenceType"
+      ],
+      "frequency_per_10k_loc": 1994,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000111010"
+      }
+    },
+    {
+      "key": "type:reference",
+      "morpheme": "tieme",
+      "quenya_root": "tië-",
+      "gloss": "path connection",
+      "linguistic_justification": "The Quenya root 'tië-' conveys 'path connection' which aligns with type reference semantics across target languages.",
+      "ast_nodes": [
+        "ReferenceType",
+        "BorrowType"
+      ],
+      "frequency_per_10k_loc": 1987,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000111011"
+      }
+    },
+    {
+      "key": "type:fnptr",
+      "morpheme": "karta",
+      "quenya_root": "karta-",
+      "gloss": "shape of doing",
+      "linguistic_justification": "The Quenya root 'karta-' conveys 'shape of doing' which aligns with type fnptr semantics across target languages.",
+      "ast_nodes": [
+        "FunctionPointerType"
+      ],
+      "frequency_per_10k_loc": 1980,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000111100"
+      }
+    },
+    {
+      "key": "type:union",
+      "morpheme": "omenta",
+      "quenya_root": "oment-",
+      "gloss": "meeting",
+      "linguistic_justification": "The Quenya root 'oment-' conveys 'meeting' which aligns with type union semantics across target languages.",
+      "ast_nodes": [
+        "UnionType",
+        "SumType"
+      ],
+      "frequency_per_10k_loc": 1973,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000111101"
+      }
+    },
+    {
+      "key": "type:intersection",
+      "morpheme": "osanya",
+      "quenya_root": "osanya-",
+      "gloss": "joining crossing",
+      "linguistic_justification": "The Quenya root 'osanya-' conveys 'joining crossing' which aligns with type intersection semantics across target languages.",
+      "ast_nodes": [
+        "IntersectionType"
+      ],
+      "frequency_per_10k_loc": 1966,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000111110"
+      }
+    },
+    {
+      "key": "type:structural",
+      "morpheme": "nilda",
+      "quenya_root": "nilda-",
+      "gloss": "friendship/binding",
+      "linguistic_justification": "The Quenya root 'nilda-' conveys 'friendship/binding' which aligns with type structural semantics across target languages.",
+      "ast_nodes": [
+        "StructuralType"
+      ],
+      "frequency_per_10k_loc": 1959,
+      "encoding": {
+        "type": "fixed",
+        "bits": 9,
+        "code": "000111111"
+      }
+    },
+    {
+      "key": "type:nominal",
+      "morpheme": "esse",
+      "quenya_root": "essë-",
+      "gloss": "name",
+      "linguistic_justification": "The Quenya root 'essë-' conveys 'name' which aligns with type nominal semantics across target languages.",
+      "ast_nodes": [
+        "NominalType"
+      ],
+      "frequency_per_10k_loc": 1952,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 0
+      }
+    },
+    {
+      "key": "type:literal",
+      "morpheme": "sanga",
+      "quenya_root": "sanga-",
+      "gloss": "firm, exact",
+      "linguistic_justification": "The Quenya root 'sanga-' conveys 'firm, exact' which aligns with type literal semantics across target languages.",
+      "ast_nodes": [
+        "LiteralType"
+      ],
+      "frequency_per_10k_loc": 1945,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 1
+      }
+    },
+    {
+      "key": "op:add",
+      "morpheme": "yonta",
+      "quenya_root": "yon-",
+      "gloss": "add together",
+      "linguistic_justification": "The Quenya root 'yon-' conveys 'add together' which aligns with op add semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:+"
+      ],
+      "frequency_per_10k_loc": 1938,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 2
+      }
+    },
+    {
+      "key": "op:sub",
+      "morpheme": "rac",
+      "quenya_root": "rac-",
+      "gloss": "to break off",
+      "linguistic_justification": "The Quenya root 'rac-' conveys 'to break off' which aligns with op sub semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:-"
+      ],
+      "frequency_per_10k_loc": 1931,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 3
+      }
+    },
+    {
+      "key": "op:mul",
+      "morpheme": "yulma",
+      "quenya_root": "yul-",
+      "gloss": "to drink up/mix",
+      "linguistic_justification": "The Quenya root 'yul-' conveys 'to drink up/mix' which aligns with op mul semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:*"
+      ],
+      "frequency_per_10k_loc": 1924,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 4
+      }
+    },
+    {
+      "key": "op:div",
+      "morpheme": "hehta",
+      "quenya_root": "hehta-",
+      "gloss": "to discard apart",
+      "linguistic_justification": "The Quenya root 'hehta-' conveys 'to discard apart' which aligns with op div semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:/"
+      ],
+      "frequency_per_10k_loc": 1917,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 5
+      }
+    },
+    {
+      "key": "op:mod",
+      "morpheme": "metya",
+      "quenya_root": "metya-",
+      "gloss": "to measure remainder",
+      "linguistic_justification": "The Quenya root 'metya-' conveys 'to measure remainder' which aligns with op mod semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:%"
+      ],
+      "frequency_per_10k_loc": 1910,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 6
+      }
+    },
+    {
+      "key": "op:pow",
+      "morpheme": "turion",
+      "quenya_root": "tur-",
+      "gloss": "to master raise",
+      "linguistic_justification": "The Quenya root 'tur-' conveys 'to master raise' which aligns with op pow semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:**",
+        "PowExpression"
+      ],
+      "frequency_per_10k_loc": 1903,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 7
+      }
+    },
+    {
+      "key": "op:eq",
+      "morpheme": "same",
+      "quenya_root": "same-",
+      "gloss": "equal",
+      "linguistic_justification": "The Quenya root 'same-' conveys 'equal' which aligns with op eq semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:==",
+        "EqualityExpression"
+      ],
+      "frequency_per_10k_loc": 1896,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 8
+      }
+    },
+    {
+      "key": "op:neq",
+      "morpheme": "ava",
+      "quenya_root": "ava-",
+      "gloss": "not",
+      "linguistic_justification": "The Quenya root 'ava-' conveys 'not' which aligns with op neq semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:!=",
+        "InequalityExpression"
+      ],
+      "frequency_per_10k_loc": 1889,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 9
+      }
+    },
+    {
+      "key": "op:lt",
+      "morpheme": "pitya",
+      "quenya_root": "pitya-",
+      "gloss": "small",
+      "linguistic_justification": "The Quenya root 'pitya-' conveys 'small' which aligns with op lt semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:<"
+      ],
+      "frequency_per_10k_loc": 1882,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 10
+      }
+    },
+    {
+      "key": "op:gt",
+      "morpheme": "alta",
+      "quenya_root": "alta-",
+      "gloss": "great",
+      "linguistic_justification": "The Quenya root 'alta-' conveys 'great' which aligns with op gt semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:>"
+      ],
+      "frequency_per_10k_loc": 1875,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 11
+      }
+    },
+    {
+      "key": "op:le",
+      "morpheme": "pityar",
+      "quenya_root": "pitya-",
+      "gloss": "small or equal",
+      "linguistic_justification": "The Quenya root 'pitya-' conveys 'small or equal' which aligns with op le semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:<="
+      ],
+      "frequency_per_10k_loc": 1868,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 12
+      }
+    },
+    {
+      "key": "op:ge",
+      "morpheme": "altar",
+      "quenya_root": "alta-",
+      "gloss": "great or equal",
+      "linguistic_justification": "The Quenya root 'alta-' conveys 'great or equal' which aligns with op ge semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:>="
+      ],
+      "frequency_per_10k_loc": 1861,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 13
+      }
+    },
+    {
+      "key": "op:and",
+      "morpheme": "yo",
+      "quenya_root": "yo-",
+      "gloss": "and",
+      "linguistic_justification": "The Quenya root 'yo-' conveys 'and' which aligns with op and semantics across target languages.",
+      "ast_nodes": [
+        "LogicalExpression:&&",
+        "BoolOp:And"
+      ],
+      "frequency_per_10k_loc": 1854,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 14
+      }
+    },
+    {
+      "key": "op:or",
+      "morpheme": "var",
+      "quenya_root": "var-",
+      "gloss": "or",
+      "linguistic_justification": "The Quenya root 'var-' conveys 'or' which aligns with op or semantics across target languages.",
+      "ast_nodes": [
+        "LogicalExpression:||",
+        "BoolOp:Or"
+      ],
+      "frequency_per_10k_loc": 1847,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 15
+      }
+    },
+    {
+      "key": "op:not",
+      "morpheme": "lá",
+      "quenya_root": "lá-",
+      "gloss": "no",
+      "linguistic_justification": "The Quenya root 'lá-' conveys 'no' which aligns with op not semantics across target languages.",
+      "ast_nodes": [
+        "UnaryExpression:!",
+        "UnaryOp:Not"
+      ],
+      "frequency_per_10k_loc": 1840,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 16
+      }
+    },
+    {
+      "key": "op:bit_and",
+      "morpheme": "tulka",
+      "quenya_root": "tulka-",
+      "gloss": "strength joining",
+      "linguistic_justification": "The Quenya root 'tulka-' conveys 'strength joining' which aligns with op bit_and semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:&"
+      ],
+      "frequency_per_10k_loc": 1833,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 17
+      }
+    },
+    {
+      "key": "op:bit_or",
+      "morpheme": "tyali",
+      "quenya_root": "tyalië-",
+      "gloss": "play/alternate",
+      "linguistic_justification": "The Quenya root 'tyalië-' conveys 'play/alternate' which aligns with op bit_or semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:|"
+      ],
+      "frequency_per_10k_loc": 1826,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 18
+      }
+    },
+    {
+      "key": "op:bit_xor",
+      "morpheme": "laure",
+      "quenya_root": "laurë-",
+      "gloss": "golden mix",
+      "linguistic_justification": "The Quenya root 'laurë-' conveys 'golden mix' which aligns with op bit_xor semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:^"
+      ],
+      "frequency_per_10k_loc": 1819,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 19
+      }
+    },
+    {
+      "key": "op:bit_not",
+      "morpheme": "mor",
+      "quenya_root": "mor-",
+      "gloss": "dark inversion",
+      "linguistic_justification": "The Quenya root 'mor-' conveys 'dark inversion' which aligns with op bit_not semantics across target languages.",
+      "ast_nodes": [
+        "UnaryExpression:~"
+      ],
+      "frequency_per_10k_loc": 1812,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 20
+      }
+    },
+    {
+      "key": "op:shift_left",
+      "morpheme": "lenge",
+      "quenya_root": "leng-",
+      "gloss": "lean left",
+      "linguistic_justification": "The Quenya root 'leng-' conveys 'lean left' which aligns with op shift_left semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:<<"
+      ],
+      "frequency_per_10k_loc": 1805,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 21
+      }
+    },
+    {
+      "key": "op:shift_right",
+      "morpheme": "lengea",
+      "quenya_root": "leng-",
+      "gloss": "lean right",
+      "linguistic_justification": "The Quenya root 'leng-' conveys 'lean right' which aligns with op shift_right semantics across target languages.",
+      "ast_nodes": [
+        "BinaryExpression:>>"
+      ],
+      "frequency_per_10k_loc": 1798,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 22
+      }
+    },
+    {
+      "key": "op:coalesce",
+      "morpheme": "onta",
+      "quenya_root": "onta-",
+      "gloss": "beget join",
+      "linguistic_justification": "The Quenya root 'onta-' conveys 'beget join' which aligns with op coalesce semantics across target languages.",
+      "ast_nodes": [
+        "NullishCoalescing"
+      ],
+      "frequency_per_10k_loc": 1791,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 23
+      }
+    },
+    {
+      "key": "op:ternary",
+      "morpheme": "ceanta",
+      "quenya_root": "ceanta-",
+      "gloss": "if-split",
+      "linguistic_justification": "The Quenya root 'ceanta-' conveys 'if-split' which aligns with op ternary semantics across target languages.",
+      "ast_nodes": [
+        "ConditionalExpression:?"
+      ],
+      "frequency_per_10k_loc": 1784,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 24
+      }
+    },
+    {
+      "key": "op:pipe",
+      "morpheme": "siryo",
+      "quenya_root": "siryo-",
+      "gloss": "flow",
+      "linguistic_justification": "The Quenya root 'siryo-' conveys 'flow' which aligns with op pipe semantics across target languages.",
+      "ast_nodes": [
+        "PipeExpression",
+        "MethodChain"
+      ],
+      "frequency_per_10k_loc": 1777,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 25
+      }
+    },
+    {
+      "key": "op:range_incl",
+      "morpheme": "pelda",
+      "quenya_root": "pelda-",
+      "gloss": "fence inclusive",
+      "linguistic_justification": "The Quenya root 'pelda-' conveys 'fence inclusive' which aligns with op range_incl semantics across target languages.",
+      "ast_nodes": [
+        "RangeExpression:..="
+      ],
+      "frequency_per_10k_loc": 1770,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 26
+      }
+    },
+    {
+      "key": "op:range_excl",
+      "morpheme": "peldaë",
+      "quenya_root": "pelda-",
+      "gloss": "fence exclusive",
+      "linguistic_justification": "The Quenya root 'pelda-' conveys 'fence exclusive' which aligns with op range_excl semantics across target languages.",
+      "ast_nodes": [
+        "RangeExpression:.."
+      ],
+      "frequency_per_10k_loc": 1763,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 27
+      }
+    },
+    {
+      "key": "op:assign",
+      "morpheme": "antya",
+      "quenya_root": "antya-",
+      "gloss": "to give to",
+      "linguistic_justification": "The Quenya root 'antya-' conveys 'to give to' which aligns with op assign semantics across target languages.",
+      "ast_nodes": [
+        "Assignment"
+      ],
+      "frequency_per_10k_loc": 1756,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 28
+      }
+    },
+    {
+      "key": "op:add_assign",
+      "morpheme": "antyayon",
+      "quenya_root": "antya-",
+      "gloss": "give additionally",
+      "linguistic_justification": "The Quenya root 'antya-' conveys 'give additionally' which aligns with op add_assign semantics across target languages.",
+      "ast_nodes": [
+        "Assignment:+="
+      ],
+      "frequency_per_10k_loc": 1749,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 29
+      }
+    },
+    {
+      "key": "op:sub_assign",
+      "morpheme": "antyarac",
+      "quenya_root": "antya-",
+      "gloss": "give subtractively",
+      "linguistic_justification": "The Quenya root 'antya-' conveys 'give subtractively' which aligns with op sub_assign semantics across target languages.",
+      "ast_nodes": [
+        "Assignment:-="
+      ],
+      "frequency_per_10k_loc": 1742,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 30
+      }
+    },
+    {
+      "key": "op:mul_assign",
+      "morpheme": "antyayul",
+      "quenya_root": "antya-",
+      "gloss": "give multiplicatively",
+      "linguistic_justification": "The Quenya root 'antya-' conveys 'give multiplicatively' which aligns with op mul_assign semantics across target languages.",
+      "ast_nodes": [
+        "Assignment:*="
+      ],
+      "frequency_per_10k_loc": 1735,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 31
+      }
+    },
+    {
+      "key": "op:div_assign",
+      "morpheme": "antyaheh",
+      "quenya_root": "antya-",
+      "gloss": "give divisively",
+      "linguistic_justification": "The Quenya root 'antya-' conveys 'give divisively' which aligns with op div_assign semantics across target languages.",
+      "ast_nodes": [
+        "Assignment:/="
+      ],
+      "frequency_per_10k_loc": 1728,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 32
+      }
+    },
+    {
+      "key": "op:mod_assign",
+      "morpheme": "antyamet",
+      "quenya_root": "antya-",
+      "gloss": "give remainder",
+      "linguistic_justification": "The Quenya root 'antya-' conveys 'give remainder' which aligns with op mod_assign semantics across target languages.",
+      "ast_nodes": [
+        "Assignment:%="
+      ],
+      "frequency_per_10k_loc": 1721,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 33
+      }
+    },
+    {
+      "key": "op:bit_and_assign",
+      "morpheme": "antyatul",
+      "quenya_root": "antya-",
+      "gloss": "give bitwise and",
+      "linguistic_justification": "The Quenya root 'antya-' conveys 'give bitwise and' which aligns with op bit_and_assign semantics across target languages.",
+      "ast_nodes": [
+        "Assignment:&="
+      ],
+      "frequency_per_10k_loc": 1714,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 34
+      }
+    },
+    {
+      "key": "op:bit_or_assign",
+      "morpheme": "antyavar",
+      "quenya_root": "antya-",
+      "gloss": "give bitwise or",
+      "linguistic_justification": "The Quenya root 'antya-' conveys 'give bitwise or' which aligns with op bit_or_assign semantics across target languages.",
+      "ast_nodes": [
+        "Assignment:|="
+      ],
+      "frequency_per_10k_loc": 1707,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 35
+      }
+    },
+    {
+      "key": "op:bit_xor_assign",
+      "morpheme": "antyalaur",
+      "quenya_root": "antya-",
+      "gloss": "give bitwise xor",
+      "linguistic_justification": "The Quenya root 'antya-' conveys 'give bitwise xor' which aligns with op bit_xor_assign semantics across target languages.",
+      "ast_nodes": [
+        "Assignment:^="
+      ],
+      "frequency_per_10k_loc": 1700,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 36
+      }
+    },
+    {
+      "key": "op:shift_left_assign",
+      "morpheme": "antyaleng",
+      "quenya_root": "antya-",
+      "gloss": "give shift left",
+      "linguistic_justification": "The Quenya root 'antya-' conveys 'give shift left' which aligns with op shift_left_assign semantics across target languages.",
+      "ast_nodes": [
+        "Assignment:<<="
+      ],
+      "frequency_per_10k_loc": 1693,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 37
+      }
+    },
+    {
+      "key": "op:shift_right_assign",
+      "morpheme": "antyalengw",
+      "quenya_root": "antya-",
+      "gloss": "give shift right",
+      "linguistic_justification": "The Quenya root 'antya-' conveys 'give shift right' which aligns with op shift_right_assign semantics across target languages.",
+      "ast_nodes": [
+        "Assignment:>>="
+      ],
+      "frequency_per_10k_loc": 1686,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 38
+      }
+    },
+    {
+      "key": "op:logical_and_assign",
+      "morpheme": "antyayo",
+      "quenya_root": "antya-",
+      "gloss": "give logical and",
+      "linguistic_justification": "The Quenya root 'antya-' conveys 'give logical and' which aligns with op logical_and_assign semantics across target languages.",
+      "ast_nodes": [
+        "Assignment:&&="
+      ],
+      "frequency_per_10k_loc": 1679,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 39
+      }
+    },
+    {
+      "key": "op:logical_or_assign",
+      "morpheme": "antyavar",
+      "quenya_root": "antya-",
+      "gloss": "give logical or",
+      "linguistic_justification": "The Quenya root 'antya-' conveys 'give logical or' which aligns with op logical_or_assign semantics across target languages.",
+      "ast_nodes": [
+        "Assignment:||="
+      ],
+      "frequency_per_10k_loc": 1672,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 40
+      }
+    },
+    {
+      "key": "op:nullish_assign",
+      "morpheme": "antyaonta",
+      "quenya_root": "antya-",
+      "gloss": "give nullish",
+      "linguistic_justification": "The Quenya root 'antya-' conveys 'give nullish' which aligns with op nullish_assign semantics across target languages.",
+      "ast_nodes": [
+        "Assignment:??="
+      ],
+      "frequency_per_10k_loc": 1665,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 41
+      }
+    },
+    {
+      "key": "op:await",
+      "morpheme": "harta",
+      "quenya_root": "harta-",
+      "gloss": "to wait/watch",
+      "linguistic_justification": "The Quenya root 'harta-' conveys 'to wait/watch' which aligns with op await semantics across target languages.",
+      "ast_nodes": [
+        "AwaitExpression"
+      ],
+      "frequency_per_10k_loc": 1658,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 42
+      }
+    },
+    {
+      "key": "op:new",
+      "morpheme": "ontaqua",
+      "quenya_root": "onta-",
+      "gloss": "bring into being",
+      "linguistic_justification": "The Quenya root 'onta-' conveys 'bring into being' which aligns with op new semantics across target languages.",
+      "ast_nodes": [
+        "NewExpression",
+        "ConstructorCall"
+      ],
+      "frequency_per_10k_loc": 1651,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 43
+      }
+    },
+    {
+      "key": "op:call",
+      "morpheme": "tulya",
+      "quenya_root": "tulya-",
+      "gloss": "to invoke",
+      "linguistic_justification": "The Quenya root 'tulya-' conveys 'to invoke' which aligns with op call semantics across target languages.",
+      "ast_nodes": [
+        "CallExpression"
+      ],
+      "frequency_per_10k_loc": 1644,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 44
+      }
+    },
+    {
+      "key": "flow:return",
+      "morpheme": "enta",
+      "quenya_root": "ent-",
+      "gloss": "give back",
+      "linguistic_justification": "The Quenya root 'ent-' conveys 'give back' which aligns with flow return semantics across target languages.",
+      "ast_nodes": [
+        "ReturnStatement"
+      ],
+      "frequency_per_10k_loc": 1637,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 45
+      }
+    },
+    {
+      "key": "flow:break",
+      "morpheme": "rusta",
+      "quenya_root": "rus-",
+      "gloss": "break off",
+      "linguistic_justification": "The Quenya root 'rus-' conveys 'break off' which aligns with flow break semantics across target languages.",
+      "ast_nodes": [
+        "BreakStatement"
+      ],
+      "frequency_per_10k_loc": 1630,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 46
+      }
+    },
+    {
+      "key": "flow:continue",
+      "morpheme": "vestar",
+      "quenya_root": "vesta-",
+      "gloss": "keep going",
+      "linguistic_justification": "The Quenya root 'vesta-' conveys 'keep going' which aligns with flow continue semantics across target languages.",
+      "ast_nodes": [
+        "ContinueStatement"
+      ],
+      "frequency_per_10k_loc": 1623,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 47
+      }
+    },
+    {
+      "key": "flow:throw",
+      "morpheme": "hatten",
+      "quenya_root": "hat-",
+      "gloss": "hurl",
+      "linguistic_justification": "The Quenya root 'hat-' conveys 'hurl' which aligns with flow throw semantics across target languages.",
+      "ast_nodes": [
+        "ThrowStatement"
+      ],
+      "frequency_per_10k_loc": 1616,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 48
+      }
+    },
+    {
+      "key": "flow:yield",
+      "morpheme": "antal",
+      "quenya_root": "anta-",
+      "gloss": "give forth",
+      "linguistic_justification": "The Quenya root 'anta-' conveys 'give forth' which aligns with flow yield semantics across target languages.",
+      "ast_nodes": [
+        "YieldStatement",
+        "YieldExpression"
+      ],
+      "frequency_per_10k_loc": 1609,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 49
+      }
+    },
+    {
+      "key": "flow:await",
+      "morpheme": "hartan",
+      "quenya_root": "harta-",
+      "gloss": "watch",
+      "linguistic_justification": "The Quenya root 'harta-' conveys 'watch' which aligns with flow await semantics across target languages.",
+      "ast_nodes": [
+        "AwaitExpression"
+      ],
+      "frequency_per_10k_loc": 1602,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 50
+      }
+    },
+    {
+      "key": "flow:return_async",
+      "morpheme": "entalya",
+      "quenya_root": "ent-",
+      "gloss": "give back swiftly",
+      "linguistic_justification": "The Quenya root 'ent-' conveys 'give back swiftly' which aligns with flow return_async semantics across target languages.",
+      "ast_nodes": [
+        "ReturnStatement"
+      ],
+      "frequency_per_10k_loc": 1595,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 51
+      }
+    },
+    {
+      "key": "flow:break_label",
+      "morpheme": "rusto",
+      "quenya_root": "rus-",
+      "gloss": "break at mark",
+      "linguistic_justification": "The Quenya root 'rus-' conveys 'break at mark' which aligns with flow break_label semantics across target languages.",
+      "ast_nodes": [
+        "BreakStatement:Labeled"
+      ],
+      "frequency_per_10k_loc": 1588,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 52
+      }
+    },
+    {
+      "key": "flow:continue_label",
+      "morpheme": "vesto",
+      "quenya_root": "vesta-",
+      "gloss": "continue at mark",
+      "linguistic_justification": "The Quenya root 'vesta-' conveys 'continue at mark' which aligns with flow continue_label semantics across target languages.",
+      "ast_nodes": [
+        "ContinueStatement:Labeled"
+      ],
+      "frequency_per_10k_loc": 1581,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 53
+      }
+    },
+    {
+      "key": "flow:goto",
+      "morpheme": "lenduva",
+      "quenya_root": "lendu-",
+      "gloss": "go toward",
+      "linguistic_justification": "The Quenya root 'lendu-' conveys 'go toward' which aligns with flow goto semantics across target languages.",
+      "ast_nodes": [
+        "GotoStatement"
+      ],
+      "frequency_per_10k_loc": 1574,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 54
+      }
+    },
+    {
+      "key": "flow:fallthrough",
+      "morpheme": "peleta",
+      "quenya_root": "pelet-",
+      "gloss": "to pass through",
+      "linguistic_justification": "The Quenya root 'pelet-' conveys 'to pass through' which aligns with flow fallthrough semantics across target languages.",
+      "ast_nodes": [
+        "FallthroughStatement"
+      ],
+      "frequency_per_10k_loc": 1567,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 55
+      }
+    },
+    {
+      "key": "flow:defer",
+      "morpheme": "hantale",
+      "quenya_root": "hantale-",
+      "gloss": "gratitude/later",
+      "linguistic_justification": "The Quenya root 'hantale-' conveys 'gratitude/later' which aligns with flow defer semantics across target languages.",
+      "ast_nodes": [
+        "DeferStatement"
+      ],
+      "frequency_per_10k_loc": 1560,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 56
+      }
+    },
+    {
+      "key": "flow:panic",
+      "morpheme": "ruhta",
+      "quenya_root": "ruhta-",
+      "gloss": "terror drive",
+      "linguistic_justification": "The Quenya root 'ruhta-' conveys 'terror drive' which aligns with flow panic semantics across target languages.",
+      "ast_nodes": [
+        "Panic",
+        "Abort"
+      ],
+      "frequency_per_10k_loc": 1553,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 57
+      }
+    },
+    {
+      "key": "flow:match_break",
+      "morpheme": "tenrup",
+      "quenya_root": "ten-",
+      "gloss": "mark break",
+      "linguistic_justification": "The Quenya root 'ten-' conveys 'mark break' which aligns with flow match_break semantics across target languages.",
+      "ast_nodes": [
+        "MatchBreak"
+      ],
+      "frequency_per_10k_loc": 1546,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 58
+      }
+    },
+    {
+      "key": "flow:loop_exit",
+      "morpheme": "yorend",
+      "quenya_root": "yor-",
+      "gloss": "end of loop",
+      "linguistic_justification": "The Quenya root 'yor-' conveys 'end of loop' which aligns with flow loop_exit semantics across target languages.",
+      "ast_nodes": [
+        "LoopExit"
+      ],
+      "frequency_per_10k_loc": 1539,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 59
+      }
+    },
+    {
+      "key": "flow:loop_continue",
+      "morpheme": "yorvest",
+      "quenya_root": "yor-",
+      "gloss": "repeat continue",
+      "linguistic_justification": "The Quenya root 'yor-' conveys 'repeat continue' which aligns with flow loop_continue semantics across target languages.",
+      "ast_nodes": [
+        "LoopContinue"
+      ],
+      "frequency_per_10k_loc": 1532,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 60
+      }
+    },
+    {
+      "key": "flow:tail_call",
+      "morpheme": "entul",
+      "quenya_root": "ent-",
+      "gloss": "return-call",
+      "linguistic_justification": "The Quenya root 'ent-' conveys 'return-call' which aligns with flow tail_call semantics across target languages.",
+      "ast_nodes": [
+        "TailCall"
+      ],
+      "frequency_per_10k_loc": 1525,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 61
+      }
+    },
+    {
+      "key": "flow:resume",
+      "morpheme": "enyal",
+      "quenya_root": "enyal-",
+      "gloss": "remember resume",
+      "linguistic_justification": "The Quenya root 'enyal-' conveys 'remember resume' which aligns with flow resume semantics across target languages.",
+      "ast_nodes": [
+        "ResumeStatement"
+      ],
+      "frequency_per_10k_loc": 1518,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 62
+      }
+    },
+    {
+      "key": "flow:suspend",
+      "morpheme": "nurta",
+      "quenya_root": "nurta-",
+      "gloss": "to hide/hold",
+      "linguistic_justification": "The Quenya root 'nurta-' conveys 'to hide/hold' which aligns with flow suspend semantics across target languages.",
+      "ast_nodes": [
+        "SuspendStatement"
+      ],
+      "frequency_per_10k_loc": 1511,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 63
+      }
+    },
+    {
+      "key": "flow:checkpoint",
+      "morpheme": "tirme",
+      "quenya_root": "tirme-",
+      "gloss": "to watch",
+      "linguistic_justification": "The Quenya root 'tirme-' conveys 'to watch' which aligns with flow checkpoint semantics across target languages.",
+      "ast_nodes": [
+        "Checkpoint"
+      ],
+      "frequency_per_10k_loc": 1504,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 64
+      }
+    },
+    {
+      "key": "flow:rewind",
+      "morpheme": "andar",
+      "quenya_root": "andar-",
+      "gloss": "go back",
+      "linguistic_justification": "The Quenya root 'andar-' conveys 'go back' which aligns with flow rewind semantics across target languages.",
+      "ast_nodes": [
+        "RewindStatement"
+      ],
+      "frequency_per_10k_loc": 1497,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 65
+      }
+    },
+    {
+      "key": "flow:retry",
+      "morpheme": "ceya",
+      "quenya_root": "ceya-",
+      "gloss": "to try again",
+      "linguistic_justification": "The Quenya root 'ceya-' conveys 'to try again' which aligns with flow retry semantics across target languages.",
+      "ast_nodes": [
+        "RetryStatement"
+      ],
+      "frequency_per_10k_loc": 1490,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 66
+      }
+    },
+    {
+      "key": "flow:exit",
+      "morpheme": "auta",
+      "quenya_root": "auta-",
+      "gloss": "depart program",
+      "linguistic_justification": "The Quenya root 'auta-' conveys 'depart program' which aligns with flow exit semantics across target languages.",
+      "ast_nodes": [
+        "ExitStatement"
+      ],
+      "frequency_per_10k_loc": 1483,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 67
+      }
+    },
+    {
+      "key": "flow:halt",
+      "morpheme": "tulka",
+      "quenya_root": "tulka-",
+      "gloss": "stand firm",
+      "linguistic_justification": "The Quenya root 'tulka-' conveys 'stand firm' which aligns with flow halt semantics across target languages.",
+      "ast_nodes": [
+        "HaltInstruction"
+      ],
+      "frequency_per_10k_loc": 1476,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 68
+      }
+    },
+    {
+      "key": "flow:trap",
+      "morpheme": "raumo",
+      "quenya_root": "raumo-",
+      "gloss": "storm/trap",
+      "linguistic_justification": "The Quenya root 'raumo-' conveys 'storm/trap' which aligns with flow trap semantics across target languages.",
+      "ast_nodes": [
+        "TrapInstruction"
+      ],
+      "frequency_per_10k_loc": 1469,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 69
+      }
+    },
+    {
+      "key": "oop:class",
+      "morpheme": "nossan",
+      "quenya_root": "noss-",
+      "gloss": "kindred grouping",
+      "linguistic_justification": "The Quenya root 'noss-' conveys 'kindred grouping' which aligns with oop class semantics across target languages.",
+      "ast_nodes": [
+        "ClassDeclaration"
+      ],
+      "frequency_per_10k_loc": 1462,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 70
+      }
+    },
+    {
+      "key": "oop:abstract_class",
+      "morpheme": "nossal",
+      "quenya_root": "noss-",
+      "gloss": "kindred veiled",
+      "linguistic_justification": "The Quenya root 'noss-' conveys 'kindred veiled' which aligns with oop abstract_class semantics across target languages.",
+      "ast_nodes": [
+        "AbstractClassDeclaration"
+      ],
+      "frequency_per_10k_loc": 1455,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 71
+      }
+    },
+    {
+      "key": "oop:interface",
+      "morpheme": "nossiel",
+      "quenya_root": "nossiël-",
+      "gloss": "interface kindred",
+      "linguistic_justification": "The Quenya root 'nossiël-' conveys 'interface kindred' which aligns with oop interface semantics across target languages.",
+      "ast_nodes": [
+        "InterfaceDeclaration"
+      ],
+      "frequency_per_10k_loc": 1448,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 72
+      }
+    },
+    {
+      "key": "oop:trait",
+      "morpheme": "saira",
+      "quenya_root": "sairë-",
+      "gloss": "distinctive feature",
+      "linguistic_justification": "The Quenya root 'sairë-' conveys 'distinctive feature' which aligns with oop trait semantics across target languages.",
+      "ast_nodes": [
+        "TraitDeclaration"
+      ],
+      "frequency_per_10k_loc": 1441,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 73
+      }
+    },
+    {
+      "key": "oop:impl",
+      "morpheme": "haryon",
+      "quenya_root": "harya-",
+      "gloss": "to possess",
+      "linguistic_justification": "The Quenya root 'harya-' conveys 'to possess' which aligns with oop impl semantics across target languages.",
+      "ast_nodes": [
+        "ImplementationBlock"
+      ],
+      "frequency_per_10k_loc": 1434,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 74
+      }
+    },
+    {
+      "key": "oop:method",
+      "morpheme": "karion",
+      "quenya_root": "kar-",
+      "gloss": "doing within type",
+      "linguistic_justification": "The Quenya root 'kar-' conveys 'doing within type' which aligns with oop method semantics across target languages.",
+      "ast_nodes": [
+        "MethodDeclaration"
+      ],
+      "frequency_per_10k_loc": 1427,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 75
+      }
+    },
+    {
+      "key": "oop:constructor",
+      "morpheme": "ontion",
+      "quenya_root": "onta-",
+      "gloss": "begetting",
+      "linguistic_justification": "The Quenya root 'onta-' conveys 'begetting' which aligns with oop constructor semantics across target languages.",
+      "ast_nodes": [
+        "ConstructorDeclaration"
+      ],
+      "frequency_per_10k_loc": 1420,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 76
+      }
+    },
+    {
+      "key": "oop:destructor",
+      "morpheme": "ruhtion",
+      "quenya_root": "ruhta-",
+      "gloss": "tearing down",
+      "linguistic_justification": "The Quenya root 'ruhta-' conveys 'tearing down' which aligns with oop destructor semantics across target languages.",
+      "ast_nodes": [
+        "DestructorDeclaration"
+      ],
+      "frequency_per_10k_loc": 1413,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 77
+      }
+    },
+    {
+      "key": "oop:property",
+      "morpheme": "sambë",
+      "quenya_root": "sambë-",
+      "gloss": "room/house",
+      "linguistic_justification": "The Quenya root 'sambë-' conveys 'room/house' which aligns with oop property semantics across target languages.",
+      "ast_nodes": [
+        "PropertyDeclaration",
+        "FieldDeclaration"
+      ],
+      "frequency_per_10k_loc": 1406,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 78
+      }
+    },
+    {
+      "key": "oop:getter",
+      "morpheme": "sambetul",
+      "quenya_root": "sambë-",
+      "gloss": "house bring",
+      "linguistic_justification": "The Quenya root 'sambë-' conveys 'house bring' which aligns with oop getter semantics across target languages.",
+      "ast_nodes": [
+        "GetterMethod"
+      ],
+      "frequency_per_10k_loc": 1399,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 79
+      }
+    },
+    {
+      "key": "oop:setter",
+      "morpheme": "sambenta",
+      "quenya_root": "sambë-",
+      "gloss": "house give",
+      "linguistic_justification": "The Quenya root 'sambë-' conveys 'house give' which aligns with oop setter semantics across target languages.",
+      "ast_nodes": [
+        "SetterMethod"
+      ],
+      "frequency_per_10k_loc": 1392,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 80
+      }
+    },
+    {
+      "key": "oop:field",
+      "morpheme": "talan",
+      "quenya_root": "talan-",
+      "gloss": "plane, floor",
+      "linguistic_justification": "The Quenya root 'talan-' conveys 'plane, floor' which aligns with oop field semantics across target languages.",
+      "ast_nodes": [
+        "FieldDeclaration"
+      ],
+      "frequency_per_10k_loc": 1385,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 81
+      }
+    },
+    {
+      "key": "oop:static_field",
+      "morpheme": "talanda",
+      "quenya_root": "talan-",
+      "gloss": "fixed floor",
+      "linguistic_justification": "The Quenya root 'talan-' conveys 'fixed floor' which aligns with oop static_field semantics across target languages.",
+      "ast_nodes": [
+        "StaticFieldDeclaration"
+      ],
+      "frequency_per_10k_loc": 1378,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 82
+      }
+    },
+    {
+      "key": "oop:static_method",
+      "morpheme": "karand",
+      "quenya_root": "kar-",
+      "gloss": "doing fixed",
+      "linguistic_justification": "The Quenya root 'kar-' conveys 'doing fixed' which aligns with oop static_method semantics across target languages.",
+      "ast_nodes": [
+        "StaticMethodDeclaration"
+      ],
+      "frequency_per_10k_loc": 1371,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 83
+      }
+    },
+    {
+      "key": "oop:virtual_method",
+      "morpheme": "karfir",
+      "quenya_root": "kar-",
+      "gloss": "doing phantom",
+      "linguistic_justification": "The Quenya root 'kar-' conveys 'doing phantom' which aligns with oop virtual_method semantics across target languages.",
+      "ast_nodes": [
+        "VirtualMethodDeclaration"
+      ],
+      "frequency_per_10k_loc": 1364,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 84
+      }
+    },
+    {
+      "key": "oop:override",
+      "morpheme": "arta",
+      "quenya_root": "arta-",
+      "gloss": "exalted over",
+      "linguistic_justification": "The Quenya root 'arta-' conveys 'exalted over' which aligns with oop override semantics across target languages.",
+      "ast_nodes": [
+        "OverrideSpecifier"
+      ],
+      "frequency_per_10k_loc": 1357,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 85
+      }
+    },
+    {
+      "key": "oop:implements",
+      "morpheme": "haryal",
+      "quenya_root": "harya-",
+      "gloss": "possess interface",
+      "linguistic_justification": "The Quenya root 'harya-' conveys 'possess interface' which aligns with oop implements semantics across target languages.",
+      "ast_nodes": [
+        "ImplementsClause"
+      ],
+      "frequency_per_10k_loc": 1350,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 86
+      }
+    },
+    {
+      "key": "oop:extends",
+      "morpheme": "telya",
+      "quenya_root": "telya-",
+      "gloss": "to finish/extend",
+      "linguistic_justification": "The Quenya root 'telya-' conveys 'to finish/extend' which aligns with oop extends semantics across target languages.",
+      "ast_nodes": [
+        "ExtendsClause"
+      ],
+      "frequency_per_10k_loc": 1343,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 87
+      }
+    },
+    {
+      "key": "oop:inherits",
+      "morpheme": "toron",
+      "quenya_root": "toron-",
+      "gloss": "brotherhood",
+      "linguistic_justification": "The Quenya root 'toron-' conveys 'brotherhood' which aligns with oop inherits semantics across target languages.",
+      "ast_nodes": [
+        "InheritanceClause"
+      ],
+      "frequency_per_10k_loc": 1336,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 88
+      }
+    },
+    {
+      "key": "oop:mixins",
+      "morpheme": "erya",
+      "quenya_root": "erya-",
+      "gloss": "to stir",
+      "linguistic_justification": "The Quenya root 'erya-' conveys 'to stir' which aligns with oop mixins semantics across target languages.",
+      "ast_nodes": [
+        "MixinClause"
+      ],
+      "frequency_per_10k_loc": 1329,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 89
+      }
+    },
+    {
+      "key": "oop:interface_method",
+      "morpheme": "nossilkar",
+      "quenya_root": "nossiël-",
+      "gloss": "interface doing",
+      "linguistic_justification": "The Quenya root 'nossiël-' conveys 'interface doing' which aligns with oop interface_method semantics across target languages.",
+      "ast_nodes": [
+        "InterfaceMethod"
+      ],
+      "frequency_per_10k_loc": 1322,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 90
+      }
+    },
+    {
+      "key": "oop:sealed",
+      "morpheme": "hresta",
+      "quenya_root": "hresta-",
+      "gloss": "shore boundary",
+      "linguistic_justification": "The Quenya root 'hresta-' conveys 'shore boundary' which aligns with oop sealed semantics across target languages.",
+      "ast_nodes": [
+        "SealedClass"
+      ],
+      "frequency_per_10k_loc": 1315,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 91
+      }
+    },
+    {
+      "key": "oop:record",
+      "morpheme": "histar",
+      "quenya_root": "hista-",
+      "gloss": "list/record",
+      "linguistic_justification": "The Quenya root 'hista-' conveys 'list/record' which aligns with oop record semantics across target languages.",
+      "ast_nodes": [
+        "RecordClass"
+      ],
+      "frequency_per_10k_loc": 1308,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 92
+      }
+    },
+    {
+      "key": "oop:partial",
+      "morpheme": "mitta",
+      "quenya_root": "mitta-",
+      "gloss": "between/part",
+      "linguistic_justification": "The Quenya root 'mitta-' conveys 'between/part' which aligns with oop partial semantics across target languages.",
+      "ast_nodes": [
+        "PartialClass"
+      ],
+      "frequency_per_10k_loc": 1301,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 93
+      }
+    },
+    {
+      "key": "oop:annotation",
+      "morpheme": "tenceli",
+      "quenya_root": "tenca-",
+      "gloss": "marked class",
+      "linguistic_justification": "The Quenya root 'tenca-' conveys 'marked class' which aligns with oop annotation semantics across target languages.",
+      "ast_nodes": [
+        "ClassAttribute"
+      ],
+      "frequency_per_10k_loc": 1294,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 94
+      }
+    },
+    {
+      "key": "modifier:public",
+      "morpheme": "calya",
+      "quenya_root": "calya-",
+      "gloss": "bright/open",
+      "linguistic_justification": "The Quenya root 'calya-' conveys 'bright/open' which aligns with modifier public semantics across target languages.",
+      "ast_nodes": [
+        "PublicModifier"
+      ],
+      "frequency_per_10k_loc": 1287,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 95
+      }
+    },
+    {
+      "key": "modifier:private",
+      "morpheme": "nulya",
+      "quenya_root": "nulya-",
+      "gloss": "hidden",
+      "linguistic_justification": "The Quenya root 'nulya-' conveys 'hidden' which aligns with modifier private semantics across target languages.",
+      "ast_nodes": [
+        "PrivateModifier"
+      ],
+      "frequency_per_10k_loc": 1280,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 96
+      }
+    },
+    {
+      "key": "modifier:protected",
+      "morpheme": "varya",
+      "quenya_root": "varya-",
+      "gloss": "to shield",
+      "linguistic_justification": "The Quenya root 'varya-' conveys 'to shield' which aligns with modifier protected semantics across target languages.",
+      "ast_nodes": [
+        "ProtectedModifier"
+      ],
+      "frequency_per_10k_loc": 1273,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 97
+      }
+    },
+    {
+      "key": "modifier:internal",
+      "morpheme": "mirya",
+      "quenya_root": "mirya-",
+      "gloss": "within",
+      "linguistic_justification": "The Quenya root 'mirya-' conveys 'within' which aligns with modifier internal semantics across target languages.",
+      "ast_nodes": [
+        "InternalModifier"
+      ],
+      "frequency_per_10k_loc": 1266,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 98
+      }
+    },
+    {
+      "key": "modifier:static",
+      "morpheme": "tulca",
+      "quenya_root": "tulca-",
+      "gloss": "firm",
+      "linguistic_justification": "The Quenya root 'tulca-' conveys 'firm' which aligns with modifier static semantics across target languages.",
+      "ast_nodes": [
+        "StaticModifier"
+      ],
+      "frequency_per_10k_loc": 1259,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 99
+      }
+    },
+    {
+      "key": "modifier:final",
+      "morpheme": "metta",
+      "quenya_root": "metta-",
+      "gloss": "final",
+      "linguistic_justification": "The Quenya root 'metta-' conveys 'final' which aligns with modifier final semantics across target languages.",
+      "ast_nodes": [
+        "FinalModifier",
+        "ConstModifier"
+      ],
+      "frequency_per_10k_loc": 1252,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 100
+      }
+    },
+    {
+      "key": "modifier:const",
+      "morpheme": "tulta",
+      "quenya_root": "tulta-",
+      "gloss": "to steady",
+      "linguistic_justification": "The Quenya root 'tulta-' conveys 'to steady' which aligns with modifier const semantics across target languages.",
+      "ast_nodes": [
+        "ConstModifier"
+      ],
+      "frequency_per_10k_loc": 1245,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 101
+      }
+    },
+    {
+      "key": "modifier:readonly",
+      "morpheme": "hlarë",
+      "quenya_root": "hlarë-",
+      "gloss": "listening only",
+      "linguistic_justification": "The Quenya root 'hlarë-' conveys 'listening only' which aligns with modifier readonly semantics across target languages.",
+      "ast_nodes": [
+        "ReadonlyModifier"
+      ],
+      "frequency_per_10k_loc": 1238,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 102
+      }
+    },
+    {
+      "key": "modifier:mutable",
+      "morpheme": "virya",
+      "quenya_root": "virya-",
+      "gloss": "to change",
+      "linguistic_justification": "The Quenya root 'virya-' conveys 'to change' which aligns with modifier mutable semantics across target languages.",
+      "ast_nodes": [
+        "MutableModifier"
+      ],
+      "frequency_per_10k_loc": 1231,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 103
+      }
+    },
+    {
+      "key": "modifier:async",
+      "morpheme": "linta",
+      "quenya_root": "linta-",
+      "gloss": "swift",
+      "linguistic_justification": "The Quenya root 'linta-' conveys 'swift' which aligns with modifier async semantics across target languages.",
+      "ast_nodes": [
+        "AsyncModifier"
+      ],
+      "frequency_per_10k_loc": 1224,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 104
+      }
+    },
+    {
+      "key": "modifier:awaitable",
+      "morpheme": "horta",
+      "quenya_root": "horta-",
+      "gloss": "to urge",
+      "linguistic_justification": "The Quenya root 'horta-' conveys 'to urge' which aligns with modifier awaitable semantics across target languages.",
+      "ast_nodes": [
+        "AwaitableMarker"
+      ],
+      "frequency_per_10k_loc": 1217,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 105
+      }
+    },
+    {
+      "key": "modifier:volatile",
+      "morpheme": "farina",
+      "quenya_root": "fárina-",
+      "gloss": "hunting, unsettled",
+      "linguistic_justification": "The Quenya root 'fárina-' conveys 'hunting, unsettled' which aligns with modifier volatile semantics across target languages.",
+      "ast_nodes": [
+        "VolatileModifier"
+      ],
+      "frequency_per_10k_loc": 1210,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 106
+      }
+    },
+    {
+      "key": "modifier:override",
+      "morpheme": "arta",
+      "quenya_root": "arta-",
+      "gloss": "exalted over",
+      "linguistic_justification": "The Quenya root 'arta-' conveys 'exalted over' which aligns with modifier override semantics across target languages.",
+      "ast_nodes": [
+        "OverrideModifier"
+      ],
+      "frequency_per_10k_loc": 1203,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 107
+      }
+    },
+    {
+      "key": "modifier:virtual",
+      "morpheme": "firya",
+      "quenya_root": "firya-",
+      "gloss": "to fade",
+      "linguistic_justification": "The Quenya root 'firya-' conveys 'to fade' which aligns with modifier virtual semantics across target languages.",
+      "ast_nodes": [
+        "VirtualModifier"
+      ],
+      "frequency_per_10k_loc": 1196,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 108
+      }
+    },
+    {
+      "key": "modifier:abstract",
+      "morpheme": "hsaila",
+      "quenya_root": "hsaila-",
+      "gloss": "shadowy",
+      "linguistic_justification": "The Quenya root 'hsaila-' conveys 'shadowy' which aligns with modifier abstract semantics across target languages.",
+      "ast_nodes": [
+        "AbstractModifier"
+      ],
+      "frequency_per_10k_loc": 1189,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 109
+      }
+    },
+    {
+      "key": "modifier:sealed",
+      "morpheme": "hresta",
+      "quenya_root": "hresta-",
+      "gloss": "shore boundary",
+      "linguistic_justification": "The Quenya root 'hresta-' conveys 'shore boundary' which aligns with modifier sealed semantics across target languages.",
+      "ast_nodes": [
+        "SealedModifier"
+      ],
+      "frequency_per_10k_loc": 1182,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 110
+      }
+    },
+    {
+      "key": "modifier:open",
+      "morpheme": "panta",
+      "quenya_root": "panta-",
+      "gloss": "open",
+      "linguistic_justification": "The Quenya root 'panta-' conveys 'open' which aligns with modifier open semantics across target languages.",
+      "ast_nodes": [
+        "OpenModifier"
+      ],
+      "frequency_per_10k_loc": 1175,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 111
+      }
+    },
+    {
+      "key": "modifier:required",
+      "morpheme": "mahta",
+      "quenya_root": "mahta-",
+      "gloss": "to demand",
+      "linguistic_justification": "The Quenya root 'mahta-' conveys 'to demand' which aligns with modifier required semantics across target languages.",
+      "ast_nodes": [
+        "RequiredModifier"
+      ],
+      "frequency_per_10k_loc": 1168,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 112
+      }
+    },
+    {
+      "key": "modifier:optional",
+      "morpheme": "merna",
+      "quenya_root": "merna-",
+      "gloss": "wishful",
+      "linguistic_justification": "The Quenya root 'merna-' conveys 'wishful' which aligns with modifier optional semantics across target languages.",
+      "ast_nodes": [
+        "OptionalModifier"
+      ],
+      "frequency_per_10k_loc": 1161,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 113
+      }
+    },
+    {
+      "key": "modifier:default",
+      "morpheme": "yáve",
+      "quenya_root": "yáve-",
+      "gloss": "fruit/standard",
+      "linguistic_justification": "The Quenya root 'yáve-' conveys 'fruit/standard' which aligns with modifier default semantics across target languages.",
+      "ast_nodes": [
+        "DefaultModifier"
+      ],
+      "frequency_per_10k_loc": 1154,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 114
+      }
+    },
+    {
+      "key": "modifier:partial",
+      "morpheme": "mitta",
+      "quenya_root": "mitta-",
+      "gloss": "partial",
+      "linguistic_justification": "The Quenya root 'mitta-' conveys 'partial' which aligns with modifier partial semantics across target languages.",
+      "ast_nodes": [
+        "PartialModifier"
+      ],
+      "frequency_per_10k_loc": 1147,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 115
+      }
+    },
+    {
+      "key": "modifier:extern",
+      "morpheme": "eltir",
+      "quenya_root": "eltir-",
+      "gloss": "to look afar",
+      "linguistic_justification": "The Quenya root 'eltir-' conveys 'to look afar' which aligns with modifier extern semantics across target languages.",
+      "ast_nodes": [
+        "ExternModifier"
+      ],
+      "frequency_per_10k_loc": 1140,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 116
+      }
+    },
+    {
+      "key": "modifier:inline",
+      "morpheme": "aquapa",
+      "quenya_root": "aquapa-",
+      "gloss": "fully close",
+      "linguistic_justification": "The Quenya root 'aquapa-' conveys 'fully close' which aligns with modifier inline semantics across target languages.",
+      "ast_nodes": [
+        "InlineModifier"
+      ],
+      "frequency_per_10k_loc": 1133,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 117
+      }
+    },
+    {
+      "key": "modifier:noexcept",
+      "morpheme": "úcare",
+      "quenya_root": "úcarë-",
+      "gloss": "without error",
+      "linguistic_justification": "The Quenya root 'úcarë-' conveys 'without error' which aligns with modifier noexcept semantics across target languages.",
+      "ast_nodes": [
+        "NoExceptSpecifier"
+      ],
+      "frequency_per_10k_loc": 1126,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 118
+      }
+    },
+    {
+      "key": "modifier:constexpr",
+      "morpheme": "sanwe",
+      "quenya_root": "sanwë-",
+      "gloss": "thought-known",
+      "linguistic_justification": "The Quenya root 'sanwë-' conveys 'thought-known' which aligns with modifier constexpr semantics across target languages.",
+      "ast_nodes": [
+        "ConstexprSpecifier"
+      ],
+      "frequency_per_10k_loc": 1119,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 119
+      }
+    },
+    {
+      "key": "modifier:template",
+      "morpheme": "lindal",
+      "quenya_root": "lindal-",
+      "gloss": "song pattern",
+      "linguistic_justification": "The Quenya root 'lindal-' conveys 'song pattern' which aligns with modifier template semantics across target languages.",
+      "ast_nodes": [
+        "TemplateParameter"
+      ],
+      "frequency_per_10k_loc": 1112,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 120
+      }
+    },
+    {
+      "key": "modifier:generic",
+      "morpheme": "aila",
+      "quenya_root": "aila-",
+      "gloss": "shining general",
+      "linguistic_justification": "The Quenya root 'aila-' conveys 'shining general' which aligns with modifier generic semantics across target languages.",
+      "ast_nodes": [
+        "GenericParameter"
+      ],
+      "frequency_per_10k_loc": 1105,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 121
+      }
+    },
+    {
+      "key": "modifier:covariant",
+      "morpheme": "telu",
+      "quenya_root": "telu-",
+      "gloss": "ending upward",
+      "linguistic_justification": "The Quenya root 'telu-' conveys 'ending upward' which aligns with modifier covariant semantics across target languages.",
+      "ast_nodes": [
+        "CovariantModifier"
+      ],
+      "frequency_per_10k_loc": 1098,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 122
+      }
+    },
+    {
+      "key": "modifier:contravariant",
+      "morpheme": "nutelu",
+      "quenya_root": "nu-telu-",
+      "gloss": "ending downward",
+      "linguistic_justification": "The Quenya root 'nu-telu-' conveys 'ending downward' which aligns with modifier contravariant semantics across target languages.",
+      "ast_nodes": [
+        "ContravariantModifier"
+      ],
+      "frequency_per_10k_loc": 1091,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 123
+      }
+    },
+    {
+      "key": "modifier:invariant",
+      "morpheme": "stal",
+      "quenya_root": "stal-",
+      "gloss": "fixed",
+      "linguistic_justification": "The Quenya root 'stal-' conveys 'fixed' which aligns with modifier invariant semantics across target languages.",
+      "ast_nodes": [
+        "InvariantModifier"
+      ],
+      "frequency_per_10k_loc": 1084,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 124
+      }
+    },
+    {
+      "key": "modifier:synchronized",
+      "morpheme": "ostya",
+      "quenya_root": "ostya-",
+      "gloss": "to gather together",
+      "linguistic_justification": "The Quenya root 'ostya-' conveys 'to gather together' which aligns with modifier synchronized semantics across target languages.",
+      "ast_nodes": [
+        "SynchronizedModifier"
+      ],
+      "frequency_per_10k_loc": 1077,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 125
+      }
+    },
+    {
+      "key": "literal:int",
+      "morpheme": "min",
+      "quenya_root": "min-",
+      "gloss": "one",
+      "linguistic_justification": "The Quenya root 'min-' conveys 'one' which aligns with literal int semantics across target languages.",
+      "ast_nodes": [
+        "IntegerLiteral"
+      ],
+      "frequency_per_10k_loc": 1070,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 126
+      }
+    },
+    {
+      "key": "literal:float",
+      "morpheme": "loar",
+      "quenya_root": "loar-",
+      "gloss": "flood/flow",
+      "linguistic_justification": "The Quenya root 'loar-' conveys 'flood/flow' which aligns with literal float semantics across target languages.",
+      "ast_nodes": [
+        "FloatLiteral"
+      ],
+      "frequency_per_10k_loc": 1063,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "10",
+        "payload_bits": 12,
+        "effective_bits": 14,
+        "ordinal": 127
+      }
+    },
+    {
+      "key": "literal:string",
+      "morpheme": "quet",
+      "quenya_root": "quet-",
+      "gloss": "speech",
+      "linguistic_justification": "The Quenya root 'quet-' conveys 'speech' which aligns with literal string semantics across target languages.",
+      "ast_nodes": [
+        "StringLiteral"
+      ],
+      "frequency_per_10k_loc": 1056,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 0
+      }
+    },
+    {
+      "key": "literal:bool_true",
+      "morpheme": "anwa",
+      "quenya_root": "anwa-",
+      "gloss": "true",
+      "linguistic_justification": "The Quenya root 'anwa-' conveys 'true' which aligns with literal bool_true semantics across target languages.",
+      "ast_nodes": [
+        "BooleanLiteral:true"
+      ],
+      "frequency_per_10k_loc": 1049,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 1
+      }
+    },
+    {
+      "key": "literal:bool_false",
+      "morpheme": "vanwa",
+      "quenya_root": "vanwa-",
+      "gloss": "lost/false",
+      "linguistic_justification": "The Quenya root 'vanwa-' conveys 'lost/false' which aligns with literal bool_false semantics across target languages.",
+      "ast_nodes": [
+        "BooleanLiteral:false"
+      ],
+      "frequency_per_10k_loc": 1042,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 2
+      }
+    },
+    {
+      "key": "literal:null",
+      "morpheme": "unyë",
+      "quenya_root": "únyë-",
+      "gloss": "not",
+      "linguistic_justification": "The Quenya root 'únyë-' conveys 'not' which aligns with literal null semantics across target languages.",
+      "ast_nodes": [
+        "NullLiteral",
+        "NoneLiteral"
+      ],
+      "frequency_per_10k_loc": 1035,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 3
+      }
+    },
+    {
+      "key": "literal:array",
+      "morpheme": "hosty",
+      "quenya_root": "hosta-",
+      "gloss": "collection literal",
+      "linguistic_justification": "The Quenya root 'hosta-' conveys 'collection literal' which aligns with literal array semantics across target languages.",
+      "ast_nodes": [
+        "ArrayLiteral",
+        "ListLiteral"
+      ],
+      "frequency_per_10k_loc": 1028,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 4
+      }
+    },
+    {
+      "key": "literal:object",
+      "morpheme": "sambëa",
+      "quenya_root": "sambë-",
+      "gloss": "house-literal",
+      "linguistic_justification": "The Quenya root 'sambë-' conveys 'house-literal' which aligns with literal object semantics across target languages.",
+      "ast_nodes": [
+        "ObjectLiteral",
+        "DictLiteral"
+      ],
+      "frequency_per_10k_loc": 1021,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 5
+      }
+    },
+    {
+      "key": "literal:regex",
+      "morpheme": "lindë",
+      "quenya_root": "lindë-",
+      "gloss": "song pattern",
+      "linguistic_justification": "The Quenya root 'lindë-' conveys 'song pattern' which aligns with literal regex semantics across target languages.",
+      "ast_nodes": [
+        "RegexLiteral"
+      ],
+      "frequency_per_10k_loc": 1014,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 6
+      }
+    },
+    {
+      "key": "literal:template",
+      "morpheme": "lambet",
+      "quenya_root": "lambë-",
+      "gloss": "language template",
+      "linguistic_justification": "The Quenya root 'lambë-' conveys 'language template' which aligns with literal template semantics across target languages.",
+      "ast_nodes": [
+        "TemplateLiteral"
+      ],
+      "frequency_per_10k_loc": 1007,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 7
+      }
+    },
+    {
+      "key": "structure:identifier",
+      "morpheme": "esse",
+      "quenya_root": "essë-",
+      "gloss": "name",
+      "linguistic_justification": "The Quenya root 'essë-' conveys 'name' which aligns with structure identifier semantics across target languages.",
+      "ast_nodes": [
+        "Identifier"
+      ],
+      "frequency_per_10k_loc": 1000,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 8
+      }
+    },
+    {
+      "key": "structure:qualifier",
+      "morpheme": "essetil",
+      "quenya_root": "essë-",
+      "gloss": "name path",
+      "linguistic_justification": "The Quenya root 'essë-' conveys 'name path' which aligns with structure qualifier semantics across target languages.",
+      "ast_nodes": [
+        "QualifiedName"
+      ],
+      "frequency_per_10k_loc": 993,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 9
+      }
+    },
+    {
+      "key": "structure:parameter",
+      "morpheme": "colma",
+      "quenya_root": "colma-",
+      "gloss": "ring, supporting",
+      "linguistic_justification": "The Quenya root 'colma-' conveys 'ring, supporting' which aligns with structure parameter semantics across target languages.",
+      "ast_nodes": [
+        "Parameter"
+      ],
+      "frequency_per_10k_loc": 986,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 10
+      }
+    },
+    {
+      "key": "structure:argument",
+      "morpheme": "colmar",
+      "quenya_root": "colma-",
+      "gloss": "supporting piece",
+      "linguistic_justification": "The Quenya root 'colma-' conveys 'supporting piece' which aligns with structure argument semantics across target languages.",
+      "ast_nodes": [
+        "Argument"
+      ],
+      "frequency_per_10k_loc": 979,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 11
+      }
+    },
+    {
+      "key": "structure:generic",
+      "morpheme": "lindë",
+      "quenya_root": "lindë-",
+      "gloss": "song/pattern",
+      "linguistic_justification": "The Quenya root 'lindë-' conveys 'song/pattern' which aligns with structure generic semantics across target languages.",
+      "ast_nodes": [
+        "TypeArgument"
+      ],
+      "frequency_per_10k_loc": 972,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 12
+      }
+    },
+    {
+      "key": "structure:type_constraint",
+      "morpheme": "nertë",
+      "quenya_root": "nertë-",
+      "gloss": "bond",
+      "linguistic_justification": "The Quenya root 'nertë-' conveys 'bond' which aligns with structure type_constraint semantics across target languages.",
+      "ast_nodes": [
+        "TypeConstraint"
+      ],
+      "frequency_per_10k_loc": 965,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 13
+      }
+    },
+    {
+      "key": "structure:where_clause",
+      "morpheme": "mar",
+      "quenya_root": "mar-",
+      "gloss": "dwelling place",
+      "linguistic_justification": "The Quenya root 'mar-' conveys 'dwelling place' which aligns with structure where_clause semantics across target languages.",
+      "ast_nodes": [
+        "WhereClause"
+      ],
+      "frequency_per_10k_loc": 958,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 14
+      }
+    },
+    {
+      "key": "structure:block_start",
+      "morpheme": "sandion",
+      "quenya_root": "sand-",
+      "gloss": "shielded begin",
+      "linguistic_justification": "The Quenya root 'sand-' conveys 'shielded begin' which aligns with structure block_start semantics across target languages.",
+      "ast_nodes": [
+        "BlockStart"
+      ],
+      "frequency_per_10k_loc": 951,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 15
+      }
+    },
+    {
+      "key": "structure:block_end",
+      "morpheme": "sandome",
+      "quenya_root": "sand-",
+      "gloss": "shielded end",
+      "linguistic_justification": "The Quenya root 'sand-' conveys 'shielded end' which aligns with structure block_end semantics across target languages.",
+      "ast_nodes": [
+        "BlockEnd"
+      ],
+      "frequency_per_10k_loc": 944,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 16
+      }
+    },
+    {
+      "key": "structure:line",
+      "morpheme": "tehta",
+      "quenya_root": "tehta-",
+      "gloss": "mark",
+      "linguistic_justification": "The Quenya root 'tehta-' conveys 'mark' which aligns with structure line semantics across target languages.",
+      "ast_nodes": [
+        "LineSeparator"
+      ],
+      "frequency_per_10k_loc": 937,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 17
+      }
+    },
+    {
+      "key": "structure:indent",
+      "morpheme": "lant",
+      "quenya_root": "lant-",
+      "gloss": "drop down",
+      "linguistic_justification": "The Quenya root 'lant-' conveys 'drop down' which aligns with structure indent semantics across target languages.",
+      "ast_nodes": [
+        "Indent"
+      ],
+      "frequency_per_10k_loc": 930,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 18
+      }
+    },
+    {
+      "key": "structure:dedent",
+      "morpheme": "halant",
+      "quenya_root": "halant-",
+      "gloss": "lift up",
+      "linguistic_justification": "The Quenya root 'halant-' conveys 'lift up' which aligns with structure dedent semantics across target languages.",
+      "ast_nodes": [
+        "Dedent"
+      ],
+      "frequency_per_10k_loc": 923,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 19
+      }
+    },
+    {
+      "key": "structure:comma",
+      "morpheme": "sepa",
+      "quenya_root": "sepa-",
+      "gloss": "lip/border",
+      "linguistic_justification": "The Quenya root 'sepa-' conveys 'lip/border' which aligns with structure comma semantics across target languages.",
+      "ast_nodes": [
+        "CommaSeparator"
+      ],
+      "frequency_per_10k_loc": 916,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 20
+      }
+    },
+    {
+      "key": "structure:colon",
+      "morpheme": "hyarmen",
+      "quenya_root": "hyarmen-",
+      "gloss": "south/guide",
+      "linguistic_justification": "The Quenya root 'hyarmen-' conveys 'south/guide' which aligns with structure colon semantics across target languages.",
+      "ast_nodes": [
+        "ColonSeparator"
+      ],
+      "frequency_per_10k_loc": 909,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 21
+      }
+    },
+    {
+      "key": "structure:semicolon",
+      "morpheme": "hyarmenya",
+      "quenya_root": "hyarmen-",
+      "gloss": "guiding pause",
+      "linguistic_justification": "The Quenya root 'hyarmen-' conveys 'guiding pause' which aligns with structure semicolon semantics across target languages.",
+      "ast_nodes": [
+        "SemicolonSeparator"
+      ],
+      "frequency_per_10k_loc": 902,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 22
+      }
+    },
+    {
+      "key": "structure:dot",
+      "morpheme": "pica",
+      "quenya_root": "pica-",
+      "gloss": "spot",
+      "linguistic_justification": "The Quenya root 'pica-' conveys 'spot' which aligns with structure dot semantics across target languages.",
+      "ast_nodes": [
+        "DotSeparator"
+      ],
+      "frequency_per_10k_loc": 895,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 23
+      }
+    },
+    {
+      "key": "structure:arrow",
+      "morpheme": "lange",
+      "quenya_root": "lange-",
+      "gloss": "pointing",
+      "linguistic_justification": "The Quenya root 'lange-' conveys 'pointing' which aligns with structure arrow semantics across target languages.",
+      "ast_nodes": [
+        "Arrow"
+      ],
+      "frequency_per_10k_loc": 888,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 24
+      }
+    },
+    {
+      "key": "structure:fat_arrow",
+      "morpheme": "langewa",
+      "quenya_root": "lange-",
+      "gloss": "heavy pointing",
+      "linguistic_justification": "The Quenya root 'lange-' conveys 'heavy pointing' which aligns with structure fat_arrow semantics across target languages.",
+      "ast_nodes": [
+        "FatArrow"
+      ],
+      "frequency_per_10k_loc": 881,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 25
+      }
+    },
+    {
+      "key": "structure:ellipsis",
+      "morpheme": "hir",
+      "quenya_root": "hir-",
+      "gloss": "to find ongoing",
+      "linguistic_justification": "The Quenya root 'hir-' conveys 'to find ongoing' which aligns with structure ellipsis semantics across target languages.",
+      "ast_nodes": [
+        "Ellipsis"
+      ],
+      "frequency_per_10k_loc": 874,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 26
+      }
+    },
+    {
+      "key": "structure:spread",
+      "morpheme": "palya",
+      "quenya_root": "palya-",
+      "gloss": "to spread",
+      "linguistic_justification": "The Quenya root 'palya-' conveys 'to spread' which aligns with structure spread semantics across target languages.",
+      "ast_nodes": [
+        "SpreadElement"
+      ],
+      "frequency_per_10k_loc": 867,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 27
+      }
+    },
+    {
+      "key": "meta:dictionary_version",
+      "morpheme": "yando",
+      "quenya_root": "yando-",
+      "gloss": "bridge generation",
+      "linguistic_justification": "The Quenya root 'yando-' conveys 'bridge generation' which aligns with meta dictionary_version semantics across target languages.",
+      "ast_nodes": [
+        "DictionaryVersion"
+      ],
+      "frequency_per_10k_loc": 860,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 28
+      }
+    },
+    {
+      "key": "meta:payload_marker",
+      "morpheme": "quetten",
+      "quenya_root": "quetta-",
+      "gloss": "speech marker",
+      "linguistic_justification": "The Quenya root 'quetta-' conveys 'speech marker' which aligns with meta payload_marker semantics across target languages.",
+      "ast_nodes": [
+        "PayloadMarker"
+      ],
+      "frequency_per_10k_loc": 853,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 29
+      }
+    },
+    {
+      "key": "meta:unknown",
+      "morpheme": "úment",
+      "quenya_root": "úmenta-",
+      "gloss": "not told",
+      "linguistic_justification": "The Quenya root 'úmenta-' conveys 'not told' which aligns with meta unknown semantics across target languages.",
+      "ast_nodes": [
+        "UnknownToken"
+      ],
+      "frequency_per_10k_loc": 846,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 30
+      }
+    },
+    {
+      "key": "meta:padding",
+      "morpheme": "caita",
+      "quenya_root": "caita-",
+      "gloss": "to lie down",
+      "linguistic_justification": "The Quenya root 'caita-' conveys 'to lie down' which aligns with meta padding semantics across target languages.",
+      "ast_nodes": [
+        "Padding"
+      ],
+      "frequency_per_10k_loc": 839,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 31
+      }
+    },
+    {
+      "key": "meta:checksum",
+      "morpheme": "hostale",
+      "quenya_root": "hostalë-",
+      "gloss": "collection counting",
+      "linguistic_justification": "The Quenya root 'hostalë-' conveys 'collection counting' which aligns with meta checksum semantics across target languages.",
+      "ast_nodes": [
+        "Checksum"
+      ],
+      "frequency_per_10k_loc": 832,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 32
+      }
+    },
+    {
+      "key": "meta:version_header",
+      "morpheme": "mindon",
+      "quenya_root": "mindon-",
+      "gloss": "tower signal",
+      "linguistic_justification": "The Quenya root 'mindon-' conveys 'tower signal' which aligns with meta version_header semantics across target languages.",
+      "ast_nodes": [
+        "StreamVersionHeader"
+      ],
+      "frequency_per_10k_loc": 825,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 33
+      }
+    },
+    {
+      "key": "meta:stream_start",
+      "morpheme": "yestar",
+      "quenya_root": "yestar-",
+      "gloss": "first day",
+      "linguistic_justification": "The Quenya root 'yestar-' conveys 'first day' which aligns with meta stream_start semantics across target languages.",
+      "ast_nodes": [
+        "StreamStart"
+      ],
+      "frequency_per_10k_loc": 818,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 34
+      }
+    },
+    {
+      "key": "meta:stream_end",
+      "morpheme": "mettar",
+      "quenya_root": "mettar-",
+      "gloss": "ending day",
+      "linguistic_justification": "The Quenya root 'mettar-' conveys 'ending day' which aligns with meta stream_end semantics across target languages.",
+      "ast_nodes": [
+        "StreamEnd"
+      ],
+      "frequency_per_10k_loc": 811,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 35
+      }
+    },
+    {
+      "key": "meta:human_readable",
+      "morpheme": "lamen",
+      "quenya_root": "lamen-",
+      "gloss": "animal voice",
+      "linguistic_justification": "The Quenya root 'lamen-' conveys 'animal voice' which aligns with meta human_readable semantics across target languages.",
+      "ast_nodes": [
+        "HumanReadable"
+      ],
+      "frequency_per_10k_loc": 804,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 36
+      }
+    },
+    {
+      "key": "meta:diagnostic",
+      "morpheme": "tirmar",
+      "quenya_root": "tirmar-",
+      "gloss": "watcher",
+      "linguistic_justification": "The Quenya root 'tirmar-' conveys 'watcher' which aligns with meta diagnostic semantics across target languages.",
+      "ast_nodes": [
+        "DiagnosticMarker"
+      ],
+      "frequency_per_10k_loc": 797,
+      "encoding": {
+        "type": "prefix",
+        "prefix": "110",
+        "payload_bits": 15,
+        "effective_bits": 18,
+        "ordinal": 37
+      }
+    }
+  ]
+}

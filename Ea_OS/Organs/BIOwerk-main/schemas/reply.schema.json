@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "reply.schema.json",
+  "type": "object",
+  "required": [
+    "id",
+    "ts",
+    "agent",
+    "ok",
+    "output",
+    "state_hash"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "ts": {
+      "type": "number"
+    },
+    "agent": {
+      "type": "string"
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "output": {
+      "type": "object"
+    },
+    "state_hash": {
+      "type": "string"
+    }
+  }
+}

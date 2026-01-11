@@ -1,0 +1,249 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backup-orchestrator
+  namespace: biowerk
+  labels:
+    app: backup-orchestrator
+    tier: backup
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backup-orchestrator
+  template:
+    metadata:
+      labels:
+        app: backup-orchestrator
+        tier: backup
+    spec:
+      containers:
+      - name: backup-orchestrator
+        image: ${REGISTRY}/biowerk-backup-orchestrator:latest
+        ports:
+        - containerPort: 8090
+          name: http
+        env:
+        - name: PORT
+          value: "8090"
+        - name: LOG_LEVEL
+          value: INFO
+        - name: POSTGRES_HOST
+          value: postgres.biowerk.svc.cluster.local
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: password
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: database
+        - name: POSTGRES_BACKUP_ENABLED
+          value: "true"
+        - name: POSTGRES_BACKUP_SCHEDULE
+          value: "0 2 * * *"
+        - name: MONGODB_HOST
+          value: mongodb.biowerk.svc.cluster.local
+        - name: MONGODB_PORT
+          value: "27017"
+        - name: MONGODB_USER
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: username
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: password
+        - name: MONGODB_DB
+          valueFrom:
+            configMapKeyRef:
+              name: mongodb-config
+              key: database
+        - name: MONGODB_BACKUP_ENABLED
+          value: "true"
+        - name: MONGODB_BACKUP_SCHEDULE
+          value: "30 2 * * *"
+        - name: REDIS_HOST
+          value: redis.biowerk.svc.cluster.local
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_BACKUP_ENABLED
+          value: "true"
+        - name: REDIS_BACKUP_SCHEDULE
+          value: "0 3 * * *"
+        - name: BACKUP_DIR
+          value: /var/backups/biowerk
+        - name: BACKUP_RETENTION_DAYS
+          value: "30"
+        - name: BACKUP_RETENTION_WEEKLY
+          value: "12"
+        - name: BACKUP_RETENTION_MONTHLY
+          value: "12"
+        - name: ENCRYPTION_ENABLED
+          value: "true"
+        - name: COMPRESSION
+          value: zstd
+        - name: VERIFY_BACKUP
+          value: "true"
+        - name: VERIFICATION_SCHEDULE
+          value: "0 4 * * 0"
+        - name: S3_ENABLED
+          value: "false"
+        - name: S3_BUCKET
+          valueFrom:
+            secretKeyRef:
+              name: backup-secrets
+              key: s3_bucket
+              optional: true
+        - name: S3_REGION
+          value: us-east-1
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: backup-secrets
+              key: aws_access_key_id
+              optional: true
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: backup-secrets
+              key: aws_secret_access_key
+              optional: true
+        - name: RTO_TARGET
+          value: 4h
+        - name: RPO_TARGET
+          value: 1h
+        - name: DR_TEST_ENABLED
+          value: "true"
+        - name: DR_TEST_SCHEDULE
+          value: "0 4 * * 0"
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+        volumeMounts:
+        - name: backup-data
+          mountPath: /var/backups/biowerk
+        - name: backup-keys
+          mountPath: /etc/biowerk/keys
+        - name: backup-logs
+          mountPath: /var/log/biowerk
+        - name: backup-metrics
+          mountPath: /var/lib/biowerk/metrics
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8090
+          initialDelaySeconds: 40
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8090
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8090
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 12
+      volumes:
+      - name: backup-data
+        persistentVolumeClaim:
+          claimName: backup-data-pvc
+      - name: backup-keys
+        persistentVolumeClaim:
+          claimName: backup-keys-pvc
+      - name: backup-logs
+        persistentVolumeClaim:
+          claimName: backup-logs-pvc
+      - name: backup-metrics
+        persistentVolumeClaim:
+          claimName: backup-metrics-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backup-orchestrator
+  namespace: biowerk
+  labels:
+    app: backup-orchestrator
+    tier: backup
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8090
+    targetPort: 8090
+    protocol: TCP
+    name: http
+  selector:
+    app: backup-orchestrator
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backup-data-pvc
+  namespace: biowerk
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backup-keys-pvc
+  namespace: biowerk
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backup-logs-pvc
+  namespace: biowerk
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backup-metrics-pvc
+  namespace: biowerk
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi

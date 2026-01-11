@@ -1,0 +1,300 @@
+{
+  "version": "1.0",
+  "datasets": [
+    {
+      "slug": "python-small-flask",
+      "name": "Flask Tutorial",
+      "category": "small",
+      "language": "python",
+      "domain": "web",
+      "estimated_loc": 8500,
+      "description": "Educational Flask sample application representing a quick regression target.",
+      "download": {
+        "url": "https://github.com/pallets/flask/archive/refs/tags/2.3.3.zip",
+        "sha256": "74a5539f87f90f90db6f0afd33d26f0ae51d0f3836a9c2bd045a4c0fe6f83f62",
+        "archive_subdir": "flask-2.3.3/examples/tutorial"
+      },
+      "entry_glob": ["**/*.py"],
+      "local_fixture": "tests/data/benchmarks/python_small"
+    },
+    {
+      "slug": "javascript-small-astro",
+      "name": "Astro Blog Starter",
+      "category": "small",
+      "language": "javascript",
+      "domain": "web",
+      "estimated_loc": 9200,
+      "description": "Static blog starter used for JavaScript/TypeScript quick benchmarks.",
+      "download": {
+        "url": "https://github.com/withastro/astro-blog-template/archive/refs/tags/latest.zip",
+        "sha256": "4dd026cf7f9c337d0d0f06b386c68c8916e9b114ef8714580edcc5a2ddcaadf5",
+        "archive_subdir": "astro-blog-template-latest"
+      },
+      "entry_glob": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+    },
+    {
+      "slug": "go-small-fiber",
+      "name": "Fiber Boilerplate",
+      "category": "small",
+      "language": "go",
+      "domain": "web",
+      "estimated_loc": 7600,
+      "description": "Minimal Go Fiber service used for API benchmarking.",
+      "download": {
+        "url": "https://github.com/gofiber/boilerplate/archive/refs/heads/master.zip",
+        "sha256": "c38a57c5cf861c913c5935bc2e8f2ae2ad3e6c02ab73a92a2f51ac3aaee47c1c",
+        "archive_subdir": "boilerplate-master"
+      },
+      "entry_glob": ["**/*.go"]
+    },
+    {
+      "slug": "rust-small-axum",
+      "name": "Axum Todo",
+      "category": "small",
+      "language": "rust",
+      "domain": "web",
+      "estimated_loc": 6400,
+      "description": "Axum based todo backend project.",
+      "download": {
+        "url": "https://github.com/tokio-rs/axum/tree/main/examples/todo"
+      },
+      "entry_glob": ["**/*.rs"]
+    },
+    {
+      "slug": "java-small-android-sunflower",
+      "name": "Android Sunflower",
+      "category": "small",
+      "language": "java",
+      "domain": "mobile",
+      "estimated_loc": 9800,
+      "description": "Android reference architecture sample.",
+      "download": {
+        "url": "https://github.com/android/sunflower/archive/refs/tags/2.3.0.zip",
+        "sha256": "07ca1c5e4d2551c6d1ac0a0edec32956543ef97cc7b8c716915e6c0ff6d7060c",
+        "archive_subdir": "sunflower-2.3.0"
+      },
+      "entry_glob": ["**/*.kt", "**/*.java"]
+    },
+    {
+      "slug": "python-medium-django",
+      "name": "Django REST Framework",
+      "category": "medium",
+      "language": "python",
+      "domain": "web",
+      "estimated_loc": 67000,
+      "description": "Django REST Framework monorepo used for medium sized Python benchmarks.",
+      "download": {
+        "url": "https://github.com/encode/django-rest-framework/archive/refs/tags/3.14.0.zip",
+        "sha256": "2d92f7ad7c741a0aa74bb38bd9889e4016b27c9ee7d28163aaf0f23e7142a3a2",
+        "archive_subdir": "django-rest-framework-3.14.0"
+      },
+      "entry_glob": ["**/*.py"]
+    },
+    {
+      "slug": "javascript-medium-nextjs",
+      "name": "Next.js Commerce",
+      "category": "medium",
+      "language": "javascript",
+      "domain": "web",
+      "estimated_loc": 88000,
+      "description": "Next.js Commerce storefront used for medium JS benchmarks.",
+      "download": {
+        "url": "https://github.com/vercel/commerce/archive/refs/tags/v1.2.0.zip",
+        "sha256": "c35b3ba7669f6f24c5120e4ae67409af4969cacde94dba1727933c32cfa85dfa",
+        "archive_subdir": "commerce-1.2.0"
+      },
+      "entry_glob": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+    },
+    {
+      "slug": "go-medium-kubernetes",
+      "name": "Kubernetes Components Sample",
+      "category": "medium",
+      "language": "go",
+      "domain": "systems",
+      "estimated_loc": 94000,
+      "description": "Subset of Kubernetes focusing on scheduler and controller manager.",
+      "download": {
+        "url": "https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.27.3.zip",
+        "sha256": "1f3b9d19da2d2fc90d518d04279314d2c5aeb1149c364ec7bb0d5853f86d62be",
+        "archive_subdir": "kubernetes-1.27.3"
+      },
+      "entry_glob": ["cmd/kube-scheduler/**/*.go", "cmd/kube-controller-manager/**/*.go", "pkg/**/*.go"]
+    },
+    {
+      "slug": "rust-medium-rust-analyzer",
+      "name": "rust-analyzer Core",
+      "category": "medium",
+      "language": "rust",
+      "domain": "developer-tools",
+      "estimated_loc": 78000,
+      "description": "Key crates from rust-analyzer used for medium sized runs.",
+      "download": {
+        "url": "https://github.com/rust-lang/rust-analyzer/archive/refs/tags/2023-09-11.zip",
+        "sha256": "7ab447b5e7bfbfd508d4bd9c0fc1c26f8cfa9f97bd2b52245e2aeb61ce0e4b02",
+        "archive_subdir": "rust-analyzer-2023-09-11"
+      },
+      "entry_glob": ["crates/**/*.rs"]
+    },
+    {
+      "slug": "java-medium-spring",
+      "name": "Spring Boot",
+      "category": "medium",
+      "language": "java",
+      "domain": "enterprise",
+      "estimated_loc": 120000,
+      "description": "Spring Boot project baseline for medium Java benchmarks.",
+      "download": {
+        "url": "https://github.com/spring-projects/spring-boot/archive/refs/tags/v3.1.1.zip",
+        "sha256": "f702aed03a805f94ba7c733d1a9a7f32c4acb1e98f17f3121f908db8b27c1200",
+        "archive_subdir": "spring-boot-3.1.1"
+      },
+      "entry_glob": ["**/*.java", "**/*.kt"]
+    },
+    {
+      "slug": "python-large-pytorch",
+      "name": "PyTorch",
+      "category": "large",
+      "language": "python",
+      "domain": "systems",
+      "estimated_loc": 470000,
+      "description": "Subset of PyTorch python modules for large scale benchmarking.",
+      "download": {
+        "url": "https://github.com/pytorch/pytorch/archive/refs/tags/v2.0.1.zip",
+        "sha256": "4033bff6b79519645fbf9777084ff6ef4f0b847ef84aa7b4dfc5c8ead5c6d1ee",
+        "archive_subdir": "pytorch-2.0.1/torch"
+      },
+      "entry_glob": ["**/*.py"]
+    },
+    {
+      "slug": "javascript-large-chromium-devtools",
+      "name": "Chromium DevTools Frontend",
+      "category": "large",
+      "language": "javascript",
+      "domain": "developer-tools",
+      "estimated_loc": 520000,
+      "description": "DevTools frontend modules extracted from Chromium.",
+      "download": {
+        "url": "https://chromium.googlesource.com/chromium/src/+/refs/tags/114.0.5735.110?format=TEXT"
+      },
+      "entry_glob": ["third_party/devtools-frontend/src/**/*.ts", "third_party/devtools-frontend/src/**/*.js"]
+    },
+    {
+      "slug": "go-large-istio",
+      "name": "Istio",
+      "category": "large",
+      "language": "go",
+      "domain": "systems",
+      "estimated_loc": 410000,
+      "description": "Istio control plane for large Go runs.",
+      "download": {
+        "url": "https://github.com/istio/istio/archive/refs/tags/1.18.0.zip",
+        "sha256": "8d512e4f0dfb9f97922198f01f19b92dcb1ba26f8a91b7c99b4a62ac28b58a7f",
+        "archive_subdir": "istio-1.18.0"
+      },
+      "entry_glob": ["**/*.go"]
+    },
+    {
+      "slug": "rust-large-firefox",
+      "name": "Firefox Components",
+      "category": "large",
+      "language": "rust",
+      "domain": "systems",
+      "estimated_loc": 560000,
+      "description": "Rust components inside the Firefox tree used for large runs.",
+      "download": {
+        "url": "https://github.com/mozilla/gecko-dev/archive/refs/tags/relbranch.zip",
+        "sha256": "cf95fa5b7d9f0ccc5fe17cc65c1dcaf149048393ca5e3f1d2f504f829148d464",
+        "archive_subdir": "gecko-dev-relbranch"
+      },
+      "entry_glob": ["servo/components/**/*.rs", "toolkit/**/*.rs"]
+    },
+    {
+      "slug": "java-large-android-platform",
+      "name": "Android Platform Samples",
+      "category": "large",
+      "language": "java",
+      "domain": "mobile",
+      "estimated_loc": 680000,
+      "description": "Representative slices from the Android platform build tree.",
+      "download": {
+        "url": "https://android.googlesource.com/platform/frameworks/base/+archive/refs/heads/main.tar.gz"
+      },
+      "entry_glob": ["core/**/*.java", "services/**/*.java"]
+    },
+    {
+      "slug": "python-huge-openstack",
+      "name": "OpenStack Nova",
+      "category": "huge",
+      "language": "python",
+      "domain": "cloud",
+      "estimated_loc": 1100000,
+      "description": "Full Nova tree for stress testing the encoding pipeline.",
+      "download": {
+        "url": "https://github.com/openstack/nova/archive/refs/tags/27.0.0.zip",
+        "sha256": "db3c1d44b36cf14b0ad2ea38b3a9aa98ca3fa80764d514f6332b55da7cf86238",
+        "archive_subdir": "nova-27.0.0"
+      },
+      "entry_glob": ["**/*.py"]
+    },
+    {
+      "slug": "javascript-huge-wordpress",
+      "name": "WordPress Gutenberg",
+      "category": "huge",
+      "language": "javascript",
+      "domain": "web",
+      "estimated_loc": 1350000,
+      "description": "Gutenberg editor monorepo for huge JS workloads.",
+      "download": {
+        "url": "https://github.com/WordPress/gutenberg/archive/refs/tags/v16.1.0.zip",
+        "sha256": "f08e37e27d0886fffc22c39cfdc78451569ee38e15b9cb5a9906b7d4b2a85c2a",
+        "archive_subdir": "gutenberg-16.1.0"
+      },
+      "entry_glob": ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"]
+    },
+    {
+      "slug": "go-huge-k8s-monorepo",
+      "name": "Kubernetes Monorepo",
+      "category": "huge",
+      "language": "go",
+      "domain": "cloud",
+      "estimated_loc": 1450000,
+      "description": "Entire Kubernetes source tree used for full scale exercises.",
+      "download": {
+        "url": "https://github.com/kubernetes/kubernetes/archive/refs/tags/v1.27.3.zip",
+        "sha256": "1f3b9d19da2d2fc90d518d04279314d2c5aeb1149c364ec7bb0d5853f86d62be",
+        "archive_subdir": "kubernetes-1.27.3"
+      },
+      "entry_glob": ["**/*.go"]
+    },
+    {
+      "slug": "rust-huge-rustc",
+      "name": "Rust Compiler",
+      "category": "huge",
+      "language": "rust",
+      "domain": "systems",
+      "estimated_loc": 1600000,
+      "description": "Rust compiler workspace including crates and tools.",
+      "download": {
+        "url": "https://github.com/rust-lang/rust/archive/refs/tags/1.71.0.zip",
+        "sha256": "4d8083bec735c149034049fa68d1487823f78535126b80919d94510634582228",
+        "archive_subdir": "rust-1.71.0"
+      },
+      "entry_glob": ["**/*.rs"]
+    },
+    {
+      "slug": "java-huge-hadoop",
+      "name": "Apache Hadoop",
+      "category": "huge",
+      "language": "java",
+      "domain": "data",
+      "estimated_loc": 1750000,
+      "description": "Apache Hadoop project for enterprise-scale Java stress tests.",
+      "download": {
+        "url": "https://github.com/apache/hadoop/archive/refs/tags/rel/release-3.3.5.zip",
+        "sha256": "a8397c929b92cbd8e6bca8f573c31d8ad1f8bf4b7aa990b891f52c729a8f4cb7",
+        "archive_subdir": "hadoop-rel-release-3.3.5"
+      },
+      "entry_glob": ["**/*.java"]
+    }
+  ]
+}

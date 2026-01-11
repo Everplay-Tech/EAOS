@@ -1,0 +1,42 @@
+apiVersion: v2
+name: biowerk
+description: A Helm chart for BIOwerk - AI-powered biological research platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - biowerk
+  - ai
+  - biology
+  - research
+  - llm
+home: https://biowerk.example.com
+sources:
+  - https://github.com/E-TECH-PLAYTECH/BIOwerk
+maintainers:
+  - name: BIOwerk Team
+    email: team@biowerk.example.com
+
+# Dependencies (optional - can use sub-charts)
+dependencies:
+  # Uncomment to use official charts as dependencies
+  # - name: postgresql
+  #   version: 12.x.x
+  #   repository: https://charts.bitnami.com/bitnami
+  #   condition: postgresql.enabled
+  # - name: mongodb
+  #   version: 13.x.x
+  #   repository: https://charts.bitnami.com/bitnami
+  #   condition: mongodb.enabled
+  # - name: redis
+  #   version: 17.x.x
+  #   repository: https://charts.bitnami.com/bitnami
+  #   condition: redis.enabled
+  # - name: prometheus
+  #   version: 15.x.x
+  #   repository: https://prometheus-community.github.io/helm-charts
+  #   condition: prometheus.enabled
+  # - name: grafana
+  #   version: 6.x.x
+  #   repository: https://grafana.github.io/helm-charts
+  #   condition: grafana.enabled

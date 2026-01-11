@@ -1,0 +1,55 @@
+# Staging-specific environment configuration
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: biowerk-ingress
+spec:
+  tls:
+  - hosts:
+    - staging.biowerk.example.com
+    - api-staging.biowerk.example.com
+    secretName: biowerk-staging-tls-cert
+  rules:
+  - host: staging.biowerk.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mesh-staging
+            port:
+              number: 80
+  - host: api-staging.biowerk.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mesh-staging
+            port:
+              number: 80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: biowerk-monitoring-ingress
+spec:
+  tls:
+  - hosts:
+    - monitoring-staging.biowerk.example.com
+    secretName: biowerk-monitoring-staging-tls-cert
+  rules:
+  - host: monitoring-staging.biowerk.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana-staging
+            port:
+              number: 3000

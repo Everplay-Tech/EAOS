@@ -1,0 +1,144 @@
+# Increase replicas for production high availability
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mesh
+spec:
+  replicas: 5
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: osteon
+spec:
+  replicas: 3
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myocyte
+spec:
+  replicas: 3
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: synapse
+spec:
+  replicas: 3
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: circadian
+spec:
+  replicas: 3
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nucleus
+spec:
+  replicas: 3
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chaperone
+spec:
+  replicas: 3
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gdpr
+spec:
+  replicas: 3
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer
+spec:
+  replicas: 3
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: mesh-hpa
+spec:
+  minReplicas: 3
+  maxReplicas: 20
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: osteon-hpa
+spec:
+  minReplicas: 3
+  maxReplicas: 15
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: myocyte-hpa
+spec:
+  minReplicas: 3
+  maxReplicas: 15
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: synapse-hpa
+spec:
+  minReplicas: 3
+  maxReplicas: 15
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: circadian-hpa
+spec:
+  minReplicas: 3
+  maxReplicas: 15
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nucleus-hpa
+spec:
+  minReplicas: 3
+  maxReplicas: 15
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: chaperone-hpa
+spec:
+  minReplicas: 3
+  maxReplicas: 15
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gdpr-hpa
+spec:
+  minReplicas: 3
+  maxReplicas: 10

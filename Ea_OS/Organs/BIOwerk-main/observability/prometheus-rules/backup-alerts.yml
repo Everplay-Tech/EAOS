@@ -1,0 +1,286 @@
+groups:
+  - name: backup_alerts
+    interval: 60s
+    rules:
+      # ============================================================================
+      # Backup Failure Alerts
+      # ============================================================================
+
+      - alert: BackupFailed
+        expr: |
+          increase(biowerk_backup_total{status="failure"}[1h]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          component: backup
+          team: infrastructure
+        annotations:
+          summary: "Backup failed for {{ $labels.database_type }}"
+          description: |
+            Database backup has failed for {{ $labels.database_type }}.
+            This requires immediate attention to ensure data protection.
+            Check backup logs for details.
+          runbook_url: "https://docs.biowerk.com/runbooks/backup-failure"
+          dashboard_url: "http://grafana:3000/d/backups/backup-monitoring"
+
+      - alert: BackupNotRunning
+        expr: |
+          (time() - biowerk_backup_last_success_timestamp) > 86400
+        for: 1h
+        labels:
+          severity: critical
+          component: backup
+          team: infrastructure
+        annotations:
+          summary: "No successful backup in 24 hours for {{ $labels.database_type }}"
+          description: |
+            The last successful backup for {{ $labels.database_type }} was more than 24 hours ago.
+            Current age: {{ $value | humanizeDuration }}.
+            This violates our RPO (Recovery Point Objective) target.
+          runbook_url: "https://docs.biowerk.com/runbooks/backup-not-running"
+
+      - alert: BackupAgeWarning
+        expr: |
+          (time() - biowerk_backup_last_success_timestamp) > 28800
+        for: 30m
+        labels:
+          severity: warning
+          component: backup
+          team: infrastructure
+        annotations:
+          summary: "Backup is getting old for {{ $labels.database_type }}"
+          description: |
+            The last successful backup for {{ $labels.database_type }} is {{ $value | humanizeDuration }} old.
+            While not critical yet, this should be investigated.
+          runbook_url: "https://docs.biowerk.com/runbooks/backup-age-warning"
+
+      # ============================================================================
+      # Backup Duration Alerts
+      # ============================================================================
+
+      - alert: BackupDurationHigh
+        expr: |
+          rate(biowerk_backup_duration_seconds_sum[1h]) /
+          rate(biowerk_backup_duration_seconds_count[1h]) > 7200
+        for: 15m
+        labels:
+          severity: warning
+          component: backup
+          team: infrastructure
+        annotations:
+          summary: "Backup duration is high for {{ $labels.database_type }}"
+          description: |
+            Backup for {{ $labels.database_type }} is taking longer than expected.
+            Average duration: {{ $value | humanizeDuration }}.
+            This may indicate database growth or performance issues.
+          runbook_url: "https://docs.biowerk.com/runbooks/backup-duration-high"
+
+      - alert: BackupDurationIncreasing
+        expr: |
+          (
+            rate(biowerk_backup_duration_seconds_sum[1h]) /
+            rate(biowerk_backup_duration_seconds_count[1h])
+          ) > 1.5 * (
+            rate(biowerk_backup_duration_seconds_sum[24h] offset 7d) /
+            rate(biowerk_backup_duration_seconds_count[24h] offset 7d)
+          )
+        for: 1h
+        labels:
+          severity: warning
+          component: backup
+          team: infrastructure
+        annotations:
+          summary: "Backup duration increasing for {{ $labels.database_type }}"
+          description: |
+            Backup duration for {{ $labels.database_type }} has increased by 50% compared to last week.
+            This may indicate a trend that needs investigation.
+          runbook_url: "https://docs.biowerk.com/runbooks/backup-duration-increasing"
+
+      # ============================================================================
+      # Backup Size Alerts
+      # ============================================================================
+
+      - alert: BackupSizeIncreaseSignificant
+        expr: |
+          (
+            biowerk_backup_size_bytes -
+            (biowerk_backup_size_bytes offset 7d)
+          ) / (biowerk_backup_size_bytes offset 7d) > 0.5
+        for: 30m
+        labels:
+          severity: warning
+          component: backup
+          team: infrastructure
+        annotations:
+          summary: "Backup size increased significantly for {{ $labels.database_type }}"
+          description: |
+            Backup size for {{ $labels.database_type }} has increased by more than 50% in the past week.
+            Current size: {{ $value | humanize1024 }}B.
+            This may indicate data growth or retention issues.
+          runbook_url: "https://docs.biowerk.com/runbooks/backup-size-increase"
+
+      - alert: BackupSizeZero
+        expr: |
+          biowerk_backup_size_bytes == 0
+        for: 5m
+        labels:
+          severity: critical
+          component: backup
+          team: infrastructure
+        annotations:
+          summary: "Backup size is zero for {{ $labels.database_type }}"
+          description: |
+            The backup for {{ $labels.database_type }} has a size of zero bytes.
+            This indicates a failed or incomplete backup.
+          runbook_url: "https://docs.biowerk.com/runbooks/backup-size-zero"
+
+      # ============================================================================
+      # Backup Verification Alerts
+      # ============================================================================
+
+      - alert: BackupVerificationFailed
+        expr: |
+          increase(biowerk_verification_total{status="failure"}[1h]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          component: backup
+          team: infrastructure
+        annotations:
+          summary: "Backup verification failed for {{ $labels.database_type }}"
+          description: |
+            The backup verification for {{ $labels.database_type }} has failed.
+            The backup may be corrupt and should not be relied upon for recovery.
+            A new backup should be created immediately.
+          runbook_url: "https://docs.biowerk.com/runbooks/backup-verification-failed"
+
+      - alert: BackupVerificationNotRun
+        expr: |
+          (time() - biowerk_verification_last_run_timestamp) > 604800
+        for: 1h
+        labels:
+          severity: warning
+          component: backup
+          team: infrastructure
+        annotations:
+          summary: "Backup verification not run in 7 days for {{ $labels.database_type }}"
+          description: |
+            Backup verification for {{ $labels.database_type }} hasn't run in over 7 days.
+            Regular verification is critical to ensure backup integrity.
+          runbook_url: "https://docs.biowerk.com/runbooks/backup-verification-not-run"
+
+      # ============================================================================
+      # Restore Testing Alerts
+      # ============================================================================
+
+      - alert: RestoreTestFailed
+        expr: |
+          increase(biowerk_restore_total{status="failure"}[1h]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          component: backup
+          team: infrastructure
+        annotations:
+          summary: "Restore test failed for {{ $labels.database_type }}"
+          description: |
+            A restore test for {{ $labels.database_type }} has failed.
+            This indicates our backups may not be recoverable.
+            Immediate investigation is required.
+          runbook_url: "https://docs.biowerk.com/runbooks/restore-test-failed"
+
+      - alert: RestoreTestNotRun
+        expr: |
+          absent(biowerk_restore_total) or
+          (time() - biowerk_restore_last_test_timestamp) > 2592000
+        for: 1h
+        labels:
+          severity: warning
+          component: backup
+          team: infrastructure
+        annotations:
+          summary: "Restore test not run in 30 days"
+          description: |
+            No restore test has been performed in the last 30 days.
+            Regular restore testing is critical to validate our DR procedures.
+          runbook_url: "https://docs.biowerk.com/runbooks/restore-test-not-run"
+
+      # ============================================================================
+      # Storage Capacity Alerts
+      # ============================================================================
+
+      - alert: BackupStorageNearFull
+        expr: |
+          (
+            sum(biowerk_backup_size_bytes) by (instance) /
+            (node_filesystem_size_bytes{mountpoint="/var/backups"} or
+             node_filesystem_size_bytes{mountpoint="/"})
+          ) > 0.8
+        for: 30m
+        labels:
+          severity: warning
+          component: backup
+          team: infrastructure
+        annotations:
+          summary: "Backup storage is nearing capacity"
+          description: |
+            Backup storage is {{ $value | humanizePercentage }} full.
+            Consider cleaning up old backups or expanding storage.
+          runbook_url: "https://docs.biowerk.com/runbooks/backup-storage-near-full"
+
+      - alert: BackupStorageFull
+        expr: |
+          (
+            sum(biowerk_backup_size_bytes) by (instance) /
+            (node_filesystem_size_bytes{mountpoint="/var/backups"} or
+             node_filesystem_size_bytes{mountpoint="/"})
+          ) > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          component: backup
+          team: infrastructure
+        annotations:
+          summary: "Backup storage is critically full"
+          description: |
+            Backup storage is {{ $value | humanizePercentage }} full.
+            Backups may fail. Immediate action required.
+          runbook_url: "https://docs.biowerk.com/runbooks/backup-storage-full"
+
+      # ============================================================================
+      # RPO/RTO Compliance Alerts
+      # ============================================================================
+
+      - alert: RPOViolation
+        expr: |
+          (time() - biowerk_backup_last_success_timestamp) > 3600
+        for: 15m
+        labels:
+          severity: critical
+          component: backup
+          team: infrastructure
+          compliance: rpo
+        annotations:
+          summary: "RPO violated for {{ $labels.database_type }}"
+          description: |
+            Recovery Point Objective (RPO) has been violated for {{ $labels.database_type }}.
+            Last successful backup: {{ $value | humanizeDuration }} ago.
+            Target RPO: 1 hour.
+            This represents potential data loss in a disaster scenario.
+          runbook_url: "https://docs.biowerk.com/runbooks/rpo-violation"
+
+      - alert: BackupOrchestratorDown
+        expr: |
+          up{job="backup-orchestrator"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          component: backup
+          team: infrastructure
+        annotations:
+          summary: "Backup Orchestrator service is down"
+          description: |
+            The Backup Orchestrator service is not responding.
+            Scheduled backups may not be running.
+            Immediate investigation required.
+          runbook_url: "https://docs.biowerk.com/runbooks/backup-orchestrator-down"

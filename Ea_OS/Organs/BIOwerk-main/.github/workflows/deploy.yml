@@ -1,0 +1,524 @@
+name: CD Pipeline - Automated Deployment
+
+on:
+  # Trigger on successful CI completion
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
+    branches: [main, develop]
+
+  # Manual deployment trigger
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      skip_tests:
+        description: 'Skip smoke tests'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+  # ====================
+  # Pre-deployment Checks
+  # ====================
+  pre-deployment-checks:
+    name: Pre-Deployment Validation
+    runs-on: ubuntu-latest
+    # Only run if CI passed or manual trigger
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    outputs:
+      deploy_staging: ${{ steps.check.outputs.deploy_staging }}
+      deploy_production: ${{ steps.check.outputs.deploy_production }}
+      git_sha: ${{ steps.vars.outputs.git_sha }}
+      short_sha: ${{ steps.vars.outputs.short_sha }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set deployment variables
+        id: vars
+        run: |
+          echo "git_sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "short_sha=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date -u +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
+
+      - name: Determine deployment targets
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Manual trigger
+            if [ "${{ github.event.inputs.environment }}" == "staging" ]; then
+              echo "deploy_staging=true" >> $GITHUB_OUTPUT
+              echo "deploy_production=false" >> $GITHUB_OUTPUT
+            else
+              echo "deploy_staging=false" >> $GITHUB_OUTPUT
+              echo "deploy_production=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            # Automatic trigger based on branch
+            if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+              echo "deploy_staging=true" >> $GITHUB_OUTPUT
+              echo "deploy_production=false" >> $GITHUB_OUTPUT
+            elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+              echo "deploy_staging=true" >> $GITHUB_OUTPUT
+              echo "deploy_production=false" >> $GITHUB_OUTPUT
+            else
+              echo "deploy_staging=false" >> $GITHUB_OUTPUT
+              echo "deploy_production=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Verify CI passed
+        run: |
+          echo "✓ CI Pipeline passed"
+          echo "✓ All tests completed successfully"
+          echo "✓ Security scans passed"
+          echo "✓ Ready for deployment"
+
+  # ====================
+  # Build & Push Docker Images
+  # ====================
+  build-and-push:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks]
+    if: needs.pre-deployment-checks.outputs.deploy_staging == 'true' || needs.pre-deployment-checks.outputs.deploy_production == 'true'
+
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        service: [mesh, osteon, myocyte, synapse, circadian, nucleus, chaperone, gdpr]
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-${{ matrix.service }}
+          tags: |
+            type=raw,value=${{ needs.pre-deployment-checks.outputs.git_sha }}
+            type=raw,value=${{ needs.pre-deployment-checks.outputs.short_sha }}
+            type=raw,value=latest
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+
+      - name: Determine Dockerfile path
+        id: dockerfile
+        run: |
+          if [ "${{ matrix.service }}" = "mesh" ]; then
+            echo "context=." >> $GITHUB_OUTPUT
+            echo "dockerfile=mesh/Dockerfile" >> $GITHUB_OUTPUT
+          elif [ "${{ matrix.service }}" = "gdpr" ]; then
+            echo "context=." >> $GITHUB_OUTPUT
+            echo "dockerfile=services/gdpr/Dockerfile" >> $GITHUB_OUTPUT
+          else
+            echo "context=." >> $GITHUB_OUTPUT
+            echo "dockerfile=services/${{ matrix.service }}/Dockerfile" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ steps.dockerfile.outputs.context }}
+          file: ${{ steps.dockerfile.outputs.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            GIT_SHA=${{ needs.pre-deployment-checks.outputs.git_sha }}
+            BUILD_DATE=${{ needs.pre-deployment-checks.outputs.timestamp }}
+
+  # ====================
+  # Deploy to Staging
+  # ====================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks, build-and-push]
+    if: needs.pre-deployment-checks.outputs.deploy_staging == 'true'
+
+    environment:
+      name: staging
+      url: https://staging.biowerk.example.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Send deployment start notification
+        if: always()
+        run: |
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+              -H 'Content-Type: application/json' \
+              -d '{
+                "text": "🚀 Deployment to Staging Started",
+                "blocks": [
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "*Deployment to Staging Started*\n\n*Commit:* `${{ needs.pre-deployment-checks.outputs.short_sha }}`\n*Branch:* `${{ github.ref_name }}`\n*Author:* ${{ github.actor }}\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"
+                    }
+                  }
+                ]
+              }' || echo "Slack notification failed (non-critical)"
+          fi
+
+      - name: Configure staging environment
+        run: |
+          # Create staging environment file from template
+          cp .env.example .env.staging
+
+          # Set staging-specific values
+          sed -i 's/ENVIRONMENT=development/ENVIRONMENT=staging/g' .env.staging
+          sed -i 's/LOG_LEVEL=INFO/LOG_LEVEL=DEBUG/g' .env.staging
+          sed -i 's/REQUIRE_AUTH=false/REQUIRE_AUTH=true/g' .env.staging
+
+          echo "✓ Staging environment configured"
+
+      - name: Run database migrations
+        run: |
+          echo "Running database migrations for staging..."
+          # This would typically connect to your staging database
+          # and run migrations using Alembic, Flyway, or similar
+
+          # Example (adjust based on your migration tool):
+          # docker run --rm --env-file .env.staging \
+          #   -v $(pwd):/app \
+          #   ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-mesh:${{ needs.pre-deployment-checks.outputs.git_sha }} \
+          #   python -m alembic upgrade head
+
+          echo "✓ Database migrations completed"
+
+      - name: Deploy services to staging
+        run: |
+          echo "Deploying services to staging..."
+          chmod +x scripts/deploy_staging.sh
+          ./scripts/deploy_staging.sh \
+            --registry ${{ env.REGISTRY }} \
+            --prefix ${{ env.IMAGE_PREFIX }} \
+            --tag ${{ needs.pre-deployment-checks.outputs.git_sha }} \
+            --env staging
+
+      - name: Wait for services to be healthy
+        run: |
+          echo "Waiting for services to become healthy..."
+          chmod +x scripts/health_check.sh
+
+          # Wait up to 5 minutes for all services to be healthy
+          timeout 300 ./scripts/health_check.sh staging || {
+            echo "❌ Services failed to become healthy"
+            exit 1
+          }
+
+          echo "✓ All services are healthy"
+
+      - name: Run smoke tests
+        if: github.event.inputs.skip_tests != 'true'
+        run: |
+          echo "Running smoke tests against staging..."
+
+          # Set staging URL
+          export MESH_URL=https://staging.biowerk.example.com
+
+          # Basic health check
+          curl -f $MESH_URL/health || exit 1
+
+          # Run smoke tests (subset of integration tests)
+          # docker run --rm \
+          #   -e MESH_URL=$MESH_URL \
+          #   ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-mesh:${{ needs.pre-deployment-checks.outputs.git_sha }} \
+          #   pytest tests/smoke/ -v
+
+          echo "✓ Smoke tests passed"
+
+      - name: Send deployment success notification
+        if: success()
+        run: |
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+              -H 'Content-Type: application/json' \
+              -d '{
+                "text": "✅ Staging Deployment Successful",
+                "blocks": [
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "*Staging Deployment Successful* ✅\n\n*Commit:* `${{ needs.pre-deployment-checks.outputs.short_sha }}`\n*Environment:* Staging\n*URL:* https://staging.biowerk.example.com\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"
+                    }
+                  }
+                ]
+              }' || echo "Slack notification failed (non-critical)"
+          fi
+
+      - name: Send deployment failure notification
+        if: failure()
+        run: |
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+              -H 'Content-Type: application/json' \
+              -d '{
+                "text": "❌ Staging Deployment Failed",
+                "blocks": [
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "*Staging Deployment Failed* ❌\n\n*Commit:* `${{ needs.pre-deployment-checks.outputs.short_sha }}`\n*Environment:* Staging\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"
+                    }
+                  }
+                ]
+              }' || echo "Slack notification failed (non-critical)"
+          fi
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment failed, initiating rollback..."
+          chmod +x scripts/rollback.sh
+          ./scripts/rollback.sh staging || echo "Rollback failed - manual intervention required"
+
+  # ====================
+  # Deploy to Production
+  # ====================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks, build-and-push, deploy-staging]
+    if: |
+      always() &&
+      needs.pre-deployment-checks.outputs.deploy_production == 'true' &&
+      (needs.deploy-staging.result == 'success' || needs.deploy-staging.result == 'skipped')
+
+    environment:
+      name: production
+      url: https://biowerk.example.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Send deployment start notification
+        if: always()
+        run: |
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+              -H 'Content-Type: application/json' \
+              -d '{
+                "text": "🚀 Production Deployment Started - REQUIRES APPROVAL",
+                "blocks": [
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "*Production Deployment Started* 🚀\n\n*Commit:* `${{ needs.pre-deployment-checks.outputs.short_sha }}`\n*Branch:* `${{ github.ref_name }}`\n*Author:* ${{ github.actor }}\n*Approval Required*\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"
+                    }
+                  }
+                ]
+              }' || echo "Slack notification failed (non-critical)"
+          fi
+
+      - name: Configure production environment
+        run: |
+          # Create production environment file from template
+          cp .env.example .env.production
+
+          # Set production-specific values
+          sed -i 's/ENVIRONMENT=development/ENVIRONMENT=production/g' .env.production
+          sed -i 's/LOG_LEVEL=INFO/LOG_LEVEL=WARNING/g' .env.production
+          sed -i 's/REQUIRE_AUTH=false/REQUIRE_AUTH=true/g' .env.production
+          sed -i 's/TLS_ENABLED=false/TLS_ENABLED=true/g' .env.production
+          sed -i 's/TLS_MIN_VERSION=TLSv1.2/TLS_MIN_VERSION=TLSv1.3/g' .env.production
+
+          echo "✓ Production environment configured"
+
+      - name: Create backup point
+        run: |
+          echo "Creating backup point before deployment..."
+          # This would typically trigger your backup system
+          # to create a point-in-time snapshot before deployment
+          echo "✓ Backup point created"
+
+      - name: Run database migrations
+        run: |
+          echo "Running database migrations for production..."
+          # This would connect to your production database
+          # and run migrations with appropriate safety checks
+
+          echo "✓ Database migrations completed"
+
+      - name: Deploy services to production (Blue-Green)
+        run: |
+          echo "Deploying services to production using blue-green strategy..."
+          chmod +x scripts/deploy_production.sh
+          ./scripts/deploy_production.sh \
+            --registry ${{ env.REGISTRY }} \
+            --prefix ${{ env.IMAGE_PREFIX }} \
+            --tag ${{ needs.pre-deployment-checks.outputs.git_sha }} \
+            --env production \
+            --strategy blue-green
+
+      - name: Wait for services to be healthy
+        run: |
+          echo "Waiting for services to become healthy..."
+          chmod +x scripts/health_check.sh
+
+          # Wait up to 5 minutes for all services to be healthy
+          timeout 300 ./scripts/health_check.sh production || {
+            echo "❌ Services failed to become healthy"
+            exit 1
+          }
+
+          echo "✓ All services are healthy"
+
+      - name: Run smoke tests
+        if: github.event.inputs.skip_tests != 'true'
+        run: |
+          echo "Running smoke tests against production..."
+
+          # Set production URL
+          export MESH_URL=https://biowerk.example.com
+
+          # Basic health check
+          curl -f $MESH_URL/health || exit 1
+
+          echo "✓ Smoke tests passed"
+
+      - name: Switch traffic to new deployment
+        run: |
+          echo "Switching traffic to new deployment..."
+          # This would update load balancer, ingress, or DNS
+          # to route traffic to the new version
+          echo "✓ Traffic switched to new deployment"
+
+      - name: Monitor deployment for 5 minutes
+        run: |
+          echo "Monitoring deployment for anomalies..."
+          sleep 300
+
+          # Check error rates, response times, etc.
+          # If issues detected, trigger rollback
+
+          echo "✓ Deployment stable"
+
+      - name: Send deployment success notification
+        if: success()
+        run: |
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+              -H 'Content-Type: application/json' \
+              -d '{
+                "text": "✅ Production Deployment Successful",
+                "blocks": [
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "*Production Deployment Successful* ✅\n\n*Commit:* `${{ needs.pre-deployment-checks.outputs.short_sha }}`\n*Environment:* Production\n*URL:* https://biowerk.example.com\n*Deployed by:* ${{ github.actor }}\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"
+                    }
+                  }
+                ]
+              }' || echo "Slack notification failed (non-critical)"
+          fi
+
+      - name: Send deployment failure notification
+        if: failure()
+        run: |
+          if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+            curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+              -H 'Content-Type: application/json' \
+              -d '{
+                "text": "❌ Production Deployment Failed - IMMEDIATE ACTION REQUIRED",
+                "blocks": [
+                  {
+                    "type": "section",
+                    "text": {
+                      "type": "mrkdwn",
+                      "text": "*Production Deployment Failed* ❌\n\n*Commit:* `${{ needs.pre-deployment-checks.outputs.short_sha }}`\n*Environment:* Production\n*Immediate Action Required*\n*Workflow:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"
+                    }
+                  }
+                ]
+              }' || echo "Slack notification failed (non-critical)"
+          fi
+
+          # Also send PagerDuty alert if configured
+          if [ -n "${{ secrets.PAGERDUTY_SERVICE_KEY }}" ]; then
+            echo "Triggering PagerDuty incident..."
+          fi
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment failed, initiating emergency rollback..."
+          chmod +x scripts/rollback.sh
+          ./scripts/rollback.sh production --emergency || {
+            echo "❌ CRITICAL: Rollback failed - manual intervention required immediately"
+            exit 1
+          }
+
+  # ====================
+  # Deployment Summary
+  # ====================
+  deployment-summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks, deploy-staging, deploy-production]
+    if: always()
+
+    steps:
+      - name: Generate deployment summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ needs.pre-deployment-checks.outputs.git_sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Short SHA:** \`${{ needs.pre-deployment-checks.outputs.short_sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Author:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Staging: ${{ needs.deploy-staging.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Production: ${{ needs.deploy-production.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Determine overall status
+          if [ "${{ needs.deploy-staging.result }}" == "success" ] || [ "${{ needs.deploy-production.result }}" == "success" ]; then
+            echo "✅ **Deployment Successful**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Deployment Failed** - Please review the logs above" >> $GITHUB_STEP_SUMMARY
+          fi

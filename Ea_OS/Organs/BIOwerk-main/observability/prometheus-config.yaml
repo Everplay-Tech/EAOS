@@ -1,0 +1,274 @@
+---
+# Prometheus configuration for BIOwerk microservices monitoring
+# Scrapes metrics from all services and infrastructure components
+
+global:
+  scrape_interval: 15s  # Default scrape interval
+  scrape_timeout: 10s
+  evaluation_interval: 15s  # Evaluate rules every 15s
+
+  # External labels for federation and remote storage
+  external_labels:
+    cluster: biowerk
+    environment: ${ENVIRONMENT:-development}
+    region: ${REGION:-us-east-1}
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+      timeout: 10s
+      api_version: v2
+
+# Rule files for alerting
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: prometheus
+
+  # Alertmanager monitoring
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
+        labels:
+          service: alertmanager
+
+  # Loki monitoring
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+        labels:
+          service: loki
+
+  # Grafana monitoring
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+        labels:
+          service: grafana
+
+  # Promtail monitoring
+  - job_name: 'promtail'
+    static_configs:
+      - targets: ['promtail:9080']
+        labels:
+          service: promtail
+
+  # BIOwerk Mesh (API Gateway)
+  - job_name: 'biowerk-mesh'
+    static_configs:
+      - targets: ['mesh:8080']
+        labels:
+          service: mesh
+          tier: gateway
+          component: api-gateway
+    metrics_path: /metrics
+    scrape_interval: 10s
+
+  # BIOwerk Microservices - Document/Writer Agent
+  - job_name: 'biowerk-osteon'
+    static_configs:
+      - targets: ['osteon:8001']
+        labels:
+          service: osteon
+          tier: agent
+          component: document-writer
+    metrics_path: /metrics
+
+  # BIOwerk Microservices - Analysis/Spreadsheet Agent
+  - job_name: 'biowerk-myocyte'
+    static_configs:
+      - targets: ['myocyte:8002']
+        labels:
+          service: myocyte
+          tier: agent
+          component: analysis-spreadsheet
+    metrics_path: /metrics
+
+  # BIOwerk Microservices - Presentation/Visualization Agent
+  - job_name: 'biowerk-synapse'
+    static_configs:
+      - targets: ['synapse:8003']
+        labels:
+          service: synapse
+          tier: agent
+          component: presentation-visualization
+    metrics_path: /metrics
+
+  # BIOwerk Microservices - Scheduler/Workflow Agent
+  - job_name: 'biowerk-circadian'
+    static_configs:
+      - targets: ['circadian:8004']
+        labels:
+          service: circadian
+          tier: agent
+          component: scheduler-workflow
+    metrics_path: /metrics
+
+  # BIOwerk Microservices - Orchestrator/Director
+  - job_name: 'biowerk-nucleus'
+    static_configs:
+      - targets: ['nucleus:8005']
+        labels:
+          service: nucleus
+          tier: agent
+          component: orchestrator-director
+    metrics_path: /metrics
+
+  # BIOwerk Microservices - Import/Export Adapter
+  - job_name: 'biowerk-chaperone'
+    static_configs:
+      - targets: ['chaperone:8006']
+        labels:
+          service: chaperone
+          tier: agent
+          component: import-export-adapter
+    metrics_path: /metrics
+
+  # BIOwerk Microservices - GDPR Compliance Service
+  - job_name: 'biowerk-gdpr'
+    static_configs:
+      - targets: ['gdpr:8010']
+        labels:
+          service: gdpr
+          tier: compliance
+          component: gdpr-service
+    metrics_path: /metrics
+
+  # BIOwerk Microservices - PHI2 Coordinator Larry
+  - job_name: 'biowerk-larry'
+    static_configs:
+      - targets: ['larry:8007']
+        labels:
+          service: larry
+          tier: coordinator
+          component: phi2-larry
+    metrics_path: /metrics
+
+  # BIOwerk Microservices - PHI2 Coordinator Moe
+  - job_name: 'biowerk-moe'
+    static_configs:
+      - targets: ['moe:8008']
+        labels:
+          service: moe
+          tier: coordinator
+          component: phi2-moe
+    metrics_path: /metrics
+
+  # BIOwerk Microservices - PHI2 Coordinator Harry
+  - job_name: 'biowerk-harry'
+    static_configs:
+      - targets: ['harry:8009']
+        labels:
+          service: harry
+          tier: coordinator
+          component: phi2-harry
+    metrics_path: /metrics
+
+  # PostgreSQL Exporter
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          service: postgres
+          tier: database
+    metrics_path: /metrics
+
+  # Redis Exporter
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: redis
+          tier: cache
+    metrics_path: /metrics
+
+  # MongoDB Exporter
+  - job_name: 'mongodb'
+    static_configs:
+      - targets: ['mongodb-exporter:9216']
+        labels:
+          service: mongodb
+          tier: database
+    metrics_path: /metrics
+
+  # PgBouncer Exporter
+  - job_name: 'pgbouncer'
+    static_configs:
+      - targets: ['pgbouncer-exporter:9127']
+        labels:
+          service: pgbouncer
+          tier: connection-pool
+    metrics_path: /metrics
+
+  # Docker container metrics (cAdvisor)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: cadvisor
+          tier: infrastructure
+    metrics_path: /metrics
+
+  # Node exporter for host metrics
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: node-exporter
+          tier: infrastructure
+    metrics_path: /metrics
+
+  # Backup Orchestrator - Backup & DR service
+  - job_name: 'backup-orchestrator'
+    static_configs:
+      - targets: ['backup-orchestrator:8090']
+        labels:
+          service: backup-orchestrator
+          tier: infrastructure
+          component: backup-dr
+    metrics_path: /metrics
+    scrape_interval: 30s
+
+# Remote write configuration (for long-term storage - optional)
+# Uncomment and configure for production deployments
+# remote_write:
+#   - url: https://prometheus-remote-storage.example.com/api/v1/write
+#     queue_config:
+#       capacity: 10000
+#       max_shards: 200
+#       min_shards: 1
+#       max_samples_per_send: 5000
+#       batch_send_deadline: 5s
+#       min_backoff: 30ms
+#       max_backoff: 100ms
+#     remote_timeout: 30s
+#     basic_auth:
+#       username: ${REMOTE_WRITE_USERNAME}
+#       password: ${REMOTE_WRITE_PASSWORD}
+
+# Remote read configuration (for querying long-term storage - optional)
+# remote_read:
+#   - url: https://prometheus-remote-storage.example.com/api/v1/read
+#     read_recent: true
+#     basic_auth:
+#       username: ${REMOTE_READ_USERNAME}
+#       password: ${REMOTE_READ_PASSWORD}
+
+# Storage configuration
+storage:
+  tsdb:
+    path: /prometheus
+    retention:
+      time: 30d  # Keep 30 days of metrics data
+      size: 50GB  # Maximum storage size
+    wal_compression: true

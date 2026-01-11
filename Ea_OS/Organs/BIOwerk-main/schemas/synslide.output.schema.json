@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "synslide.output.schema.json",
+  "type": "object",
+  "properties": {
+    "slides": {
+      "type": "array"
+    },
+    "layout_graph": {
+      "type": "object"
+    },
+    "speaker_notes": {
+      "type": "array"
+    }
+  }
+}

@@ -1,0 +1,151 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mesh
+  namespace: biowerk
+  labels:
+    app: mesh
+    tier: gateway
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mesh
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: mesh
+        tier: gateway
+    spec:
+      containers:
+      - name: mesh
+        image: ${REGISTRY}/biowerk-mesh:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8443
+          name: https
+        env:
+        - name: AGENT_OSTEON_URL
+          value: http://osteon.biowerk.svc.cluster.local:8001
+        - name: AGENT_MYOCYTE_URL
+          value: http://myocyte.biowerk.svc.cluster.local:8002
+        - name: AGENT_SYNAPSE_URL
+          value: http://synapse.biowerk.svc.cluster.local:8003
+        - name: AGENT_CIRCADIAN_URL
+          value: http://circadian.biowerk.svc.cluster.local:8004
+        - name: AGENT_NUCLEUS_URL
+          value: http://nucleus.biowerk.svc.cluster.local:8005
+        - name: AGENT_CHAPERONE_URL
+          value: http://chaperone.biowerk.svc.cluster.local:8006
+        - name: AGENT_GDPR_URL
+          value: http://gdpr.biowerk.svc.cluster.local:8010
+        - name: POSTGRES_HOST
+          value: pgbouncer.biowerk.svc.cluster.local
+        - name: POSTGRES_PORT
+          value: "6432"
+        - name: MONGO_HOST
+          value: mongodb.biowerk.svc.cluster.local
+        - name: REDIS_HOST
+          value: redis.biowerk.svc.cluster.local
+        - name: TLS_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: tls_enabled
+        - name: TLS_CERT_FILE
+          value: /app/certs/cert.pem
+        - name: TLS_KEY_FILE
+          value: /app/certs/key.pem
+        - name: TLS_MIN_VERSION
+          value: TLSv1.2
+        - name: RATE_LIMIT_ENABLED
+          value: "true"
+        - name: RATE_LIMIT_REQUESTS
+          value: "100"
+        - name: RATE_LIMIT_WINDOW
+          value: "60"
+        - name: RATE_LIMIT_STRATEGY
+          value: sliding_window
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: jwt_secret_key
+        - name: REQUIRE_AUTH
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: require_auth
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: environment
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+        volumeMounts:
+        - name: tls-certs
+          mountPath: /app/certs
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+      volumes:
+      - name: tls-certs
+        secret:
+          secretName: tls-certs
+          optional: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mesh
+  namespace: biowerk
+  labels:
+    app: mesh
+    tier: gateway
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  - port: 443
+    targetPort: 8443
+    protocol: TCP
+    name: https
+  selector:
+    app: mesh
