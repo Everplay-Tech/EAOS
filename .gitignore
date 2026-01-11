@@ -1,0 +1,63 @@
+# Rust/Cargo
+/target/
+**/target/
+**/debug/incremental/
+**/debug/.fingerprint/
+**/Cargo.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+.DS_Store?
+
+# Build artifacts
+*.a
+*.bin
+*.blob
+*.o
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.backup
+
+# Environment variables
+.env
+.env.local
+
+# Node modules (if any)
+node_modules/
+npm-debug.log*
+
+# Coverage reports
+coverage/
+*.lcov
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
