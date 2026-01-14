@@ -1,0 +1,17 @@
+[package]
+name = "biowerk-agent"
+version = "0.2.0"
+edition = "2021"
+description = "BIOwerk Office Suite for EAOS - Osteon (Documents), Myocyte (Logic)"
+license = "MIT OR Apache-2.0"
+
+[features]
+default = ["std"]
+std = []
+
+[dependencies]
+ea-symbiote = { path = "../../muscles/symbiote" }
+roulette-rs = { path = "../../muscles/roulette-rs" }
+permfs = { path = "../../permfs", default-features = false, features = ["std"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
