@@ -9,6 +9,7 @@
 
 pub mod client;
 pub mod server;
+
 pub use client::{
     CapsuleBuildOptions, DEFAULT_PATH_HINT, IhpClientError, IhpServerProfile,
     build_capsule_for_password, build_capsule_for_password_with_options, fetch_ihp_profile,
@@ -25,12 +26,15 @@ use sha2::Sha256;
 use std::collections::HashSet;
 use std::fmt;
 use std::sync::Arc;
-use zeroize::Zeroizing;
+#[cfg(test)]
+use std::sync::atomic::{AtomicBool, Ordering};
+use subtle::ConstantTimeEq;
+use zeroize::{Zeroize, Zeroizing};
 
 #[cfg(feature = "observability")]
 use metrics::{counter, histogram};
 #[cfg(feature = "observability")]
-use tracing::{debug, info, instrument, warn};
+use tracing::{info, instrument};
 
 /// Default protocol version for this crate.
 pub const DEFAULT_PROTOCOL_VERSION: ProtocolVersion = ProtocolVersion::V1;
@@ -38,6 +42,10 @@ pub const DEFAULT_PROTOCOL_VERSION: ProtocolVersion = ProtocolVersion::V1;
 pub const DEFAULT_MAX_TIMESTAMP_DRIFT_SECONDS: i64 = 300;
 /// Maximum payload bytes accepted by the library.
 pub const MAX_PAYLOAD_BYTES: usize = 64 * 1024;
+/// Maximum allowed fingerprint bytes to guard against unbounded inputs.
+pub const MAX_FINGERPRINT_BYTES: usize = 4 * 1024;
+/// Upper bound for caller-configured drift to avoid runaway values.
+pub const MAX_TIMESTAMP_DRIFT_CAP_SECONDS: i64 = 7 * 86_400;
 /// Domain separator injected into AAD to prevent cross-protocol misuse.
 pub const AAD_DOMAIN: &[u8] = b"IHP_CAPSULE_AAD:v1";
 
@@ -144,9 +152,7 @@ impl ProtocolVersion {
 }
 
 /// Maximum allowable timestamp drift to protect clocks from misconfiguration.
-pub const MAX_ALLOWED_DRIFT_SECONDS: i64 = 86_400;
-/// Maximum length for any fingerprint component stored in [`ServerEnvironmentProfile`].
-pub const MAX_FINGERPRINT_BYTES: usize = 1024;
+pub const MAX_ALLOWED_DRIFT_SECONDS: i64 = 7 * 86_400;
 /// Bytes in a symmetric key.
 pub const KEY_BYTES: usize = 32;
 /// Nonce size for AES-GCM.
@@ -155,35 +161,48 @@ pub const NONCE_LEN: usize = 12;
 /// Zeroized secret key material used across the IHP protocol.
 #[derive(Clone)]
 pub struct SecretKey {
-    inner: Arc<Zeroizing<[u8; KEY_BYTES]>>,
+    inner: Zeroizing<[u8; KEY_BYTES]>,
+    #[cfg(test)]
+    drop_witness: Option<Arc<AtomicBool>>,
 }
 
 impl SecretKey {
     pub fn new(bytes: [u8; KEY_BYTES]) -> Self {
         Self {
-            inner: Arc::new(Zeroizing::new(bytes)),
+            inner: Zeroizing::new(bytes),
+            #[cfg(test)]
+            drop_witness: None,
         }
     }
 
     pub fn from_hsm(bytes: Zeroizing<[u8; KEY_BYTES]>) -> Self {
         Self {
-            inner: Arc::new(bytes),
+            inner: bytes,
+            #[cfg(test)]
+            drop_witness: None,
         }
     }
 
-    /// Exposes the secret key bytes for cryptographic operations.
-    ///
-    /// # Safety
-    ///
-    /// This method exposes secret material. Callers must:
-    /// - Never log or serialize the returned bytes
-    /// - Never copy the bytes to unsecured memory
-    /// - Use the bytes only for cryptographic operations (HKDF, AEAD)
-    /// - Ensure the returned reference does not outlive the SecretKey
-    ///
-    /// All call sites are audited and documented. See SECURITY.md for details.
     pub(crate) fn expose(&self) -> &[u8; KEY_BYTES] {
         &self.inner
+    }
+
+    #[cfg(test)]
+    pub fn new_with_witness(bytes: [u8; KEY_BYTES], witness: Arc<AtomicBool>) -> Self {
+        Self {
+            inner: Zeroizing::new(bytes),
+            drop_witness: Some(witness),
+        }
+    }
+}
+
+impl Drop for SecretKey {
+    fn drop(&mut self) {
+        self.inner.zeroize();
+        #[cfg(test)]
+        if let Some(flag) = &self.drop_witness {
+            flag.store(true, Ordering::SeqCst);
+        }
     }
 }
 
@@ -214,13 +233,6 @@ impl MasterKey {
         Self(SecretKey::from_hsm(bytes))
     }
 
-    /// Exposes the master key bytes for HKDF operations.
-    ///
-    /// # Safety
-    ///
-    /// Only used in `derive_profile_key_inner()` for HKDF expansion.
-    /// The exposed bytes are passed directly to HKDF and never copied or logged.
-    /// See `SecretKey::expose()` documentation for full safety requirements.
     pub(crate) fn expose(&self) -> &[u8; KEY_BYTES] {
         self.0.expose()
     }
@@ -235,13 +247,6 @@ impl ProfileKey {
         Self(SecretKey::new(bytes))
     }
 
-    /// Exposes the master key bytes for HKDF operations.
-    ///
-    /// # Safety
-    ///
-    /// Only used in `derive_profile_key_inner()` for HKDF expansion.
-    /// The exposed bytes are passed directly to HKDF and never copied or logged.
-    /// See `SecretKey::expose()` documentation for full safety requirements.
     pub(crate) fn expose(&self) -> &[u8; KEY_BYTES] {
         self.0.expose()
     }
@@ -256,13 +261,6 @@ impl SessionKey {
         Self(SecretKey::new(bytes))
     }
 
-    /// Exposes the master key bytes for HKDF operations.
-    ///
-    /// # Safety
-    ///
-    /// Only used in `derive_profile_key_inner()` for HKDF expansion.
-    /// The exposed bytes are passed directly to HKDF and never copied or logged.
-    /// See `SecretKey::expose()` documentation for full safety requirements.
     pub(crate) fn expose(&self) -> &[u8; KEY_BYTES] {
         self.0.expose()
     }
@@ -290,6 +288,8 @@ impl fmt::Debug for SessionKey {
 #[derive(Clone)]
 pub struct SecretNonce<const N: usize> {
     inner: Zeroizing<[u8; N]>,
+    #[cfg(test)]
+    drop_witness: Option<Arc<AtomicBool>>,
 }
 
 impl<const N: usize> SecretNonce<N> {
@@ -301,30 +301,45 @@ impl<const N: usize> SecretNonce<N> {
         arr.copy_from_slice(bytes);
         Ok(Self {
             inner: Zeroizing::new(arr),
+            #[cfg(test)]
+            drop_witness: None,
         })
     }
 
     pub fn from_array(bytes: [u8; N]) -> Self {
         Self {
             inner: Zeroizing::new(bytes),
+            #[cfg(test)]
+            drop_witness: None,
         }
     }
 
-    /// Exposes the nonce bytes for AEAD operations.
-    ///
-    /// # Safety
-    ///
-    /// Nonces are not secret material, but should still be handled carefully.
-    /// This method is used only to pass nonces to AEAD cipher operations.
-    /// The returned reference does not outlive the SecretNonce.
     pub fn expose(&self) -> &[u8; N] {
         &self.inner
+    }
+
+    #[cfg(test)]
+    pub fn new_with_witness(bytes: [u8; N], witness: Arc<AtomicBool>) -> Self {
+        Self {
+            inner: Zeroizing::new(bytes),
+            drop_witness: Some(witness),
+        }
     }
 }
 
 impl<const N: usize> fmt::Debug for SecretNonce<N> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("SecretNonce").field(&"[REDACTED]").finish()
+    }
+}
+
+impl<const N: usize> Drop for SecretNonce<N> {
+    fn drop(&mut self) {
+        self.inner.zeroize();
+        #[cfg(test)]
+        if let Some(flag) = &self.drop_witness {
+            flag.store(true, Ordering::SeqCst);
+        }
     }
 }
 
@@ -376,7 +391,7 @@ impl CapsuleTimestamp {
 }
 
 /// Password material with bound checking to avoid unbounded allocations.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct PasswordMaterial(Zeroizing<Vec<u8>>);
 
 impl PasswordMaterial {
@@ -399,7 +414,7 @@ pub struct MaxDrift(i64);
 
 impl MaxDrift {
     pub fn new(seconds: i64) -> Result<Self, IhpError> {
-        if seconds.is_negative() || seconds > MAX_ALLOWED_DRIFT_SECONDS {
+        if seconds.is_negative() || seconds > MAX_TIMESTAMP_DRIFT_CAP_SECONDS {
             return Err(IhpError::InvalidTimestamp);
         }
         Ok(Self(seconds))
@@ -494,7 +509,8 @@ impl Default for IhpConfig {
         let mut allowed_versions = HashSet::new();
         allowed_versions.insert(DEFAULT_PROTOCOL_VERSION);
         Self {
-            max_timestamp_drift: MaxDrift(DEFAULT_MAX_TIMESTAMP_DRIFT_SECONDS),
+            max_timestamp_drift: MaxDrift::new(DEFAULT_MAX_TIMESTAMP_DRIFT_SECONDS)
+                .expect("default drift fits cap"),
             allowed_versions,
             aead_algorithm: AeadAlgorithm::Aes256Gcm,
             max_payload_bytes: MAX_PAYLOAD_BYTES,
@@ -517,7 +533,7 @@ impl IhpConfig {
             return Err(IhpError::Config("no protocol versions allowed".into()));
         }
         if self.max_timestamp_drift.seconds() < 0
-            || self.max_timestamp_drift.seconds() > MAX_ALLOWED_DRIFT_SECONDS
+            || self.max_timestamp_drift.seconds() > MAX_TIMESTAMP_DRIFT_CAP_SECONDS
         {
             return Err(IhpError::Config("timestamp drift out of bounds".into()));
         }
@@ -572,9 +588,9 @@ impl IhpConfigBuilder {
             .allowed_versions
             .unwrap_or_else(|| HashSet::from([DEFAULT_PROTOCOL_VERSION]));
         IhpConfig {
-            max_timestamp_drift: self
-                .max_timestamp_drift
-                .unwrap_or(MaxDrift(DEFAULT_MAX_TIMESTAMP_DRIFT_SECONDS)),
+            max_timestamp_drift: self.max_timestamp_drift.unwrap_or_else(|| {
+                MaxDrift::new(DEFAULT_MAX_TIMESTAMP_DRIFT_SECONDS).expect("default drift fits cap")
+            }),
             allowed_versions,
             aead_algorithm: self.aead_algorithm.unwrap_or(AeadAlgorithm::Aes256Gcm),
             max_payload_bytes: self.max_payload_bytes.unwrap_or(MAX_PAYLOAD_BYTES),
@@ -691,7 +707,8 @@ impl MasterKeyProvider for InMemoryKeyProvider {
     }
 }
 
-/// HKDF labels grouped for domain separation.
+/// HKDF labels grouped for domain separation so that profile and session derivations
+/// cannot be confused or mixed with other protocol steps.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CryptoDomainLabels {
     pub hkdf_profile: &'static [u8],
@@ -734,9 +751,6 @@ fn derive_profile_key_inner(
     server_env_hash: &ServerEnvHash,
     labels: &CryptoDomainLabels,
 ) -> Result<ProfileKey, IhpError> {
-    // SAFETY: master.expose() is used only for HKDF expansion. The exposed bytes
-    // are passed directly to HKDF::new() and never copied, logged, or serialized.
-    // The HKDF implementation consumes the bytes without retaining references.
     let derived = hkdf_expand(
         labels.hkdf_profile,
         server_env_hash.as_bytes(),
@@ -762,9 +776,6 @@ fn derive_session_key_inner(
     info.push(derivation.network_context.rtt_bucket);
     info.extend_from_slice(&derivation.network_context.path_hint.to_le_bytes());
     info.extend_from_slice(&derivation.server_profile_id.0.to_le_bytes());
-    // SAFETY: k_profile.expose() is used only for HKDF expansion. The exposed bytes
-    // are passed directly to HKDF::new() as salt and never copied, logged, or serialized.
-    // The HKDF implementation consumes the bytes without retaining references.
     let secret = hkdf_expand(&info, k_profile.expose(), derivation.tls_exporter_key)?;
     Ok(SessionKey::new(secret))
 }
@@ -870,6 +881,7 @@ pub fn derive_session_key(
     derive_session_key_inner(k_profile, &derivation, labels)
 }
 
+/// Assemble authenticated data with explicit domain separation and versioning.
 fn build_aad(
     version: ProtocolVersion,
     server_profile_id: ServerProfileId,
@@ -887,14 +899,7 @@ fn build_aad(
 }
 
 fn constant_time_equal(a: &[u8], b: &[u8]) -> bool {
-    if a.len() != b.len() {
-        return false;
-    }
-    let mut diff = 0u8;
-    for (x, y) in a.iter().zip(b.iter()) {
-        diff |= x ^ y;
-    }
-    diff == 0
+    a.len() == b.len() && a.ct_eq(b).into()
 }
 
 fn encode_plaintext(
@@ -948,10 +953,6 @@ fn decode_plaintext(bytes: &[u8], max_payload_bytes: usize) -> Result<IhpPlainte
 fn select_cipher(algorithm: AeadAlgorithm, key: &SessionKey) -> Result<Aes256Gcm, IhpError> {
     match algorithm {
         AeadAlgorithm::Aes256Gcm => {
-            // SAFETY: key.expose() is used only to initialize the AES-GCM cipher.
-            // The exposed bytes are copied internally by Aes256Gcm::new_from_slice()
-            // and the reference does not outlive this function call.
-            // The cipher implementation handles the key securely.
             Aes256Gcm::new_from_slice(key.expose()).map_err(|_| IhpError::KeyDerivation)
         }
     }
@@ -965,9 +966,6 @@ fn encrypt_inner(
     plaintext_bytes: &[u8],
 ) -> Result<Vec<u8>, IhpError> {
     let cipher = select_cipher(algorithm, key)?;
-    // SAFETY: nonce.expose() is used only to create the AEAD nonce.
-    // The exposed bytes are copied by AesNonce::from_slice() and the reference
-    // does not outlive this function call. Nonces are not secret material.
     let nonce = AesNonce::from_slice(nonce.expose());
     cipher
         .encrypt(
@@ -988,9 +986,6 @@ fn decrypt_inner(
     ciphertext: &[u8],
 ) -> Result<Vec<u8>, IhpError> {
     let cipher = select_cipher(algorithm, key)?;
-    // SAFETY: nonce.expose() is used only to create the AEAD nonce.
-    // The exposed bytes are copied by AesNonce::from_slice() and the reference
-    // does not outlive this function call. Nonces are not secret material.
     let nonce = AesNonce::from_slice(nonce.expose());
     cipher
         .decrypt(
@@ -1015,7 +1010,7 @@ pub struct IhpCapsule {
 }
 
 /// Decrypted content carried inside an [`IhpCapsule`].
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IhpPlaintext {
     pub password_material: PasswordMaterial,
     pub timestamp: CapsuleTimestamp,
@@ -1198,24 +1193,25 @@ mod tests {
     use super::*;
     use proptest::prelude::*;
     use serde_json::{from_str, to_string};
+    use std::sync::atomic::{AtomicBool, Ordering};
 
-    const KAT_MASTER_KEY: [u8; KEY_BYTES] = *b"master key material for ihp proto*";
+    const KAT_MASTER_KEY: [u8; KEY_BYTES] = *b"IHP deterministic master keyseed";
     const KAT_TLS_EXPORTER: &[u8] = b"tls exporter key material";
     const KAT_PASSWORD: &[u8] = b"known-answer";
     const KAT_CLIENT_NONCE: [u8; NONCE_LEN] = [1u8; NONCE_LEN];
     const KAT_ENV_HASH: ServerEnvHash = ServerEnvHash([0x42u8; 32]);
     const KAT_PROFILE_KEY: [u8; KEY_BYTES] = [
-        175, 78, 27, 228, 11, 127, 225, 36, 158, 219, 93, 182, 205, 187, 16, 192, 160, 230, 152,
-        222, 112, 201, 24, 38, 169, 191, 209, 171, 170, 220, 195, 228,
+        42, 87, 168, 215, 162, 203, 208, 176, 143, 241, 155, 11, 138, 69, 87, 171, 168, 242, 63,
+        32, 21, 128, 131, 231, 55, 133, 142, 185, 93, 4, 220, 225,
     ];
     const KAT_SESSION_KEY: [u8; KEY_BYTES] = [
-        207, 224, 74, 76, 26, 88, 246, 237, 203, 113, 51, 160, 235, 87, 96, 212, 162, 31, 107, 191,
-        51, 38, 53, 3, 172, 88, 243, 108, 120, 29, 181, 252,
+        208, 221, 46, 68, 101, 92, 115, 181, 231, 1, 50, 96, 236, 54, 48, 137, 215, 87, 120, 82,
+        195, 171, 96, 230, 41, 9, 220, 65, 45, 68, 140, 199,
     ];
     const KAT_CIPHERTEXT: [u8; 48] = [
-        107, 64, 4, 13, 160, 100, 198, 111, 154, 19, 9, 210, 11, 232, 194, 152, 7, 160, 192, 208,
-        96, 182, 211, 13, 54, 93, 98, 59, 39, 16, 30, 165, 21, 241, 138, 200, 219, 12, 3, 192, 182,
-        224, 64, 20, 208, 93, 64, 163,
+        77, 180, 95, 53, 4, 122, 217, 216, 60, 13, 133, 11, 184, 237, 42, 196, 187, 206, 228, 12,
+        190, 92, 8, 56, 188, 52, 183, 96, 165, 69, 86, 233, 44, 203, 254, 8, 235, 135, 49, 8, 87,
+        9, 148, 233, 14, 171, 139, 83,
     ];
 
     #[derive(Default)]
@@ -1258,7 +1254,7 @@ mod tests {
         env_hash: &ServerEnvHash,
         rtt_bucket: u8,
     ) -> (ProfileKey, SessionKey, ClientNonce) {
-        let provider = InMemoryKeyProvider::new(*b"master key material for ihp proto*");
+        let provider = InMemoryKeyProvider::new(KAT_MASTER_KEY);
         let labels = CryptoDomainLabels::default();
         let k_profile =
             derive_profile_key(&provider, ServerProfileId(42), env_hash, &labels).expect("profile");
@@ -1452,29 +1448,57 @@ mod tests {
 
     #[test]
     fn secret_material_zeroizes_on_drop() {
-        use std::sync::Mutex;
-        let leaked = Arc::new(Mutex::new([1u8; 32]));
-        let handle = leaked.clone();
+        let flag = Arc::new(AtomicBool::new(false));
         {
-            let key = SecretKey::new([0xAA; 32]);
-            let ptr = Arc::into_raw(key.inner.clone());
-            // Safety: only used for test to observe bytes
-            let guard = unsafe { &*ptr };
-            *leaked.lock().unwrap() = **guard;
-            // drop key to trigger zeroize
-            drop(unsafe { Arc::from_raw(ptr) });
+            let key = SecretKey::new_with_witness([0xAA; KEY_BYTES], flag.clone());
+            assert_eq!(key.expose()[0], 0xAA);
         }
-        assert_eq!(*handle.lock().unwrap(), [0u8; 32]);
+        assert!(flag.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn nonce_zeroizes_on_drop() {
+        let flag = Arc::new(AtomicBool::new(false));
+        {
+            let nonce = SecretNonce::<NONCE_LEN>::new_with_witness([0x11; NONCE_LEN], flag.clone());
+            assert_eq!(nonce.expose()[0], 0x11);
+        }
+        assert!(flag.load(Ordering::SeqCst));
     }
 
     #[test]
     fn hsm_provider_is_invoked() {
-        let provider = CountingHsmProvider::new(*b"master key material for ihp proto*");
+        let provider = CountingHsmProvider::new(KAT_MASTER_KEY);
         let labels = CryptoDomainLabels::default();
         let env_hash = ServerEnvHash([1u8; 32]);
         let _ = derive_profile_key(&provider, ServerProfileId(7), &env_hash, &labels).unwrap();
         let _ = derive_profile_key(&provider, ServerProfileId(8), &env_hash, &labels).unwrap();
         assert_eq!(provider.load_count(), 2);
+    }
+
+    #[test]
+    fn hkdf_key_provider_invokes_master_loader() {
+        let provider = CountingHsmProvider::new(KAT_MASTER_KEY);
+        let load_counter = provider.loads.clone();
+        let hkdf_provider = HkdfKeyProvider::new(provider);
+        let env_hash = compute_server_env_hash(&sample_sep()).unwrap();
+        let ctx = IhpContext::new(IhpConfig::default(), hkdf_provider).unwrap();
+        let k_profile = ctx
+            .derive_profile_key(ServerProfileId(9), &env_hash)
+            .expect("profile key");
+        let derivation = SessionDerivation {
+            tls_exporter_key: b"tls exporter key material",
+            client_nonce: ClientNonce::new([1u8; NONCE_LEN]),
+            network_context: IhpNetworkContext {
+                rtt_bucket: 4,
+                path_hint: 77,
+            },
+            server_profile_id: ServerProfileId(9),
+        };
+        let _ = ctx
+            .derive_session_key(&k_profile, derivation)
+            .expect("session key");
+        assert_eq!(*load_counter.lock().unwrap(), 1);
     }
 
     #[test]
@@ -1584,49 +1608,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
-    fn dump_kat_vectors() {
-        let sep = sample_sep();
-        let env_hash = compute_server_env_hash(&sep).unwrap();
-        let labels = CryptoDomainLabels::default();
-        let provider = InMemoryKeyProvider::new(KAT_MASTER_KEY);
-        let profile =
-            derive_profile_key(&provider, ServerProfileId(1), &env_hash, &labels).unwrap();
-        let client_nonce = ClientNonce::new(KAT_CLIENT_NONCE);
-        let network_context = IhpNetworkContext {
-            rtt_bucket: 5,
-            path_hint: 120,
-        };
-        let session = derive_session_key(
-            &profile,
-            KAT_TLS_EXPORTER,
-            &client_nonce,
-            &network_context,
-            ServerProfileId(1),
-            &labels,
-        )
-        .unwrap();
-        println!("profile={:?}", profile.expose());
-        println!("session={:?}", session.expose());
-        let password = PasswordMaterial::new(KAT_PASSWORD).unwrap();
-        let capsule = encrypt_capsule(
-            DEFAULT_PROTOCOL_VERSION,
-            &IhpConfig::default(),
-            44,
-            client_nonce,
-            ServerProfileId(1),
-            network_context,
-            &env_hash,
-            &session,
-            &password,
-            CapsuleTimestamp::new(1_700_000_123).unwrap(),
-        )
-        .unwrap();
-        println!("ciphertext={:?}", capsule.payload);
-        println!("capsule_json={}", serde_json::to_string(&capsule).unwrap());
-    }
-
-    #[test]
     fn config_validation_enforces_bounds() {
         let mut config = IhpConfig::default();
         config.allowed_versions.clear();
@@ -1663,6 +1644,32 @@ mod tests {
             let plaintext = decrypt_capsule(&capsule, &env_hash, &k_session, timestamp, &config).unwrap();
             assert_eq!(plaintext.password_material.as_slice(), payload.as_slice());
             assert_eq!(plaintext.header_id, header_id);
+        }
+
+        #[test]
+        fn proptest_detects_tamper(payload in prop::collection::vec(any::<u8>(), 0..64), header_id in any::<u64>()) {
+            let sep = sample_sep();
+            let env_hash = compute_server_env_hash(&sep).unwrap();
+            let (_, k_session, client_nonce) = base_keys(&env_hash, 5);
+            let network_context = IhpNetworkContext { rtt_bucket: 5, path_hint: 42 };
+            let timestamp = CapsuleTimestamp::new(1_700_000_000).unwrap();
+            let config = IhpConfig::default();
+            let material = PasswordMaterial::new(&payload).unwrap();
+            let mut capsule = encrypt_capsule(
+                DEFAULT_PROTOCOL_VERSION,
+                &config,
+                header_id,
+                client_nonce,
+                ServerProfileId(1),
+                network_context,
+                &env_hash,
+                &k_session,
+                &material,
+                timestamp,
+            ).unwrap();
+            capsule.payload[0] ^= 0xAA;
+            let tampered = decrypt_capsule(&capsule, &env_hash, &k_session, timestamp, &config);
+            prop_assert!(tampered.is_err());
         }
     }
 }

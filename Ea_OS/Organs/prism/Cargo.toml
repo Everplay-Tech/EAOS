@@ -1,0 +1,28 @@
+[package]
+name = "ea-prism"
+version = "0.1.0"
+edition = "2021"
+description = "Prism Organ - Secure capsule decryption and Quenyan bytecode execution"
+license = "MIT OR Apache-2.0"
+keywords = ["prism", "capsule", "quenyan", "bytecode", "eaos"]
+
+[features]
+default = ["std"]
+std = ["alloc", "ea-symbiote/std"]
+alloc = ["ea-symbiote/alloc"]
+
+[dependencies]
+# IHP for capsule decryption
+ihp = { path = "../../IHP-main" }
+
+# Symbiote for SovereignDocument trait
+ea-symbiote = { path = "../../muscles/symbiote" }
+
+# Crypto
+blake3 = { version = "1.5", default-features = false }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = "1.0"
