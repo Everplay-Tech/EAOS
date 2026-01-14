@@ -10,18 +10,14 @@
 pub mod client;
 pub mod server;
 pub use client::{
-    IhpClientError, IhpServerProfile, build_capsule_for_password, fetch_ihp_profile,
+    CapsuleBuildOptions, DEFAULT_PATH_HINT, IhpClientError, IhpServerProfile,
+    build_capsule_for_password, build_capsule_for_password_with_options, fetch_ihp_profile,
     measure_rtt_bucket,
 };
 
 use aes_gcm::aead::{Aead, KeyInit, Payload};
 use aes_gcm::{Aes256Gcm, Nonce as AesNonce};
 use blake3::Hasher;
-pub use client::{
-    CapsuleBuildOptions, DEFAULT_PATH_HINT, IhpClientError, IhpServerProfile,
-    build_capsule_for_password, build_capsule_for_password_with_options, fetch_ihp_profile,
-    measure_rtt_bucket,
-};
 use hkdf::Hkdf;
 use rand_core::{CryptoRng, RngCore};
 use serde::{Deserialize, Serialize};
@@ -380,7 +376,7 @@ impl CapsuleTimestamp {
 }
 
 /// Password material with bound checking to avoid unbounded allocations.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PasswordMaterial(Zeroizing<Vec<u8>>);
 
 impl PasswordMaterial {
@@ -653,6 +649,7 @@ pub trait KeyProvider: Send + Sync {
         &self,
         k_profile: &ProfileKey,
         derivation: &SessionDerivation<'_>,
+        labels: &CryptoDomainLabels,
     ) -> Result<SessionKey, IhpError>;
 }
 
@@ -1018,7 +1015,7 @@ pub struct IhpCapsule {
 }
 
 /// Decrypted content carried inside an [`IhpCapsule`].
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IhpPlaintext {
     pub password_material: PasswordMaterial,
     pub timestamp: CapsuleTimestamp,

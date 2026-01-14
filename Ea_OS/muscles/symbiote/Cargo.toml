@@ -1,0 +1,30 @@
+[package]
+name = "ea-symbiote"
+version = "0.2.0"
+edition = "2021"
+authors = ["Ea Foundation <contact@ea.foundation>"]
+description = "IPC Synapse Layer - Inter-Process Communication for EAOS Organs"
+repository = "https://github.com/ea-foundation/symbiote"
+license = "MIT OR Apache-2.0"
+keywords = ["ipc", "synapse", "muscle", "ea", "syscall", "no-std"]
+categories = ["no-std", "embedded"]
+readme = "README.md"
+
+[features]
+default = ["alloc"]
+std = ["alloc"]
+alloc = []
+
+[dependencies]
+# Core dependencies - no_std compatible
+blake3 = { version = "1.5", default-features = false }
+log = { version = "0.4", default-features = false }
+hex = { version = "0.4", default-features = false, features = ["alloc"] }
+
+[dev-dependencies]
+proptest = "1.0"
+criterion = { version = "0.5" }
+
+[[bench]]
+name = "symbiote_benchmarks"
+harness = false

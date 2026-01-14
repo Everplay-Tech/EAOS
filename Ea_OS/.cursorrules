@@ -1,0 +1,37 @@
+# EAOS Cursor Rules
+
+## System Anatomy
+
+| Component | Path | Function |
+|-----------|------|----------|
+| Brain | `muscles/referee-kernel` | UEFI Bootloader & Micro-kernel |
+| Skeleton | `permfs` | Crash-proof FS with 256-bit addressing |
+| Nerves | `muscles/permfs-bridge` | Syscall interface & Braid integration |
+| Reflexes | `muscles/roulette-rs` | T9-Braid Compression (7.9% ratio) |
+| Immune | `intelligence/dr-lex` | Governance engine |
+| Organs | `organs/biowerk-agent` | Office Suite |
+
+## Governance Rules (Dr-Lex)
+
+1. No unencrypted data touches the disk (PermFS)
+2. All writes must pass `is_ethically_corrupt()` check
+3. System must survive SIGKILL and replay from Journal
+
+## Key Constants
+
+- Braid Magic: `0xB8AD`
+- Block Size: 4096 bytes
+- Target Compression: 7.9%
+
+## Build Commands
+
+- Full build: `./scripts/build-all.sh`
+- ISO only: `./scripts/make-iso.sh`
+- UEFI target: `cargo build -p referee --release --target x86_64-unknown-uefi`
+
+## Important Constraints
+
+- BIOwerk is a generic Office Suite, NOT healthcare-specific
+- All data must be braided before storage
+- Prefer editing existing files over creating new ones
+- Use `no_std` patterns for kernel code

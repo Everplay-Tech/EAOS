@@ -1,0 +1,208 @@
+{
+  "$schema": "./sovereign_health.schema.json",
+  "name": "EAOS Sovereign Health Pod",
+  "version": "1.0.0",
+  "description": "Initial deployment manifest for the EAOS Healthcare Organism",
+  "created_at": "2025-01-12T00:00:00Z",
+
+  "organs": {
+    "osteon": {
+      "name": "Osteon Agent",
+      "description": "Skeletal/structural agent - formats and validates patient records",
+      "status": "running",
+      "crate": "biowerk-agent",
+      "entry_point": "OsteonAgent::new()",
+      "health_check": {
+        "enabled": true,
+        "interval_ms": 5000,
+        "timeout_ms": 1000
+      },
+      "metrics": {
+        "records_formatted": 0,
+        "validation_errors": 0,
+        "compression_ratio_avg": 0.079
+      }
+    },
+    "hemato": {
+      "name": "Hemato Agent",
+      "description": "Blood/transport agent - handles data flow between organs",
+      "status": "running",
+      "crate": "biowerk-agent",
+      "entry_point": "HematoAgent::new()",
+      "health_check": {
+        "enabled": true,
+        "interval_ms": 5000,
+        "timeout_ms": 1000
+      },
+      "metrics": {
+        "requests_routed": 0,
+        "pending_count": 0
+      }
+    },
+    "nephro": {
+      "name": "Nephro Agent",
+      "description": "Filtration agent - validates and sanitizes healthcare data",
+      "status": "running",
+      "crate": "biowerk-agent",
+      "entry_point": "NephroAgent::new()",
+      "health_check": {
+        "enabled": true,
+        "interval_ms": 5000,
+        "timeout_ms": 1000
+      },
+      "metrics": {
+        "records_sanitized": 0,
+        "pii_fields_masked": 0
+      }
+    },
+    "myocyte": {
+      "name": "Myocyte (Roulette-RS)",
+      "description": "Muscle fiber - T9-Braid compression engine",
+      "status": "running",
+      "crate": "roulette-rs",
+      "entry_point": "T9BraidTransformer::new()",
+      "health_check": {
+        "enabled": true,
+        "interval_ms": 3000,
+        "timeout_ms": 500
+      },
+      "metrics": {
+        "blocks_transformed": 0,
+        "bytes_compressed": 0,
+        "godel_numbers_generated": 0
+      }
+    }
+  },
+
+  "intelligence": {
+    "nucleus_director": {
+      "name": "Nucleus Director",
+      "description": "Central orchestration for EAOS organism",
+      "status": "running",
+      "crate": "nucleus-director",
+      "entry_point": "NucleusDirector::new()",
+      "orchestration": {
+        "max_concurrent_tasks": 10,
+        "task_timeout_ms": 30000
+      }
+    },
+    "dr_lex": {
+      "name": "Dr-Lex Governance",
+      "description": "Healthcare Constitution enforcement",
+      "status": "enforced",
+      "crate": "dr-lex",
+      "entry_point": "DrLexAuditor::new()",
+      "policy": {
+        "strict_mode": true,
+        "constitution": "HealthcareConstitution::default()",
+        "ethics_rules": ["ETH-001", "ETH-002", "ETH-003", "ETH-004"]
+      },
+      "metrics": {
+        "audits_performed": 0,
+        "writes_approved": 0,
+        "writes_blocked": 0
+      }
+    }
+  },
+
+  "muscles": {
+    "referee_kernel": {
+      "name": "Referee Kernel",
+      "description": "UEFI microkernel for syscall routing",
+      "status": "standby",
+      "crate": "referee-kernel",
+      "target": "x86_64-unknown-uefi",
+      "note": "Requires UEFI target for compilation"
+    },
+    "permfs_bridge": {
+      "name": "PermFS Bridge",
+      "description": "Syscall-to-storage translation layer",
+      "status": "running",
+      "crate": "permfs-bridge",
+      "features": ["std", "governance"]
+    },
+    "hyperbolic_chamber": {
+      "name": "Hyperbolic Chamber",
+      "description": "Task planning and scheduling",
+      "status": "running",
+      "crate": "hyperbolic-chamber"
+    },
+    "musclekernel": {
+      "name": "MuscleKernel (C)",
+      "description": "LSTM-based I/O predictor for block devices",
+      "status": "standby",
+      "language": "c",
+      "path": "muscles/musclekernel-main",
+      "note": "Linux kernel module - requires kernel headers"
+    }
+  },
+
+  "defense": {
+    "sefirot": {
+      "name": "Sefirot Chaos Framework",
+      "description": "Chaos testing and resilience verification",
+      "status": "standby",
+      "crate": "sefirot",
+      "scenarios": ["cataclysm", "gevurah"],
+      "note": "Activated during chaos testing only"
+    }
+  },
+
+  "storage": {
+    "permfs": {
+      "name": "PermFS",
+      "description": "256-bit addressed permanent filesystem",
+      "status": "running",
+      "crate": "permfs",
+      "features": ["std"],
+      "config": {
+        "block_size": 4096,
+        "braid_magic": "0xB8AD",
+        "encryption": "AES-256-XTS",
+        "compression": "LZ4"
+      }
+    },
+    "ihp": {
+      "name": "IHP Capsules",
+      "description": "Encrypted capsule wrapping for data at rest",
+      "status": "running",
+      "crate": "ihp",
+      "config": {
+        "header_magic": "IHP\\x01",
+        "cipher": "AES-256-GCM"
+      }
+    }
+  },
+
+  "senses": {
+    "dashboard": {
+      "name": "ByteDisplay Dashboard",
+      "description": "Visual representation of braided data",
+      "status": "available",
+      "path": "Organs/untitled-main",
+      "port": 5000,
+      "features": ["byte_display", "braid_viewer", "godel_numbers"]
+    },
+    "diagnostics": {
+      "name": "Diagnostics Export",
+      "description": "JSON export for monitoring",
+      "status": "running",
+      "output_path": "/tmp/eaos_diagnostics.json",
+      "update_interval_ms": 1000
+    }
+  },
+
+  "verification": {
+    "braid_header_magic": "0xB8AD",
+    "compression_target": 0.079,
+    "chaos_recovery": true,
+    "ethical_blocking": true
+  },
+
+  "deployment": {
+    "target": "health_pod",
+    "build_command": "cargo build --workspace --release",
+    "test_command": "cargo test --workspace",
+    "cataclysm_test": "bash tests/cataclysm_test.sh"
+  }
+}

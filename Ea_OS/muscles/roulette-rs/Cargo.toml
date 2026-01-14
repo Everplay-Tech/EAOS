@@ -1,0 +1,19 @@
+[package]
+name = "roulette-rs"
+version = "0.1.0"
+edition = "2021"
+description = "Nested-Radix T9-Braid compression for EAOS - Reflex Muscle"
+license = "MIT OR Apache-2.0"
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+default = ["std"]
+std = []
+no_std = []
+
+[dependencies]
+# Minimal dependencies for kernel integration
+# libm provides no_std compatible math functions (log2, etc.)
+libm = "0.2"

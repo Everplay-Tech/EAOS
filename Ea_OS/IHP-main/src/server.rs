@@ -399,7 +399,7 @@ fn generate_session_token(
 }
 
 /// Convenience function to run the server on the provided socket address.
-pub async fn run_server(state: ServerState, addr: SocketAddr) -> Result<(), hyper::Error> {
+pub async fn run_server(state: ServerState, addr: SocketAddr) -> Result<(), std::io::Error> {
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, build_router(state)).await
 }

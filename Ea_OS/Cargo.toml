@@ -3,12 +3,51 @@ resolver = "2"
 
 members = [
     "permfs",
+    "muscles/referee-kernel",
+    "muscles/hyperbolic-chamber",
+    "muscles/permfs-bridge",
+    "muscles/roulette-rs",
+    "muscles/symbiote",
+    "organs/biowerk-agent",
+    "intelligence/nucleus-director",
+    "intelligence/dr-lex",
+    "defense/sefirot",
+    "signals/quenyan/reference/rust",
+    "IHP-main",
+]
+
+# referee-kernel requires UEFI target, exclude from default workspace builds
+default-members = [
+    "permfs",
+    "muscles/hyperbolic-chamber",
+    "muscles/permfs-bridge",
+    "muscles/roulette-rs",
+    "muscles/symbiote",
+    "organs/biowerk-agent",
+    "intelligence/nucleus-director",
+    "intelligence/dr-lex",
+    "defense/sefirot",
+    "signals/quenyan/reference/rust",
+    "IHP-main",
 ]
 
 # Exclude non-Rust projects or those with custom build systems
 exclude = [
     "muscles/musclekernel-main",
-    "muscles/referee-kernel-main",
-    "muscles/hyperbolic-chamber",
-    "signals/quenyan-main-2",
+    "muscles/roulette-kernel-rs-main",
 ]
+
+[workspace.package]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+# Shared dependencies across EAOS components
+blake3 = { version = "1.5", default-features = false }
+
+# Profile settings for no_std builds
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"

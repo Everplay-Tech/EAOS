@@ -1,0 +1,22 @@
+[package]
+name = "permfs-bridge"
+version = "0.1.0"
+edition = "2021"
+description = "Bridge between Referee Kernel syscalls and PermFS storage layer"
+license = "MIT OR Apache-2.0"
+
+[lib]
+# Use rlib for Rust linking (e.g., referee-kernel)
+# staticlib is for C linking, but requires panic handler
+crate-type = ["rlib"]
+
+[features]
+default = ["std", "governance"]
+std = ["dep:permfs", "permfs/std"]
+uefi = []  # UEFI builds - minimal, no permfs dependency
+governance = ["dr-lex", "std"]  # Governance requires std
+
+[dependencies]
+permfs = { path = "../../permfs", default-features = false, optional = true }
+roulette-rs = { path = "../roulette-rs", default-features = false }
+dr-lex = { path = "../../intelligence/dr-lex", optional = true }

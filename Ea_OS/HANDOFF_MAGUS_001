@@ -1,0 +1,129 @@
+
+Here is the **Comprehensive Master Handoff Document**.
+
+This file is designed to be saved as `EAOS_ARCHITECTURE.md` at the root of your repository. It bridges the gap between "what the code looks like" and "what the system actually does." It captures the biological metaphors, the strict security architecture, and the recent pivot to the Office Suite.
+
+---
+
+# 🧬 EAOS: The Sovereign Operating System
+
+**Architecture & Implementation Guide**
+**Version:** 1.0 (Sovereign Office Transition)
+**Target:** x86_64 UEFI (Bare Metal)
+
+## 🌌 Core Philosophy
+
+EAOS is not a clone of Linux or Windows. It is a **Digital Organism**.
+
+1. **Sovereignty**: Data is strictly governed. No byte touches the disk without being "Braided" (Compressed/Encrypted) and "Audited" (Ethical Review).
+2. **Biological Architecture**: The system components are named and function like biological systems (Brain, Bone, Nerves, Reflexes).
+3. **Immutability**: Files are not overwritten; they are accreted. The filesystem (`PermFS`) is an append-only ledger of state.
+
+---
+
+## 🗺️ Anatomical Architecture (Component Map)
+
+| Biological Name | Code Path | Rust Crate | Function & Intent |
+| --- | --- | --- | --- |
+| **THE BRAIN** | `muscles/referee-kernel` | `referee-kernel` | **The Kernel.** A lightweight UEFI bootloader and microkernel. It initializes hardware, enforces memory safety, and schedules the Organs. It is `no_std` and runs on bare metal. |
+| **THE SKELETON** | `permfs/` | `permfs` | **The Filesystem.** A crash-proof, distributed storage engine with 256-bit addressing. It does not use standard inodes; it uses Content-Addressable Storage logic. |
+| **THE NERVES** | `muscles/permfs-bridge` | `permfs-bridge` | **The Driver Layer.** Connects the Brain to the Skeleton. It intercepts all write operations to inject the "Reflex" (Compression) and "Immune" (Governance) logic. |
+| **THE SYNAPSE** | `muscles/symbiote` | `ea-symbiote` | **The IPC Middleware.** The translation layer between Agents (Organs) and the Kernel. It standardizes data into `SovereignBlob` containers. |
+| **THE REFLEX** | `muscles/roulette-rs` | `roulette-rs` | **The Compression Engine.** Implements **T9-Braid Theory**. It mathematically knots data, achieving ~7.9% compression ratios while encrypting it. |
+| **THE IMMUNE SYSTEM** | `intelligence/dr-lex` | `dr-lex` | **The Governance Engine.** A "Pre-Write Hook." It scans data for ethical violations (e.g., unencrypted PII) and blocks the write if the data is corrupt. |
+| **THE VOICE** | `signals/quenyan` | `mcs_reference` | **The Language.** A compiler for **Quenyan (QYN)**. It compiles high-level user scripts into bytecode logic blobs. |
+| **THE ORGANS** | `organs/biowerk-agent` | `biowerk-agent` | **The Application Layer.** Currently capable of Text Editing (**Osteon**) and Logic Calculation (**Myocyte**). |
+| **THE NUCLEUS** | `intelligence/nucleus-director` | `nucleus-director` | **The Shell.** The CLI/TUI entry point. It accepts user commands (`write`, `calc`) and dispatches them to the Organs. |
+
+---
+
+## ⚙️ Data Flow: The "Sovereign Cycle"
+
+When a user saves a file, the data travels through this exact pipeline. If any step fails, the system rejects the data.
+
+1. **User Input**: User types `write manifesto.txt "Hello World"` in the **Nucleus** shell.
+2. **Organ Processing**: The **Nucleus** dispatches the task to **Osteon** (The Document Agent).
+3. **Encapsulation**: **Osteon** wraps the text in a `SovereignBlob` (Type: `Document`) and attaches a label.
+4. **Synaptic Transmission**: The blob is passed to **Symbiote**. Symbiote validates the structure and invokes a `WriteBlock` syscall.
+5. **Reflex Action**: The **PermFS Bridge** catches the syscall. It passes the raw data to **Roulette-RS**, which "Braids" it (compresses/encrypts).
+6. **Immune Response**: Before writing, **Dr-Lex** inspects the braided data. It looks for the **Magic Header `0xB8AD**`. If missing, it kills the process.
+7. **Ossification**: If clean, **PermFS** writes the data to the virtual disk.
+
+---
+
+## 🛠️ The "Office Suite" Definition
+
+We have pivoted away from "Healthcare-Only." BIOwerk is now a Sovereign Office Suite.
+
+### 1. Osteon (The Writer)
+
+* **What it is:** A headless Word Processor.
+* **What it does:** Accepts strings or streams. Outputs `SovereignBlob::Document`.
+* **Future Goal:** Markdown rendering and version history via Braid.
+
+### 2. Myocyte (The Calculator)
+
+* **What it is:** A Logic & Spreadsheet Engine.
+* **What it does:** Accepts Quenyan formulas (e.g., `revenue - cost`). Compiles them via `signals/quenyan`. Outputs `SovereignBlob::Logic`.
+* **Future Goal:** A grid-based TUI for editing logic cells.
+
+### 3. Nucleus (The Interface)
+
+* **What it is:** The Command Line Interface.
+* **What it does:** Manages the "Game Loop" of the OS. Parses text input and displays system status.
+* **Future Goal:** Render a graphical "Braid Lattice" (Stage 11) to visualize system memory state.
+
+---
+
+## 🔧 Operational Guide
+
+### Essential Commands
+
+* **Build Everything:**
+```bash
+./scripts/build-all.sh
+
+```
+
+
+* **Generate ISO:**
+```bash
+./scripts/make-iso.sh
+
+```
+
+
+*Output:* `dist/eaos-health-pod.iso`
+* **Run Emulator (QEMU):**
+```bash
+qemu-system-x86_64 -enable-kvm -m 512M -bios /path/to/OVMF.fd -cdrom dist/eaos-health-pod.iso -serial stdio
+
+```
+
+
+
+### Development Rules (The "Constitution")
+
+1. **NO_STD Priority:** All "Muscles" (Kernel, Bridge, Symbiote, Roulette) must be `no_std` compatible. `std` is only allowed in the "Organs" (Agents) or for testing tools.
+2. **Magic Header:** All persisted data **MUST** start with `0xB8AD`. This is the cryptographic proof of braiding.
+3. **Strict Typing:** Do not pass raw bytes between layers if possible. Use `SovereignBlob` or `BlockAddr` structs.
+4. **No "Mocking" in Production:** If the `PermFS` driver isn't ready for UEFI, we do not fake it; we implement the "Handoff" architecture where the kernel loads the driver module.
+
+---
+
+## 🔭 Current Status vs. Missing Links
+
+| Feature | Status | Notes |
+| --- | --- | --- |
+| **Boot Process** | 🟢 Active | Boots to "Eä referee v3.0 awakens". |
+| **File System** | 🟢 Active | `PermFS` logic is sound, bridge is linked. |
+| **Office Apps** | 🟡 Partial | CLI works, but no visual editor yet. |
+| **Language** | 🟢 Active | Quenyan compiler builds and runs. |
+| **Graphics** | 🔴 Missing | Currently text-only (Serial/VGA text). |
+| **Networking** | 🔴 Missing | `IHP` exists but is not hooked into the Kernel. |
+
+## 📜 Directives for AI Collaborators
+
+* **If modifying the Kernel:** Ensure you do not break the `Syscall` ABI defined in `muscles/referee-kernel/src/syscall.rs`.
+* **If modifying Agents:** Always use `Symbiote` to talk to the system. Never try to invoke syscalls directly from `biowerk`.
+* **If adding new Apps:** Implement the `SovereignDocument` trait in `muscles/symbiote` first.

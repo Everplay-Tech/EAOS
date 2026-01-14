@@ -1,0 +1,96 @@
+
+
+
+
+**Technical Reference & Architectural Constraints**
+**Target:** Future UI Designer (AI or Human)
+**System Context:** Bare Metal UEFI (No Window Manager, No GPU Driver)
+
+## 1. The Physical Reality (The Canvas)
+
+You are not designing for a browser or an OS window. You are designing directly for the **UEFI Graphics Output Protocol (GOP)**.
+
+* **Memory Mapped Video:** The screen is a raw array of bytes (`u32` per pixel) located in kernel memory.
+* **Zero Hardware Acceleration:** There is no OpenGL, DirectX, or Vulkan. Every pixel change requires the CPU to write to memory.
+* **Implication:** Avoid full-screen redraws. Designs must prioritize **"Dirty Rectangles"** (updating only changed regions) to prevent screen tearing and high CPU usage.
+
+## 2. The Data Sources (What Can Be Visualized)
+
+Any UI component you design must pull data from one of these three specific "Organs." If it’s not here, it doesn't exist.
+
+### Source A: The Braid Lattice (Storage State)
+
+* **Origin:** `muscles/permfs-bridge`
+* **Data Structure:** A sparse map of 4KB blocks addressed by 256-bit IDs.
+* **Available States:**
+1. `Empty` (Unallocated)
+2. `Raw` (In-memory buffer, not yet written)
+3. `Braided` (Verified `0xB8AD` header, compressed/encrypted)
+4. `Blocked` (Rejected by `Dr-Lex` governance)
+
+
+* **Constraint:** The UI can read this map in real-time via `Symbiote`. The visualization should reflect the *density* and *integrity* of the data, not just file names.
+
+### Source B: The Synapse (Process State)
+
+* **Origin:** `muscles/symbiote`
+* **Data Structure:** `SovereignBlob` (The generic document container).
+* **Available Metadata:**
+* `BlobType` (Document, Logic, Record)
+* `CompressionRatio` (Input vs. Output size)
+* `GovernanceStatus` (Compliant/Non-Compliant)
+
+
+* **Constraint:** The UI acts as the visual representation of the IPC layer. When a user "opens" a file, they are deserializing a `SovereignBlob`.
+
+### Source C: The Nucleus (Input/Output)
+
+* **Origin:** `intelligence/nucleus-director`
+* **Interaction Model:** Command-based (Text/Script).
+* **Constraint:** The "Shell" is the primary input method. Graphical elements are output/feedback mechanisms, not necessarily controls (unless a mouse driver is implemented later).
+
+## 3. The Interaction Framework
+
+### The "Write" Event
+
+* **Trigger:** User commits data (via Shell or Organ).
+* **System Action:** `Symbiote` hands data to `Roulette-RS` (Reflex).
+* **Visual Opportunity:** The interface needs to represent the **transformation** of data.
+* *Input:* Raw Data.
+* *Process:* The Braid (Compression/Encryption).
+* *Output:* The 7.9% compressed artifact.
+
+
+* **Constraint:** This happens synchronously in the kernel. The UI must handle the "blocking" nature of the write operation or visualize the wait state.
+
+### The "Governance" Event
+
+* **Trigger:** User attempts to write non-compliant data (e.g., Unencrypted PII).
+* **System Action:** `Dr-Lex` (Immune System) intercepts the syscall inside `permfs-bridge` and returns `AuditBlocked`.
+* **Visual Opportunity:** The system does not just "fail silently." The UI must visualize the **rejection**. The immune system has actively neutralized a threat. This state is distinct from a generic I/O error.
+
+## 4. Architectural Boundaries (Do's and Don'ts)
+
+| Feature | Technical Reality | Design Implication |
+| --- | --- | --- |
+| **Windowing** | No Window Manager exists. | Design for **Tiling** or **Single-Tasking** layouts. Overlapping windows require complex software clipping (expensive). |
+| **Fonts** | No System Fonts or Truetype support. | You must use **Bitmap Fonts** or implement a custom rasterizer. Typography will be pixel-aligned. |
+| **Transparency** | No Alpha Blending hardware. | Transparency requires software calculation (reading background pixel, mixing, writing back). Use sparingly. |
+| **Cursor** | No Mouse Driver (yet). | The interface should be primarily keyboard-driven (CLI/TUI logic). |
+
+## 5. Prompt Injection for the Future Designer
+
+**Use this to orient the designer instance:**
+
+> "You are designing the UI for EAOS, a bare-metal UEFI operating system.
+> **Technical Constraints:**
+> 1. **Renderer:** Software-only Framebuffer (CPU bound). Avoid complex layering.
+> 2. **Data Source:** You must visualize the state of `PermFS` blocks (Raw, Braided, Blocked).
+> 3. **Interaction:** Keyboard-driven Command Line (`Nucleus`).
+>
+>
+> **Goal:** Create a visual language that truthfully represents the underlying cryptographic architecture defined in `EAOS_ARCHITECTURE.md`. Do not design standard desktop metaphors (windows/folders) unless they fit the 'SovereignBlob' data structure."
+
+---
+
+This framework provides the **physics** of the world. It is up to the future designer to determine the **aesthetics**.

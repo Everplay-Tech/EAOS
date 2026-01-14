@@ -1,0 +1,40 @@
+{
+  "wrapper_version": "1.2.0",
+  "payload_version": "1.2.0",
+  "payload_features": [],
+  "metadata": {
+    "title": "Hello Sovereign World",
+    "author": "EAOS",
+    "created": "2026-01-13T00:00:00Z"
+  },
+  "salt": null,
+  "nonce": null,
+  "sections": {
+    "stream_header": {
+      "dictionary_version": "1.0",
+      "encoder_version": "1.0.0",
+      "source_language": "text",
+      "source_language_version": "1.0",
+      "symbol_count": 1,
+      "source_hash": "",
+      "has_source_map": false
+    },
+    "compression": {
+      "backend": "identity",
+      "symbol_count": 1,
+      "model": {},
+      "extras": {}
+    },
+    "tokens": "SGVsbG8gU292ZXJlaWduIFdvcmxk",
+    "string_table": "SGVsbG8gU292ZXJlaWduIFdvcmxk",
+    "payloads": [],
+    "payload_channels": {
+      "identifiers": null,
+      "strings": null,
+      "integers": null,
+      "counts": null,
+      "flags": null
+    },
+    "source_map": null
+  }
+}

@@ -1,0 +1,20 @@
+[package]
+name = "mcs_reference"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+base64 = "0.21"
+chacha20poly1305 = { version = "0.10", features = ["alloc"] }
+clap = { version = "4.4", features = ["derive"] }
+crc32fast = "1.3"
+ea-symbiote = { path = "../../../../muscles/symbiote" }
+getrandom = { version = "0.2", features = ["std"] }
+hex = "0.4"
+hkdf = "0.12"
+pbkdf2 = "0.12"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+thiserror = "1.0"
