@@ -1,0 +1,37 @@
+[package]
+name = "ea-net-stack"
+version = "0.1.0"
+edition = "2021"
+description = "EAOS Userspace Network Stack - Microkernel TCP/IP implementation"
+license = "MIT OR Apache-2.0"
+keywords = ["network", "tcp", "ip", "microkernel", "eaos"]
+
+[features]
+default = ["std"]
+std = []
+
+[dependencies]
+# IPC layer for communication with Organs
+ea-symbiote = { path = "../symbiote" }
+
+# Braid compression for efficient network data transfer
+roulette-rs = { path = "../roulette-rs", default-features = false }
+
+# Userspace TCP/IP stack
+smoltcp = { version = "0.12", default-features = false, features = [
+    "std",
+    "medium-ethernet",
+    "proto-ipv4",
+    "socket-tcp",
+    "socket-udp",
+] }
+
+# Logging
+log = "0.4"
+
+# Serialization for IPC messages
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.149"
+
+[dev-dependencies]
+env_logger = "0.11"
