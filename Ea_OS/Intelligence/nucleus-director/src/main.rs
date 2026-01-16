@@ -70,11 +70,18 @@ fn print_response(response: &DirectorResponse) {
             println!("  Block: {}", block_offset);
             println!("  Bytecode: {} bytes", bytecode_size);
         }
-        DirectorResponse::Status { biowerk_ready, document_count, logic_count } => {
+        DirectorResponse::HeartbeatRecorded { tick, uptime_secs, block_offset } => {
+            println!("Heartbeat recorded:");
+            println!("  Tick: {}", tick);
+            println!("  Uptime: {} seconds", uptime_secs);
+            println!("  Block: {}", block_offset);
+        }
+        DirectorResponse::Status { biowerk_ready, document_count, logic_count, heartbeat_tick } => {
             println!("System Status:");
             println!("  BIOwerk: {}", if *biowerk_ready { "Ready" } else { "Not Ready" });
             println!("  Documents: {}", document_count);
             println!("  Logic units: {}", logic_count);
+            println!("  Heartbeat tick: {}", heartbeat_tick);
         }
         DirectorResponse::DocumentList { count, documents } => {
             println!("Documents ({}):", count);

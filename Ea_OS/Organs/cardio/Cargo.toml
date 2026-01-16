@@ -1,0 +1,19 @@
+[package]
+name = "ea-cardio"
+version = "0.1.0"
+edition = "2021"
+authors = ["Third Party Developer <dev@example.com>"]
+description = "Cardio Organ - System heartbeat and uptime tracking for EAOS"
+license = "MIT OR Apache-2.0"
+keywords = ["heartbeat", "uptime", "organ", "eaos"]
+
+[features]
+default = ["std"]
+std = ["alloc", "ea-symbiote/std"]
+alloc = ["ea-symbiote/alloc"]
+
+[dependencies]
+# Depend on Symbiote for SovereignDocument trait
+ea-symbiote = { path = "../../muscles/symbiote" }
+
+[dev-dependencies]

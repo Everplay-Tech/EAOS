@@ -16,7 +16,12 @@ std = []
 [dependencies]
 biowerk-agent = { path = "../../organs/biowerk-agent" }
 ea-symbiote = { path = "../../muscles/symbiote" }
+ea-cardio = { path = "../../organs/cardio" }
 roulette-rs = { path = "../../muscles/roulette-rs" }
 permfs = { path = "../../permfs", default-features = false, features = ["std"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+
+[dev-dependencies]
+ea-cardio = { path = "../../organs/cardio" }
+ea-symbiote = { path = "../../muscles/symbiote" }

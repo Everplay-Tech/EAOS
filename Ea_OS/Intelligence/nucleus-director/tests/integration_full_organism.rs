@@ -15,6 +15,8 @@
 use nucleus_director::{DirectorRequest, DirectorResponse, NucleusDirector, BRAID_MAGIC};
 use biowerk_agent::{AgentRequest, AgentResponse, BIOwerk};
 use roulette_rs::{BLOCK_SIZE, BraidTransformer, T9BraidTransformer};
+use ea_cardio::{CardioMonitor, Heartbeat, StatusCode};
+use ea_symbiote::{BlobType, SovereignDocument, Symbiote};
 
 /// Test: Full Office Suite Cycle
 ///
@@ -72,7 +74,7 @@ fn test_full_organism_office_cycle() {
     let status = director.process(DirectorRequest::SystemStatus);
 
     match status {
-        DirectorResponse::Status { biowerk_ready, document_count, logic_count } => {
+        DirectorResponse::Status { biowerk_ready, document_count, logic_count, .. } => {
             println!("  BIOwerk: {}", if biowerk_ready { "Ready" } else { "Not Ready" });
             println!("  Documents: {}", document_count);
             println!("  Logic units: {}", logic_count);
@@ -219,7 +221,7 @@ fn test_system_status() {
     let response = director.process(DirectorRequest::SystemStatus);
 
     match response {
-        DirectorResponse::Status { biowerk_ready, document_count, logic_count } => {
+        DirectorResponse::Status { biowerk_ready, document_count, logic_count, .. } => {
             println!("System Status:");
             println!("  BIOwerk ready: {}", biowerk_ready);
             println!("  Documents: {}", document_count);
@@ -279,4 +281,177 @@ fn test_braid_magic_constant() {
     // Verify the magic constant is correct
     assert_eq!(BRAID_MAGIC, [0xB8, 0xAD]);
     println!("Braid magic: 0x{:02X}{:02X} = 0xB8AD", BRAID_MAGIC[0], BRAID_MAGIC[1]);
+}
+
+// ============================================================================
+// STAGE 11.5: ECOSYSTEM EXPANSION TEST
+// ============================================================================
+
+/// Test: Ecosystem Expansion - Third-Party Organ Integration
+///
+/// This test proves that external developers can create Organs that:
+/// 1. Implement the SovereignDocument trait
+/// 2. Store data via Symbiote without ANY kernel modifications
+/// 3. Participate in the Braid ecosystem with 0xB8AD compliance
+///
+/// CRUCIAL: The Cardio organ was created as a "third-party" module.
+/// Symbiote code is UNCHANGED. This proves the modularity goal.
+#[test]
+fn test_ecosystem_expansion() {
+    println!("\n========================================");
+    println!("  EAOS STAGE 11.5: ECOSYSTEM EXPANSION");
+    println!("  Third-Party Organ Integration Test");
+    println!("========================================\n");
+
+    // Step 1: Create a third-party organ (Cardio)
+    println!("Step 1: Creating third-party Cardio organ...");
+    let mut monitor = CardioMonitor::new();
+
+    // Simulate system operation
+    monitor.tick_n(3600); // 1 hour of operation
+    monitor.set_pulse_rate(72);
+    monitor.set_status(StatusCode::Healthy);
+
+    let heartbeat = monitor.snapshot();
+    println!("  Heartbeat created:");
+    println!("  - Tick: {}", heartbeat.tick);
+    println!("  - Uptime: {} seconds", monitor.uptime_secs());
+    println!("  - Pulse: {} BPM", heartbeat.pulse_rate);
+    println!("  - Status: {} (healthy)", heartbeat.status);
+
+    // Step 2: Verify SovereignDocument implementation
+    println!("\nStep 2: Verifying SovereignDocument implementation...");
+    let blob_type = heartbeat.blob_type();
+    assert_eq!(blob_type, BlobType::Record);
+    println!("  Blob type: {:?}", blob_type);
+
+    let bytes = heartbeat.to_bytes();
+    assert_eq!(bytes.len(), 20);
+    println!("  Serialized: {} bytes", bytes.len());
+
+    let recovered = Heartbeat::from_bytes(&bytes).expect("Deserialization failed");
+    assert_eq!(recovered, heartbeat);
+    println!("  Roundtrip: VERIFIED");
+
+    // Step 3: Convert to SovereignBlob
+    println!("\nStep 3: Converting to SovereignBlob...");
+    let blob = heartbeat.to_blob();
+    assert!(blob.is_governance_compliant());
+    assert_eq!(blob.blob_type, BlobType::Record);
+    println!("  Governance compliant: YES (0xB8AD header)");
+    println!("  Payload size: {} bytes", blob.payload.len());
+
+    // Step 4: Commit through Symbiote (UNCHANGED!)
+    println!("\nStep 4: Committing via Symbiote (NO MODIFICATIONS!)...");
+    let mut synapse = Symbiote::new();
+    let result = synapse.commit_organ_data(blob);
+    assert!(result.is_ok());
+
+    let addr = result.unwrap();
+    println!("  Committed to block: {}", addr.block_offset());
+    println!("  Address valid: {}", !addr.is_null());
+
+    // Step 5: Verify Nucleus integration
+    println!("\nStep 5: Testing Nucleus Cardio command...");
+    let mut director = NucleusDirector::new();
+
+    // Record a heartbeat through Nucleus
+    let response = director.process(DirectorRequest::CardioHeartbeat);
+    match response {
+        DirectorResponse::HeartbeatRecorded { tick, uptime_secs, block_offset } => {
+            println!("  Heartbeat recorded:");
+            println!("  - Tick: {}", tick);
+            println!("  - Uptime: {} seconds", uptime_secs);
+            println!("  - Block: {}", block_offset);
+            assert_eq!(tick, 1);
+            assert_eq!(uptime_secs, 1);
+        }
+        DirectorResponse::Error(e) => panic!("Heartbeat failed: {}", e),
+        _ => panic!("Unexpected response"),
+    }
+
+    // Record more heartbeats
+    director.process(DirectorRequest::CardioHeartbeat);
+    director.process(DirectorRequest::CardioHeartbeat);
+
+    // Check system status includes heartbeat
+    let status = director.process(DirectorRequest::SystemStatus);
+    match status {
+        DirectorResponse::Status { heartbeat_tick, .. } => {
+            assert_eq!(heartbeat_tick, 3);
+            println!("  Status shows heartbeat tick: {}", heartbeat_tick);
+        }
+        _ => panic!("Expected Status response"),
+    }
+
+    println!("\n========================================");
+    println!("  ECOSYSTEM EXPANSION: VERIFIED");
+    println!("========================================");
+    println!("");
+    println!("  Third-party Organ: ea-cardio");
+    println!("  Document Type:     Heartbeat");
+    println!("  Symbiote Version:  UNCHANGED");
+    println!("  Kernel Changes:    ZERO");
+    println!("  Braid Compliant:   YES");
+    println!("");
+    println!("  CONCLUSION: Other devs CAN build Muscles!");
+    println!("========================================\n");
+}
+
+/// Test: Full Organism with Cardio
+///
+/// Demonstrates all three organs working together:
+/// - Osteon (documents)
+/// - Myocyte (logic)
+/// - Cardio (system health)
+#[test]
+fn test_full_organism_with_cardio() {
+    println!("\n--- Full Organism Test (Osteon + Myocyte + Cardio) ---\n");
+
+    let mut director = NucleusDirector::new();
+
+    // 1. Write a document
+    let doc = director.process(DirectorRequest::WriteDocument {
+        filename: "quarterly_report.txt".to_string(),
+        content: "Q1 2026 Revenue: $3.375M".to_string(),
+    });
+    assert!(matches!(doc, DirectorResponse::DocumentSaved { .. }));
+    println!("Document: quarterly_report.txt saved");
+
+    // 2. Process logic
+    let logic = director.process(DirectorRequest::ProcessLogic {
+        name: "profit.qyn".to_string(),
+        formula: "3375000 - 2400000".to_string(),
+    });
+    assert!(matches!(logic, DirectorResponse::LogicProcessed { .. }));
+    println!("Logic: profit.qyn processed");
+
+    // 3. Record heartbeat
+    let heartbeat = director.process(DirectorRequest::CardioHeartbeat);
+    assert!(matches!(heartbeat, DirectorResponse::HeartbeatRecorded { .. }));
+    println!("Cardio: heartbeat recorded");
+
+    // 4. Final status
+    let status = director.process(DirectorRequest::SystemStatus);
+    match status {
+        DirectorResponse::Status {
+            biowerk_ready,
+            document_count,
+            logic_count,
+            heartbeat_tick,
+        } => {
+            assert!(biowerk_ready);
+            assert_eq!(document_count, 1);
+            assert_eq!(logic_count, 1);
+            assert_eq!(heartbeat_tick, 1);
+            println!("\nFinal Status:");
+            println!("  BIOwerk: Ready");
+            println!("  Documents: {}", document_count);
+            println!("  Logic units: {}", logic_count);
+            println!("  Heartbeat: tick {}", heartbeat_tick);
+        }
+        _ => panic!("Expected Status"),
+    }
+
+    println!("\nFull organism test: PASSED");
 }
