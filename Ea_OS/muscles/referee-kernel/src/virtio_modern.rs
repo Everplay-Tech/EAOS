@@ -23,6 +23,7 @@
 //! In identity-mapped UEFI: Physical Address = Virtual Address.
 
 use core::ptr::{read_volatile, write_volatile};
+use core::sync::atomic::{fence, Ordering};
 use crate::pci_modern::VirtioMmioRegions;
 use crate::interrupts::{read_isr, IsrResult, INTERRUPT_PENDING};
 
@@ -529,6 +530,9 @@ impl VirtioModern {
         avail.idx = NUM_RX_BUFFERS as u16;
         self.rx_queue.next_avail_idx = NUM_RX_BUFFERS as u16;
 
+        // CRITICAL: Barrier ensures hardware sees buffer addresses BEFORE the doorbell
+        fence(Ordering::Release);
+
         // Ring doorbell to notify device
         self.ring_doorbell(0);
 
@@ -564,6 +568,35 @@ impl VirtioModern {
             } else {
                 None
             }
+        }
+    }
+
+    /// Process completed RX buffers from used ring
+    ///
+    /// Returns `Some((buffer_id, byte_length))` if a packet was received,
+    /// `None` if no new packets are available.
+    pub fn process_rx(&mut self) -> Option<(usize, u32)> {
+        unsafe {
+            let used = &RX_QUEUE.used.used;
+            let used_idx = read_volatile(&used.idx as *const u16);
+
+            // Barrier: Ensure we see the data the hardware wrote
+            fence(Ordering::Acquire);
+
+            if self.rx_queue.last_used_idx == used_idx {
+                return None; // Nothing new in the bucket
+            }
+
+            let idx = (self.rx_queue.last_used_idx as usize) % QUEUE_SIZE;
+            let elem = read_volatile(&used.ring[idx] as *const VirtqUsedElem);
+
+            // SAFETY: Defense against oversized packets (P1 Fix)
+            if elem.len > PACKET_BUF_SIZE as u32 {
+                return None;
+            }
+
+            self.rx_queue.last_used_idx = self.rx_queue.last_used_idx.wrapping_add(1);
+            Some((elem.id as usize, elem.len)) // Returns (Buffer ID, Byte Length)
         }
     }
 
@@ -612,3 +645,324 @@ impl VirtioModern {
         mmio_write8(self.common_cfg + COMMON_DEVICE_STATUS, status);
     }
 }
+
+// ============================================================================
+// BIO-S/1.0 Zero-Copy Telemetry Bridge
+// ============================================================================
+
+/// Magic sync word for BIO-STREAM protocol
+pub const BIO_MAGIC: u32 = 0xEA01_EA01;
+
+/// Invalid magic (signals write in progress)
+pub const BIO_MAGIC_INVALID: u32 = 0x0000_0000;
+
+/// The Sovereign Protocol: BIO-STREAM (Fixed 32 Bytes)
+///
+/// This structure is the wire format for kernel-to-userspace telemetry.
+/// It's designed for zero-copy transfer via shared memory.
+///
+/// ## Tearing Prevention (SeqLock Pattern)
+///
+/// The `seq` field is a sequence counter:
+/// - Odd value = write in progress (reader must retry)
+/// - Even value = write complete (data is consistent)
+///
+/// Reader protocol:
+/// 1. Read `seq` (if odd, spin)
+/// 2. Read data
+/// 3. Read `seq` again (if changed, retry from step 1)
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct BioFrame {
+    /// Sequence counter for tearing detection (odd = write in progress)
+    pub seq: u32,
+    /// Sync Word (0xEA01EA01) - allows receiver to verify frame alignment
+    pub magic: u32,
+    /// CPU pressure: 0-1000 (maps to 0.0-100.0%)
+    pub cpu_pressure: u16,
+    /// Memory pressure: 0-1000 (maps to 0.0-100.0%)
+    pub mem_pressure: u16,
+    /// Packets Per Second received (instant)
+    pub pps_rx: u32,
+    /// Packets Per Second transmitted (instant)
+    pub pps_tx: u32,
+    /// System uptime in kernel ticks
+    pub sys_uptime: u64,
+    /// Status flags bitmask (bit 0: Alert, bit 1: Throttle)
+    pub flags: u32,
+}
+
+impl BioFrame {
+    /// Size of BioFrame in bytes (for protocol versioning)
+    pub const SIZE: usize = 32;
+
+    /// Create a new BioFrame with magic word set
+    pub const fn new() -> Self {
+        Self {
+            seq: 0,  // Even = ready to read
+            magic: BIO_MAGIC,
+            cpu_pressure: 0,
+            mem_pressure: 0,
+            pps_rx: 0,
+            pps_tx: 0,
+            sys_uptime: 0,
+            flags: 0,
+        }
+    }
+
+    /// Check if sequence indicates write in progress
+    #[inline]
+    pub fn is_write_in_progress(seq: u32) -> bool {
+        seq & 1 != 0  // Odd = writing
+    }
+}
+
+/// The "Aligned BSS Bridge" (4KB Telemetry Page)
+///
+/// This structure is page-aligned for direct mmap by userspace.
+/// The headroom allows WebSocket headers to be prepended without copying.
+///
+/// ## SeqLock Protocol
+///
+/// Writer (kernel):
+/// 1. Increment seq to odd (atomic)
+/// 2. Memory fence (Release)
+/// 3. Write all fields
+/// 4. Memory fence (Release)
+/// 5. Increment seq to even (atomic)
+///
+/// Reader (userspace):
+/// 1. Read seq (if odd, retry)
+/// 2. Memory fence (Acquire)
+/// 3. Copy all fields
+/// 4. Memory fence (Acquire)
+/// 5. Read seq again (if changed, retry)
+#[repr(C, align(4096))]
+pub struct SharedTelemetry {
+    /// Headroom for WebSocket frame header (opcode + length)
+    /// Allows zero-copy send: write header here, pass single pointer to NIC
+    pub headroom: [u8; 4],
+    /// The actual telemetry frame
+    pub frame: BioFrame,
+    /// Padding to fill 4KB page
+    _pad: [u8; 4096 - 4 - BioFrame::SIZE],
+}
+
+impl SharedTelemetry {
+    /// Create zeroed telemetry page with magic initialized
+    pub const fn new() -> Self {
+        Self {
+            headroom: [0; 4],
+            frame: BioFrame::new(),
+            _pad: [0; 4096 - 4 - BioFrame::SIZE],
+        }
+    }
+
+    /// Get physical address of the telemetry page (for userspace mmap)
+    pub fn phys_addr(&self) -> usize {
+        self as *const _ as usize
+    }
+
+    /// Update telemetry with SeqLock tearing prevention (Writer Side)
+    ///
+    /// This ensures readers always see a consistent frame, never a
+    /// "Frankenstein" mix of old and new values.
+    ///
+    /// ## SeqLock Writer Protocol
+    /// ```text
+    /// 1. seq++ (odd = write in progress)
+    /// 2. smp_wmb() - write barrier
+    /// 3. write payload
+    /// 4. smp_wmb() - write barrier
+    /// 5. seq++ (even = write complete)
+    /// ```
+    pub fn update(&mut self, cpu: u16, mem: u16, pps_rx: u32, pps_tx: u32, uptime: u64, flags: u32) {
+        unsafe {
+            // Step 1: Increment seq to ODD (signals "write in progress")
+            let old_seq = read_volatile(&self.frame.seq as *const u32);
+            let write_seq = old_seq.wrapping_add(1);
+            write_volatile(&mut self.frame.seq as *mut u32, write_seq);
+
+            // Step 2: WRITE MEMORY BARRIER (smp_wmb)
+            // Ensures seq increment is globally visible BEFORE payload writes
+            fence(Ordering::Release);
+
+            // Step 3: Write all data fields using volatile writes
+            // This prevents compiler from reordering or caching these stores
+            write_volatile(&mut self.frame.magic as *mut u32, BIO_MAGIC);
+            write_volatile(&mut self.frame.cpu_pressure as *mut u16, cpu);
+            write_volatile(&mut self.frame.mem_pressure as *mut u16, mem);
+            write_volatile(&mut self.frame.pps_rx as *mut u32, pps_rx);
+            write_volatile(&mut self.frame.pps_tx as *mut u32, pps_tx);
+            write_volatile(&mut self.frame.sys_uptime as *mut u64, uptime);
+            write_volatile(&mut self.frame.flags as *mut u32, flags);
+
+            // Step 4: WRITE MEMORY BARRIER (smp_wmb)
+            // Ensures ALL payload writes complete BEFORE seq increment
+            fence(Ordering::Release);
+
+            // Step 5: Increment seq to EVEN (signals "write complete")
+            let done_seq = write_seq.wrapping_add(1);
+            write_volatile(&mut self.frame.seq as *mut u32, done_seq);
+        }
+    }
+
+    /// Read telemetry with SeqLock tearing prevention (Reader Side)
+    ///
+    /// Returns a consistent copy of the BioFrame, retrying if a write
+    /// was in progress during the read.
+    ///
+    /// ## SeqLock Reader Protocol
+    /// ```text
+    /// do {
+    ///     1. snapshot = seq
+    ///     2. smp_rmb() - read barrier
+    ///     3. optimistic read of payload
+    ///     4. smp_rmb() - read barrier
+    /// } while (snapshot is ODD || snapshot != seq)
+    /// ```
+    ///
+    /// # Safety
+    /// Caller must ensure the SharedTelemetry is valid and not being deallocated.
+    pub unsafe fn read_safe(&self) -> BioFrame {
+        let mut result: BioFrame;
+        let mut seq_snapshot: u32;
+
+        loop {
+            // Step 1: Snapshot the sequence counter
+            seq_snapshot = read_volatile(&self.frame.seq as *const u32);
+
+            // If seq is ODD, a write is in progress - spin wait
+            if seq_snapshot & 1 != 0 {
+                core::hint::spin_loop();
+                continue;
+            }
+
+            // Step 2: READ MEMORY BARRIER (smp_rmb)
+            // Ensures we read seq BEFORE we read the payload
+            fence(Ordering::Acquire);
+
+            // Step 3: Optimistic read of all fields
+            result = BioFrame {
+                seq: seq_snapshot,
+                magic: read_volatile(&self.frame.magic as *const u32),
+                cpu_pressure: read_volatile(&self.frame.cpu_pressure as *const u16),
+                mem_pressure: read_volatile(&self.frame.mem_pressure as *const u16),
+                pps_rx: read_volatile(&self.frame.pps_rx as *const u32),
+                pps_tx: read_volatile(&self.frame.pps_tx as *const u32),
+                sys_uptime: read_volatile(&self.frame.sys_uptime as *const u64),
+                flags: read_volatile(&self.frame.flags as *const u32),
+            };
+
+            // Step 4: READ MEMORY BARRIER (smp_rmb)
+            // Ensures all payload reads complete BEFORE we re-check seq
+            fence(Ordering::Acquire);
+
+            // Step 5: Validation - check if seq changed during read
+            let seq_final = read_volatile(&self.frame.seq as *const u32);
+            if seq_snapshot == seq_final {
+                // Success! Data is consistent
+                break;
+            }
+
+            // Seq changed during read - data is torn, retry
+            core::hint::spin_loop();
+        }
+
+        result
+    }
+
+    /// Prepare WebSocket binary frame header in headroom
+    /// Format: [0x82, length] for binary frame <= 125 bytes
+    pub fn prepare_ws_header(&mut self) {
+        self.headroom[0] = 0x82; // Binary frame, FIN bit set
+        self.headroom[1] = BioFrame::SIZE as u8; // Payload length
+        self.headroom[2] = 0;
+        self.headroom[3] = 0;
+    }
+}
+
+/// Global shared telemetry bridge
+/// This is the kernel's side of the zero-copy bridge to userspace
+pub static mut NEON_BRIDGE: SharedTelemetry = SharedTelemetry::new();
+
+// ============================================================================
+// Telemetry Statistics Collector
+// ============================================================================
+
+use core::sync::atomic::AtomicU64;
+
+/// Kernel-side telemetry collector
+pub struct TelemetryCollector {
+    /// Tick counter (incremented each scheduler loop)
+    pub tick: AtomicU64,
+    /// RX packet counter (current window)
+    pub rx_packets: AtomicU64,
+    /// TX packet counter (current window)
+    pub tx_packets: AtomicU64,
+    /// Last tick when PPS was calculated
+    last_pps_tick: AtomicU64,
+    /// Calculated RX PPS
+    pub pps_rx: AtomicU64,
+    /// Calculated TX PPS
+    pub pps_tx: AtomicU64,
+}
+
+impl TelemetryCollector {
+    pub const fn new() -> Self {
+        Self {
+            tick: AtomicU64::new(0),
+            rx_packets: AtomicU64::new(0),
+            tx_packets: AtomicU64::new(0),
+            last_pps_tick: AtomicU64::new(0),
+            pps_rx: AtomicU64::new(0),
+            pps_tx: AtomicU64::new(0),
+        }
+    }
+
+    /// Increment tick counter
+    pub fn tick(&self) {
+        self.tick.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Record received packet
+    pub fn record_rx(&self) {
+        self.rx_packets.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Record transmitted packet
+    pub fn record_tx(&self) {
+        self.tx_packets.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Calculate PPS and update bridge (call every ~1 second worth of ticks)
+    pub fn update_pps(&self, ticks_per_second: u64) {
+        let current_tick = self.tick.load(Ordering::Relaxed);
+        let last_tick = self.last_pps_tick.load(Ordering::Relaxed);
+
+        if current_tick.saturating_sub(last_tick) >= ticks_per_second {
+            // Calculate PPS
+            let rx = self.rx_packets.swap(0, Ordering::Relaxed);
+            let tx = self.tx_packets.swap(0, Ordering::Relaxed);
+
+            self.pps_rx.store(rx, Ordering::Relaxed);
+            self.pps_tx.store(tx, Ordering::Relaxed);
+            self.last_pps_tick.store(current_tick, Ordering::Relaxed);
+        }
+    }
+
+    /// Push current state to the NEON_BRIDGE
+    ///
+    /// # Safety
+    /// Must not be called concurrently from multiple contexts
+    pub unsafe fn push_to_bridge(&self, cpu_pressure: u16, mem_pressure: u16, flags: u32) {
+        let uptime = self.tick.load(Ordering::Relaxed);
+        let pps_rx = self.pps_rx.load(Ordering::Relaxed) as u32;
+        let pps_tx = self.pps_tx.load(Ordering::Relaxed) as u32;
+
+        NEON_BRIDGE.update(cpu_pressure, mem_pressure, pps_rx, pps_tx, uptime, flags);
+    }
+}
+
+/// Global telemetry collector instance
+pub static TELEMETRY: TelemetryCollector = TelemetryCollector::new();

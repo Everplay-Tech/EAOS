@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEON // SYSTOLE</title>
+    <style>
+        :root {
+            --bio-green: #39ff14;
+            --bio-green-dim: rgba(57, 255, 20, 0.6);
+            --void: #050505;
+            --grid-line: rgba(57, 255, 20, 0.15);
+            --alert-red: #ff3939;
+            --throttle-yellow: #ffcc00;
+            --font-stack: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--void);
+            color: var(--bio-green);
+            font-family: var(--font-stack);
+            display: grid;
+            grid-template-columns: 1fr 1.2fr 1fr;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* CRT scanline overlay */
+        body::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%),
+                linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        .pane {
+            padding: 1.5rem;
+            border-right: 1px solid var(--grid-line);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .pane:last-child {
+            border-right: none;
+        }
+
+        .pane h2 {
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: var(--bio-green-dim);
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+        }
+
+        /* Event Stream */
+        #codex-feed {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        #codex-feed::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #codex-feed::-webkit-scrollbar-track {
+            background: var(--void);
+        }
+
+        #codex-feed::-webkit-scrollbar-thumb {
+            background: var(--grid-line);
+        }
+
+        .event-line {
+            padding: 4px 0;
+            border-bottom: 1px solid var(--grid-line);
+            opacity: 0;
+            animation: fadeIn 0.3s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .event-time {
+            color: var(--bio-green-dim);
+            margin-right: 8px;
+        }
+
+        .event-type {
+            color: var(--bio-green);
+            font-weight: bold;
+        }
+
+        .event-type.alert {
+            color: var(--alert-red);
+        }
+
+        /* Telemetry Grid */
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            padding: 1rem 0;
+        }
+
+        .readout {
+            background: rgba(57, 255, 20, 0.03);
+            border: 1px solid var(--grid-line);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .val-text {
+            font-size: 42px;
+            font-weight: bold;
+            display: block;
+            text-shadow: 0 0 20px var(--bio-green);
+        }
+
+        .label-text {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--bio-green-dim);
+            margin-top: 0.5rem;
+        }
+
+        .unit-text {
+            font-size: 14px;
+            color: var(--bio-green-dim);
+        }
+
+        /* Gauge */
+        .gauge-container {
+            width: 100%;
+            height: 8px;
+            background: var(--void);
+            border: 1px solid var(--grid-line);
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .gauge-fill {
+            height: 100%;
+            background: var(--bio-green);
+            transition: width 0.1s linear;
+            box-shadow: 0 0 10px var(--bio-green);
+        }
+
+        .gauge-fill.warning {
+            background: var(--throttle-yellow);
+            box-shadow: 0 0 10px var(--throttle-yellow);
+        }
+
+        .gauge-fill.critical {
+            background: var(--alert-red);
+            box-shadow: 0 0 10px var(--alert-red);
+        }
+
+        /* Status Indicators */
+        .status-row {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--grid-line);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--bio-green);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.disconnected {
+            background: var(--alert-red);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Control Rack */
+        #command-rack {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .fader-group {
+            background: rgba(57, 255, 20, 0.03);
+            border: 1px solid var(--grid-line);
+            padding: 1rem;
+        }
+
+        .fader-label {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--bio-green-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        .fader {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: var(--grid-line);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .fader::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 24px;
+            background: var(--bio-green);
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--bio-green);
+        }
+
+        .btn-override {
+            background: transparent;
+            border: 1px solid var(--grid-line);
+            color: var(--bio-green);
+            padding: 12px 24px;
+            font-family: var(--font-stack);
+            font-size: 11px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .btn-override:hover {
+            background: rgba(57, 255, 20, 0.1);
+            border-color: var(--bio-green);
+        }
+
+        .btn-override:active {
+            background: var(--bio-green);
+            color: var(--void);
+        }
+
+        .btn-override.alert {
+            border-color: var(--alert-red);
+            color: var(--alert-red);
+        }
+
+        .btn-override.alert:hover {
+            background: rgba(255, 57, 57, 0.1);
+        }
+
+        /* Connection Status Bar */
+        #connection-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 24px;
+            background: var(--void);
+            border-top: 1px solid var(--grid-line);
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            font-size: 10px;
+            letter-spacing: 1px;
+            z-index: 1000;
+        }
+
+        #connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #uptime {
+            margin-left: auto;
+            color: var(--bio-green-dim);
+        }
+    </style>
+</head>
+<body>
+    <section class="pane">
+        <h2>KERNEL.EVENT_STREAM</h2>
+        <div id="codex-feed"></div>
+    </section>
+
+    <section class="pane">
+        <h2>SYSTEM_TELEMETRY</h2>
+        <div class="matrix-grid">
+            <div class="readout">
+                <span id="cpu-val" class="val-text">0.0</span>
+                <span class="unit-text">%</span>
+                <span class="label-text">CPU_LOAD</span>
+                <div class="gauge-container">
+                    <div id="cpu-gauge" class="gauge-fill" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="readout">
+                <span id="mem-val" class="val-text">0.0</span>
+                <span class="unit-text">%</span>
+                <span class="label-text">MEM_PRESSURE</span>
+                <div class="gauge-container">
+                    <div id="mem-gauge" class="gauge-fill" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="readout">
+                <span id="pps-rx-val" class="val-text">0</span>
+                <span class="unit-text">pkt/s</span>
+                <span class="label-text">RX_RATE</span>
+            </div>
+            <div class="readout">
+                <span id="pps-tx-val" class="val-text">0</span>
+                <span class="unit-text">pkt/s</span>
+                <span class="label-text">TX_RATE</span>
+            </div>
+        </div>
+
+        <div class="status-row">
+            <div class="status-indicator">
+                <div id="kernel-dot" class="status-dot"></div>
+                <span>KERNEL_LINK</span>
+            </div>
+            <div class="status-indicator">
+                <div id="virtio-dot" class="status-dot"></div>
+                <span>VIRTIO_NET</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="pane">
+        <h2>OVERRIDE_CONTROLS</h2>
+        <div id="command-rack">
+            <div class="fader-group">
+                <div class="fader-label">THROTTLE_CEILING</div>
+                <input type="range" class="fader" id="throttle-fader" min="0" max="100" value="100">
+            </div>
+            <div class="fader-group">
+                <div class="fader-label">LOG_VERBOSITY</div>
+                <input type="range" class="fader" id="verbosity-fader" min="0" max="4" value="2">
+            </div>
+            <button class="btn-override" onclick="sendCommand('REFRESH')">FORCE_REFRESH</button>
+            <button class="btn-override" onclick="sendCommand('DUMP_STATE')">DUMP_STATE</button>
+            <button class="btn-override alert" onclick="sendCommand('HALT')">EMERGENCY_HALT</button>
+        </div>
+    </section>
+
+    <div id="connection-bar">
+        <div id="connection-status">
+            <div id="ws-dot" class="status-dot disconnected"></div>
+            <span id="ws-status">DISCONNECTED</span>
+        </div>
+        <span id="uptime">UPTIME: --:--:--</span>
+    </div>
+
+    <script>
+        // BIO-S/1.0 Protocol Constants
+        const BIO_MAGIC = 0xEA01EA01;
+        const BIO_FRAME_SIZE = 32;
+
+        // BioFrame offsets (SeqLock protocol)
+        const OFF_SEQ = 0;           // u32: sequence counter
+        const OFF_MAGIC = 4;         // u32: sync word
+        const OFF_CPU = 8;           // u16: cpu pressure
+        const OFF_MEM = 10;          // u16: mem pressure
+        const OFF_PPS_RX = 12;       // u32: packets/sec RX
+        const OFF_PPS_TX = 16;       // u32: packets/sec TX
+        const OFF_UPTIME = 20;       // u64: system uptime
+        const OFF_FLAGS = 28;        // u32: status flags
+
+        // State with LERP targets for smooth animation
+        const state = {
+            cpu: 0, targetCpu: 0,
+            mem: 0, targetMem: 0,
+            ppsRx: 0, targetPpsRx: 0,
+            ppsTx: 0, targetPpsTx: 0,
+            uptime: 0,
+            flags: 0,
+            lastFlags: 0,  // For edge detection of flag changes
+            connected: false,
+            lastPacket: 0
+        };
+
+        // WebSocket connection
+        let ws = null;
+        const WS_URL = `ws://${window.location.hostname}:8080/bio`;
+
+        function connect() {
+            if (ws && ws.readyState === WebSocket.OPEN) return;
+
+            ws = new WebSocket(WS_URL);
+            ws.binaryType = 'arraybuffer';
+
+            ws.onopen = () => {
+                state.connected = true;
+                updateConnectionStatus(true);
+                logEvent('SYSTEM', 'WebSocket connected to kernel bridge');
+            };
+
+            ws.onclose = () => {
+                state.connected = false;
+                updateConnectionStatus(false);
+                logEvent('ALERT', 'Connection lost - reconnecting...');
+                setTimeout(connect, 2000);
+            };
+
+            ws.onerror = (err) => {
+                logEvent('ALERT', 'WebSocket error');
+            };
+
+            ws.onmessage = (event) => {
+                if (event.data instanceof ArrayBuffer) {
+                    handleBioFrame(event.data);
+                }
+            };
+        }
+
+        // Zero-Copy BioFrame Parser with SeqLock Tearing Prevention
+        //
+        // SeqLock Protocol (Reader Side):
+        // do {
+        //   1. snapshot = seq
+        //   2. memory barrier (implicit in JS single-thread)
+        //   3. optimistic read of payload
+        //   4. memory barrier (implicit in JS single-thread)
+        // } while (snapshot is ODD || snapshot != seq)
+        //
+        // Note: WebSocket messages arrive as complete ArrayBuffers, so the
+        // kernel-side SeqLock ensures consistency before sending. This JS
+        // validation is defense-in-depth for mmap scenarios.
+        //
+        function handleBioFrame(buffer) {
+            if (buffer.byteLength < BIO_FRAME_SIZE) return;
+
+            const dv = new DataView(buffer);
+            const MAX_RETRIES = 3;
+            let retries = 0;
+
+            while (retries < MAX_RETRIES) {
+                // Step 1: Snapshot sequence counter
+                const seqSnapshot = dv.getUint32(OFF_SEQ, true);
+
+                // Check if write in progress (odd seq = writer active)
+                if (seqSnapshot & 1) {
+                    retries++;
+                    continue;  // Retry
+                }
+
+                // Step 2: Validate magic word
+                const magic = dv.getUint32(OFF_MAGIC, true);
+                if (magic !== BIO_MAGIC) {
+                    logEvent('ALERT', `Invalid magic: 0x${magic.toString(16).toUpperCase()}`);
+                    return;
+                }
+
+                // Step 3: Optimistic read of all data fields
+                const cpu = dv.getUint16(OFF_CPU, true);
+                const mem = dv.getUint16(OFF_MEM, true);
+                const ppsRx = dv.getUint32(OFF_PPS_RX, true);
+                const ppsTx = dv.getUint32(OFF_PPS_TX, true);
+                const uptime = Number(dv.getBigUint64(OFF_UPTIME, true));
+                const flags = dv.getUint32(OFF_FLAGS, true);
+
+                // Step 4: Re-read sequence counter to detect tearing
+                const seqFinal = dv.getUint32(OFF_SEQ, true);
+
+                // Step 5: Validation
+                if (seqSnapshot !== seqFinal) {
+                    // Seq changed during read - data is torn, retry
+                    retries++;
+                    logEvent('WARN', 'Frame torn - retrying');
+                    continue;
+                }
+
+                // SUCCESS: Frame is consistent! Apply updates
+                state.lastPacket = Date.now();
+                state.targetCpu = cpu / 10;   // 0-1000 -> 0.0-100.0
+                state.targetMem = mem / 10;
+                state.targetPpsRx = ppsRx;
+                state.targetPpsTx = ppsTx;
+                state.uptime = uptime;
+                state.flags = flags;
+
+                // Check alert flags (only log on state change to reduce noise)
+                if ((flags & 0x01) && !(state.lastFlags & 0x01)) {
+                    logEvent('ALERT', 'System alert flag set');
+                }
+                if ((flags & 0x02) && !(state.lastFlags & 0x02)) {
+                    logEvent('WARN', 'Throttle engaged');
+                }
+                state.lastFlags = flags;
+
+                return;  // Success, exit loop
+            }
+
+            // Max retries exceeded
+            logEvent('ERROR', `SeqLock failed after ${MAX_RETRIES} retries`);
+        }
+
+        // 60fps LERP Render Loop - Decoupled from network
+        function render() {
+            // Smooth interpolation for "hardware feel"
+            const lerp = 0.08;
+            state.cpu += (state.targetCpu - state.cpu) * lerp;
+            state.mem += (state.targetMem - state.mem) * lerp;
+            state.ppsRx += (state.targetPpsRx - state.ppsRx) * lerp;
+            state.ppsTx += (state.targetPpsTx - state.ppsTx) * lerp;
+
+            // Update display
+            document.getElementById('cpu-val').textContent = state.cpu.toFixed(1);
+            document.getElementById('mem-val').textContent = state.mem.toFixed(1);
+            document.getElementById('pps-rx-val').textContent = Math.floor(state.ppsRx);
+            document.getElementById('pps-tx-val').textContent = Math.floor(state.ppsTx);
+
+            // Update gauges with color thresholds
+            updateGauge('cpu-gauge', state.cpu);
+            updateGauge('mem-gauge', state.mem);
+
+            // Update uptime
+            const secs = Math.floor(state.uptime / 1000);
+            const h = Math.floor(secs / 3600);
+            const m = Math.floor((secs % 3600) / 60);
+            const s = secs % 60;
+            document.getElementById('uptime').textContent =
+                `UPTIME: ${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+
+            // Check for stale data
+            if (state.connected && Date.now() - state.lastPacket > 3000) {
+                document.getElementById('kernel-dot').classList.add('disconnected');
+            } else if (state.connected) {
+                document.getElementById('kernel-dot').classList.remove('disconnected');
+            }
+
+            requestAnimationFrame(render);
+        }
+
+        function updateGauge(id, value) {
+            const gauge = document.getElementById(id);
+            gauge.style.width = `${Math.min(100, value)}%`;
+            gauge.classList.remove('warning', 'critical');
+            if (value > 80) gauge.classList.add('critical');
+            else if (value > 60) gauge.classList.add('warning');
+        }
+
+        function updateConnectionStatus(connected) {
+            const dot = document.getElementById('ws-dot');
+            const status = document.getElementById('ws-status');
+            dot.classList.toggle('disconnected', !connected);
+            status.textContent = connected ? 'CONNECTED' : 'DISCONNECTED';
+        }
+
+        // Event logging
+        const MAX_EVENTS = 50;
+        function logEvent(type, message) {
+            const feed = document.getElementById('codex-feed');
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            const line = document.createElement('div');
+            line.className = 'event-line';
+            line.innerHTML = `<span class="event-time">${time}</span><span class="event-type ${type.toLowerCase()}">[${type}]</span> ${message}`;
+            feed.insertBefore(line, feed.firstChild);
+
+            // Trim old events
+            while (feed.children.length > MAX_EVENTS) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        // Send commands to kernel
+        function sendCommand(cmd) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ command: cmd }));
+                logEvent('CMD', `Sent: ${cmd}`);
+            } else {
+                logEvent('ALERT', 'Cannot send - not connected');
+            }
+        }
+
+        // Initialize
+        logEvent('SYSTEM', 'NEON//SYSTOLE v1.0 initializing...');
+        logEvent('SYSTEM', 'BIO-S/1.0 protocol ready');
+        render();
+        connect();
+
+        // Demo mode - simulate data when not connected
+        setInterval(() => {
+            if (!state.connected) {
+                state.targetCpu = 20 + Math.random() * 30;
+                state.targetMem = 40 + Math.random() * 20;
+                state.targetPpsRx = Math.floor(100 + Math.random() * 500);
+                state.targetPpsTx = Math.floor(50 + Math.random() * 200);
+                state.uptime += 1000;
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
