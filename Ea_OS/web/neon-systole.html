@@ -280,6 +280,307 @@
             background: rgba(255, 57, 57, 0.1);
         }
 
+        /* ============================================================
+         * TACTILE COMMAND DECK - "If you can't feel it, you can't trust it."
+         * ============================================================ */
+
+        .tactile-deck {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            flex: 1;
+        }
+
+        .sovereign-knob {
+            background: rgba(57, 255, 20, 0.03);
+            border: 1px solid var(--grid-line);
+            padding: 1.25rem;
+            position: relative;
+        }
+
+        .sovereign-knob::before {
+            content: attr(data-label);
+            position: absolute;
+            top: -10px;
+            left: 12px;
+            background: var(--void);
+            padding: 0 8px;
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: var(--bio-green-dim);
+        }
+
+        /* Entropy Flux - Inertial Flywheel */
+        .flywheel-track {
+            width: 100%;
+            height: 60px;
+            position: relative;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .flywheel-track:active {
+            cursor: grabbing;
+        }
+
+        .flywheel-indicator {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 40px;
+            background: var(--bio-green);
+            box-shadow: 0 0 15px var(--bio-green), 0 0 30px rgba(57, 255, 20, 0.3);
+            transition: box-shadow 0.1s;
+        }
+
+        .flywheel-indicator.spinning {
+            box-shadow: 0 0 25px var(--bio-green), 0 0 50px rgba(57, 255, 20, 0.5);
+        }
+
+        .flywheel-scale {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg,
+                var(--grid-line) 0%,
+                var(--bio-green-dim) 50%,
+                var(--alert-red) 100%
+            );
+        }
+
+        /* Net Choke - Hydraulic Resistance Fader */
+        .hydraulic-track {
+            width: 100%;
+            height: 120px;
+            background: linear-gradient(180deg,
+                rgba(255, 57, 57, 0.2) 0%,
+                rgba(57, 255, 20, 0.05) 100%
+            );
+            border: 1px solid var(--grid-line);
+            position: relative;
+            cursor: ns-resize;
+            touch-action: none;
+        }
+
+        .hydraulic-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg,
+                var(--alert-red) 0%,
+                var(--throttle-yellow) 50%,
+                var(--bio-green) 100%
+            );
+            opacity: 0.7;
+            transition: opacity 0.1s;
+        }
+
+        .hydraulic-fill.engaged {
+            opacity: 1;
+            filter: drop-shadow(0 0 10px var(--bio-green));
+        }
+
+        .hydraulic-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px var(--void);
+        }
+
+        /* Verbosity - Mechanical Ratchet */
+        .ratchet-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 0.5rem 0;
+        }
+
+        .ratchet-knob {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%,
+                var(--void) 0%,
+                #0a0a0a 50%,
+                var(--void) 100%
+            );
+            border: 2px solid var(--bio-green-dim);
+            position: relative;
+            cursor: pointer;
+            touch-action: none;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .ratchet-knob::after {
+            content: "";
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 16px;
+            background: var(--bio-green);
+            border-radius: 2px;
+            box-shadow: 0 0 8px var(--bio-green);
+        }
+
+        .ratchet-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 10px;
+        }
+
+        .ratchet-step {
+            padding: 4px 12px;
+            border: 1px solid var(--grid-line);
+            color: var(--bio-green-dim);
+            transition: all 0.1s;
+        }
+
+        .ratchet-step.active {
+            border-color: var(--bio-green);
+            color: var(--bio-green);
+            background: rgba(57, 255, 20, 0.1);
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+        }
+
+        /* Mem Acid - Deadman Switch */
+        .deadman-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .arm-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .arm-toggle input[type="checkbox"] {
+            display: none;
+        }
+
+        .arm-switch {
+            width: 48px;
+            height: 24px;
+            background: var(--void);
+            border: 1px solid var(--alert-red);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .arm-switch::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 16px;
+            height: 16px;
+            background: var(--alert-red);
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+
+        .arm-toggle input:checked + .arm-switch {
+            background: rgba(255, 57, 57, 0.3);
+            box-shadow: 0 0 15px var(--alert-red);
+        }
+
+        .arm-toggle input:checked + .arm-switch::after {
+            left: 27px;
+        }
+
+        .arm-label {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--alert-red);
+        }
+
+        .deadman-track {
+            width: 100%;
+            height: 40px;
+            background: var(--void);
+            border: 1px solid var(--grid-line);
+            position: relative;
+            cursor: not-allowed;
+            touch-action: none;
+            overflow: hidden;
+        }
+
+        .deadman-track.armed {
+            cursor: ew-resize;
+            border-color: var(--alert-red);
+        }
+
+        .deadman-fill {
+            height: 100%;
+            width: 0%;
+            background: repeating-linear-gradient(45deg,
+                var(--alert-red),
+                var(--alert-red) 10px,
+                #000 10px,
+                #000 20px
+            );
+            transition: width 0.05s linear;
+        }
+
+        .deadman-track.danger-active .deadman-fill {
+            box-shadow: 0 0 20px var(--alert-red);
+            animation: hazardPulse 0.5s infinite;
+        }
+
+        @keyframes hazardPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .deadman-lock {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--bio-green-dim);
+        }
+
+        .deadman-track.armed .deadman-lock {
+            display: none;
+        }
+
+        /* Physics feedback indicators */
+        .engaged {
+            filter: drop-shadow(0 0 10px var(--bio-green));
+            border-color: #fff !important;
+        }
+
+        .danger-active {
+            filter: drop-shadow(0 0 15px var(--alert-red));
+        }
+
+        /* Jitter animation for access denied */
+        @keyframes jitter {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(4px); }
+            75% { transform: translateX(-4px); }
+        }
+
+        .jitter {
+            animation: jitter 0.2s ease-in-out;
+        }
+
         /* Connection Status Bar */
         #connection-bar {
             position: fixed;
@@ -359,19 +660,52 @@
     </section>
 
     <section class="pane">
-        <h2>OVERRIDE_CONTROLS</h2>
-        <div id="command-rack">
-            <div class="fader-group">
-                <div class="fader-label">THROTTLE_CEILING</div>
-                <input type="range" class="fader" id="throttle-fader" min="0" max="100" value="100">
+        <h2>SOVEREIGN_CONTROLS</h2>
+        <div class="tactile-deck">
+            <!-- Entropy Flux: Inertial Flywheel -->
+            <div class="sovereign-knob" data-label="ENTROPY_FLUX">
+                <div class="flywheel-track" id="ctrl-entropy">
+                    <div class="flywheel-indicator" id="entropy-indicator" style="left: 50%"></div>
+                    <div class="flywheel-scale"></div>
+                </div>
             </div>
-            <div class="fader-group">
-                <div class="fader-label">LOG_VERBOSITY</div>
-                <input type="range" class="fader" id="verbosity-fader" min="0" max="4" value="2">
+
+            <!-- Net Choke: Hydraulic Resistance -->
+            <div class="sovereign-knob" data-label="NET_CHOKE">
+                <div class="hydraulic-track" id="ctrl-choke">
+                    <div class="hydraulic-fill" id="choke-fill" style="height: 0%"></div>
+                    <span class="hydraulic-value" id="choke-value">0%</span>
+                </div>
             </div>
-            <button class="btn-override" onclick="sendCommand('REFRESH')">FORCE_REFRESH</button>
-            <button class="btn-override" onclick="sendCommand('DUMP_STATE')">DUMP_STATE</button>
-            <button class="btn-override alert" onclick="sendCommand('HALT')">EMERGENCY_HALT</button>
+
+            <!-- Verbosity: Mechanical Ratchet -->
+            <div class="sovereign-knob" data-label="VERBOSITY">
+                <div class="ratchet-container">
+                    <div class="ratchet-knob" id="ctrl-verb"></div>
+                    <div class="ratchet-steps">
+                        <div class="ratchet-step" data-level="4">TRACE</div>
+                        <div class="ratchet-step" data-level="3">DEBUG</div>
+                        <div class="ratchet-step active" data-level="2">INFO</div>
+                        <div class="ratchet-step" data-level="1">WARN</div>
+                        <div class="ratchet-step" data-level="0">ERROR</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mem Acid: Deadman Switch -->
+            <div class="sovereign-knob" data-label="MEM_ACID">
+                <div class="deadman-container">
+                    <label class="arm-toggle">
+                        <input type="checkbox" id="toggle-arm">
+                        <div class="arm-switch"></div>
+                        <span class="arm-label">ARM SYSTEM</span>
+                    </label>
+                    <div class="deadman-track" id="ctrl-acid">
+                        <div class="deadman-fill" id="acid-fill"></div>
+                        <span class="deadman-lock">LOCKED</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -424,12 +758,15 @@
             ws.onopen = () => {
                 state.connected = true;
                 updateConnectionStatus(true);
+                commandDeck.setSocket(ws);  // Link command deck to socket
                 logEvent('SYSTEM', 'WebSocket connected to kernel bridge');
+                logEvent('SYSTEM', 'Tactile controls ONLINE');
             };
 
             ws.onclose = () => {
                 state.connected = false;
                 updateConnectionStatus(false);
+                commandDeck.setSocket(null);  // Disconnect command deck
                 logEvent('ALERT', 'Connection lost - reconnecting...');
                 setTimeout(connect, 2000);
             };
@@ -595,7 +932,289 @@
             }
         }
 
-        // Send commands to kernel
+        // ================================================================
+        // BIO-C/1.0 COMMAND DECK
+        // "If you can't feel it, you can't trust it."
+        // ================================================================
+
+        const CMD = {
+            ENTROPY: 0x01,
+            CHOKE: 0x02,
+            VERB: 0x03,
+            ACID: 0x04
+        };
+
+        class BioCommandDeck {
+            constructor(socket) {
+                this.socket = socket;
+                this.seq = 0;
+                this.crcTable = this.genCRCTable();
+            }
+
+            setSocket(socket) {
+                this.socket = socket;
+            }
+
+            dispatch(cmdId, value, flags = 0) {
+                const buf = new ArrayBuffer(16);
+                const view = new DataView(buf);
+
+                // Bytes 0-1: Magic (0xB10C)
+                view.setUint16(0, 0xB10C, true);
+                // Bytes 2-3: Sequence ID
+                view.setUint16(2, this.seq++, true);
+                // Byte 4: Command ID
+                view.setUint8(4, cmdId);
+                // Byte 5: Flags
+                view.setUint8(5, flags);
+                // Bytes 6-7: Padding
+                view.setUint16(6, 0, true);
+                // Bytes 8-11: Payload (float32)
+                view.setFloat32(8, value, true);
+
+                // CRC32 over bytes 0-11
+                let crc = 0 ^ (-1);
+                const bytes = new Uint8Array(buf, 0, 12);
+                for (let i = 0; i < 12; i++) {
+                    crc = (crc >>> 8) ^ this.crcTable[(crc ^ bytes[i]) & 0xFF];
+                }
+                view.setUint32(12, (crc ^ (-1)) >>> 0, true);
+
+                if (this.socket && this.socket.readyState === 1) {
+                    this.socket.send(buf);
+                    return true;
+                }
+                return false;
+            }
+
+            genCRCTable() {
+                let table = [];
+                for (let n = 0; n < 256; n++) {
+                    let c = n;
+                    for (let k = 0; k < 8; k++) {
+                        c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+                    }
+                    table[n] = c;
+                }
+                return table;
+            }
+        }
+
+        // Global command deck instance
+        const commandDeck = new BioCommandDeck(null);
+
+        // ================================================================
+        // TACTILE PHYSICS ENGINE
+        // ================================================================
+
+        function setupTactileControls() {
+            // --- ENTROPY FLUX: Inertial Flywheel ---
+            const entropy = document.getElementById('ctrl-entropy');
+            const entropyIndicator = document.getElementById('entropy-indicator');
+            let entropyVal = 0.5;
+            let entropyVelocity = 0;
+
+            entropy.addEventListener('pointerdown', (e) => {
+                entropy.setPointerCapture(e.pointerId);
+                entropy.dataset.lastX = e.clientX;
+                entropyIndicator.classList.add('spinning');
+            });
+
+            entropy.addEventListener('pointermove', (e) => {
+                if (!entropy.hasPointerCapture(e.pointerId)) return;
+
+                const deltaX = e.clientX - parseFloat(entropy.dataset.lastX);
+                entropy.dataset.lastX = e.clientX;
+
+                // PHYSICS: INERTIAL FLYWHEEL
+                // Add velocity based on swipe, momentum carries forward
+                entropyVelocity += deltaX * 0.002;
+            });
+
+            entropy.addEventListener('pointerup', () => {
+                entropyIndicator.classList.remove('spinning');
+            });
+
+            // Inertial decay loop
+            function entropyPhysics() {
+                // Apply velocity with friction
+                entropyVal += entropyVelocity;
+                entropyVelocity *= 0.95;  // Friction/decay
+
+                // Clamp
+                entropyVal = Math.max(0, Math.min(1, entropyVal));
+
+                // Update UI
+                entropyIndicator.style.left = `${entropyVal * 100}%`;
+
+                // Send command when velocity significant
+                if (Math.abs(entropyVelocity) > 0.001) {
+                    commandDeck.dispatch(CMD.ENTROPY, entropyVal);
+                }
+
+                requestAnimationFrame(entropyPhysics);
+            }
+            entropyPhysics();
+
+
+            // --- NET CHOKE: Hydraulic Resistance ---
+            const choke = document.getElementById('ctrl-choke');
+            const chokeFill = document.getElementById('choke-fill');
+            const chokeValue = document.getElementById('choke-value');
+            let chokeVal = 0.0;
+
+            choke.addEventListener('pointerdown', (e) => {
+                choke.setPointerCapture(e.pointerId);
+                choke.dataset.lastY = e.clientY;
+                chokeFill.classList.add('engaged');
+            });
+
+            choke.addEventListener('pointermove', (e) => {
+                if (!choke.hasPointerCapture(e.pointerId)) return;
+
+                const rect = choke.getBoundingClientRect();
+                const deltaY = parseFloat(choke.dataset.lastY) - e.clientY;
+
+                // PHYSICS: HYDRAULIC DRAG
+                // Resistance increases as value increases (1x -> 4x)
+                // Simulates "pressure" of choking the network pipe
+                const resistance = 1.0 + (chokeVal * 3.0);
+                const range = rect.height;
+
+                chokeVal += (deltaY / range) / resistance;
+                chokeVal = Math.max(0, Math.min(1, chokeVal));
+
+                chokeFill.style.height = `${chokeVal * 100}%`;
+                chokeValue.textContent = `${Math.round(chokeVal * 100)}%`;
+                choke.dataset.lastY = e.clientY;
+
+                commandDeck.dispatch(CMD.CHOKE, chokeVal);
+            });
+
+            choke.addEventListener('pointerup', (e) => {
+                choke.releasePointerCapture(e.pointerId);
+                chokeFill.classList.remove('engaged');
+            });
+
+
+            // --- VERBOSITY: Mechanical Ratchet ---
+            const knob = document.getElementById('ctrl-verb');
+            const steps = document.querySelectorAll('.ratchet-step');
+            const STEPS = 5;
+            let verbLevel = 2;
+
+            knob.addEventListener('pointerdown', (e) => {
+                knob.setPointerCapture(e.pointerId);
+                knob.dataset.startAngle = getAngle(knob, e);
+            });
+
+            function getAngle(elem, e) {
+                const rect = elem.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                return Math.atan2(e.clientY - cy, e.clientX - cx);
+            }
+
+            knob.addEventListener('pointermove', (e) => {
+                if (!knob.hasPointerCapture(e.pointerId)) return;
+
+                const angle = getAngle(knob, e);
+                // Map angle (-PI to PI) to 0-1
+                const norm = (angle + Math.PI) / (2 * Math.PI);
+
+                // PHYSICS: SNAP-TO-GRID (Mechanical Ratchet)
+                const stepSize = 1 / (STEPS - 1);
+                const snapped = Math.round(norm / stepSize) * stepSize;
+                const discrete = Math.round(snapped * (STEPS - 1));
+
+                if (discrete !== verbLevel) {
+                    verbLevel = discrete;
+
+                    // Rotate knob (300 degree range)
+                    const rotation = (discrete / (STEPS - 1)) * 300 - 60;
+                    knob.style.transform = `rotate(${rotation}deg)`;
+
+                    // Haptic feedback
+                    if (navigator.vibrate) navigator.vibrate(15);
+
+                    // Update step indicators
+                    steps.forEach(step => {
+                        const level = parseInt(step.dataset.level);
+                        step.classList.toggle('active', level === discrete);
+                    });
+
+                    // Send discrete value (0-4 mapped to 0.0-1.0)
+                    commandDeck.dispatch(CMD.VERB, discrete / (STEPS - 1));
+                    logEvent('CMD', `VERBOSITY: Level ${discrete}`);
+                }
+            });
+
+
+            // --- MEM ACID: Deadman Switch ---
+            const acid = document.getElementById('ctrl-acid');
+            const acidFill = document.getElementById('acid-fill');
+            const armToggle = document.getElementById('toggle-arm');
+            let acidVal = 0.0;
+
+            armToggle.addEventListener('change', () => {
+                acid.classList.toggle('armed', armToggle.checked);
+                if (armToggle.checked) {
+                    logEvent('WARN', 'MEM_ACID: System ARMED');
+                } else {
+                    // Spring return when disarmed
+                    acidVal = 0;
+                    acidFill.style.width = '0%';
+                    commandDeck.dispatch(CMD.ACID, 0.0, 0x00);
+                    logEvent('SYSTEM', 'MEM_ACID: System SAFE');
+                }
+            });
+
+            acid.addEventListener('pointerdown', (e) => {
+                if (!armToggle.checked) {
+                    // ACCESS DENIED jitter
+                    acid.classList.add('jitter');
+                    setTimeout(() => acid.classList.remove('jitter'), 200);
+                    logEvent('ALERT', 'MEM_ACID: ARM required');
+                    return;
+                }
+                acid.setPointerCapture(e.pointerId);
+                acid.dataset.lastX = e.clientX;
+                acid.classList.add('danger-active');
+            });
+
+            acid.addEventListener('pointermove', (e) => {
+                if (!acid.hasPointerCapture(e.pointerId)) return;
+
+                const rect = acid.getBoundingClientRect();
+                const delta = e.clientX - parseFloat(acid.dataset.lastX);
+
+                acidVal = Math.max(0, Math.min(1, acidVal + (delta / rect.width)));
+                acidFill.style.width = `${acidVal * 100}%`;
+                acid.dataset.lastX = e.clientX;
+
+                // Send with ARMED flag (0x01)
+                commandDeck.dispatch(CMD.ACID, acidVal, 0x01);
+            });
+
+            const releaseAcid = (e) => {
+                if (!acid.hasPointerCapture(e.pointerId)) return;
+                acid.releasePointerCapture(e.pointerId);
+                acid.classList.remove('danger-active');
+
+                // PHYSICS: SPRING RETURN - snaps back to safety
+                acidVal = 0.0;
+                acidFill.style.width = '0%';
+                commandDeck.dispatch(CMD.ACID, 0.0, 0x00);
+                logEvent('SYSTEM', 'MEM_ACID: Spring return to SAFE');
+            };
+
+            acid.addEventListener('pointerup', releaseAcid);
+            acid.addEventListener('pointercancel', releaseAcid);
+        }
+
+        // ================================================================
+
+        // Send legacy JSON commands (for buttons that still use it)
         function sendCommand(cmd) {
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ command: cmd }));
@@ -607,9 +1226,11 @@
 
         // Initialize
         logEvent('SYSTEM', 'NEON//SYSTOLE v1.0 initializing...');
-        logEvent('SYSTEM', 'BIO-S/1.0 protocol ready');
+        logEvent('SYSTEM', 'BIO-S/1.0 protocol ready (downstream)');
+        logEvent('SYSTEM', 'BIO-C/1.0 protocol ready (upstream)');
         render();
         connect();
+        setupTactileControls();
 
         // Demo mode - simulate data when not connected
         setInterval(() => {

@@ -966,3 +966,245 @@ impl TelemetryCollector {
 
 /// Global telemetry collector instance
 pub static TELEMETRY: TelemetryCollector = TelemetryCollector::new();
+
+// ============================================================================
+// BIO-C/1.0 Zero-Copy Command Bridge (Upstream: UI → Kernel)
+// ============================================================================
+
+/// Magic sync word for BIO-COMMAND protocol
+pub const BIOC_MAGIC: u16 = 0xB10C;
+
+/// Command ID: Entropy flux (RNG harvest rate)
+pub const CMD_ENTROPY_FLUX: u8 = 0x01;
+
+/// Command ID: Network choke (RX queue limit)
+pub const CMD_NET_CHOKE: u8 = 0x02;
+
+/// Command ID: Log verbosity level (0-4)
+pub const CMD_VERBOSITY: u8 = 0x03;
+
+/// Command ID: Memory page poisoning (ACID test)
+pub const CMD_MEM_ACID: u8 = 0x04;
+
+/// Command flags
+pub const CMDF_ARMED: u8 = 0x01;  // Deadman switch is armed
+
+/// BIO-C/1.0 Command Frame (16 bytes, aligned)
+///
+/// Wire format for upstream commands from UI to kernel.
+/// CRC32 protects against corruption on the wire.
+///
+/// ```text
+///  0                   1                   2                   3
+///  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |      MAGIC (0xB10C)           |     SEQ_ID (Rolling u16)      |
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |    CMD_ID     |     FLAGS     |          PADDING (0x00)       |
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |                       PAYLOAD (Float32)                       |
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// |                       CRC32 (Checksum)                        |
+/// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+/// ```
+#[repr(C, align(16))]
+#[derive(Clone, Copy, Debug)]
+pub struct BioCommand {
+    /// Protocol magic (0xB10C)
+    pub magic: u16,
+    /// Rolling sequence ID for replay detection
+    pub seq_id: u16,
+    /// Command ID (0x01-0x04)
+    pub cmd_id: u8,
+    /// Command flags (bit 0: ARMED for deadman switches)
+    pub flags: u8,
+    /// Padding for alignment
+    pub _pad: [u8; 2],
+    /// Payload value (0.0 - 1.0 normalized)
+    pub payload: f32,
+    /// CRC32 checksum of bytes 0-11
+    pub crc32: u32,
+}
+
+impl BioCommand {
+    /// Frame size in bytes
+    pub const SIZE: usize = 16;
+
+    /// Parse a raw buffer into a BioCommand
+    ///
+    /// Returns `None` if magic is wrong, CRC fails, or buffer too small.
+    pub fn from_bytes(buf: &[u8]) -> Option<Self> {
+        if buf.len() < Self::SIZE {
+            return None;
+        }
+
+        // Parse fields (Little Endian)
+        let magic = u16::from_le_bytes([buf[0], buf[1]]);
+        if magic != BIOC_MAGIC {
+            return None;
+        }
+
+        let seq_id = u16::from_le_bytes([buf[2], buf[3]]);
+        let cmd_id = buf[4];
+        let flags = buf[5];
+        let payload = f32::from_le_bytes([buf[8], buf[9], buf[10], buf[11]]);
+        let crc_received = u32::from_le_bytes([buf[12], buf[13], buf[14], buf[15]]);
+
+        // Validate CRC32 over bytes 0-11
+        let crc_computed = crc32_ieee(&buf[0..12]);
+        if crc_computed != crc_received {
+            return None;
+        }
+
+        Some(Self {
+            magic,
+            seq_id,
+            cmd_id,
+            flags,
+            _pad: [0; 2],
+            payload,
+            crc32: crc_received,
+        })
+    }
+
+    /// Check if ARMED flag is set (for deadman switches)
+    pub fn is_armed(&self) -> bool {
+        self.flags & CMDF_ARMED != 0
+    }
+}
+
+/// CRC32 (IEEE 802.3 polynomial) calculation
+///
+/// Uses the standard Ethernet polynomial: 0xEDB88320 (reflected form)
+fn crc32_ieee(data: &[u8]) -> u32 {
+    const POLY: u32 = 0xEDB88320;
+    let mut crc: u32 = 0xFFFFFFFF;
+
+    for &byte in data {
+        crc ^= byte as u32;
+        for _ in 0..8 {
+            if crc & 1 != 0 {
+                crc = (crc >> 1) ^ POLY;
+            } else {
+                crc >>= 1;
+            }
+        }
+    }
+
+    crc ^ 0xFFFFFFFF
+}
+
+// ============================================================================
+// Command Dispatcher
+// ============================================================================
+
+/// Result of command dispatch
+#[derive(Debug, Clone, Copy)]
+pub enum CommandResult {
+    /// Command accepted and applied
+    Accepted,
+    /// Command rejected (invalid value or safety check failed)
+    Rejected(&'static str),
+    /// Command requires ARMED flag but it wasn't set
+    NotArmed,
+    /// Unknown command ID
+    UnknownCommand,
+}
+
+/// Current kernel parameter state (controlled by tactile deck)
+pub struct KernelOverrides {
+    /// Entropy harvest rate multiplier (0.0 - 1.0)
+    pub entropy_flux: f32,
+    /// Network RX throttle (0.0 = no limit, 1.0 = max choke)
+    pub net_choke: f32,
+    /// Log verbosity level (0-4)
+    pub verbosity: u8,
+    /// Memory page poisoning level (0.0 - 1.0, requires ARMED)
+    pub mem_acid: f32,
+    /// Last received sequence ID (for replay detection)
+    last_seq: u16,
+}
+
+impl KernelOverrides {
+    /// Create with safe defaults
+    pub const fn new() -> Self {
+        Self {
+            entropy_flux: 0.5,  // Medium harvest rate
+            net_choke: 0.0,    // No throttling
+            verbosity: 2,      // Default log level
+            mem_acid: 0.0,     // No poisoning
+            last_seq: 0,
+        }
+    }
+
+    /// Process a received BioCommand
+    ///
+    /// Returns the result of dispatch (accepted/rejected/etc).
+    pub fn dispatch(&mut self, cmd: &BioCommand) -> CommandResult {
+        // Replay detection: reject if seq_id is not newer
+        // Handle wraparound with signed comparison trick
+        let seq_diff = cmd.seq_id.wrapping_sub(self.last_seq) as i16;
+        if seq_diff <= 0 && self.last_seq != 0 {
+            return CommandResult::Rejected("Stale sequence");
+        }
+        self.last_seq = cmd.seq_id;
+
+        // Clamp payload to 0.0 - 1.0
+        let value = cmd.payload.clamp(0.0, 1.0);
+
+        match cmd.cmd_id {
+            CMD_ENTROPY_FLUX => {
+                // Entropy flux: direct mapping
+                self.entropy_flux = value;
+                CommandResult::Accepted
+            }
+
+            CMD_NET_CHOKE => {
+                // Network choke: direct mapping
+                self.net_choke = value;
+                CommandResult::Accepted
+            }
+
+            CMD_VERBOSITY => {
+                // Verbosity: map 0.0-1.0 to discrete 0-4
+                // (no_std: manual round via floor + 0.5)
+                self.verbosity = (value * 4.0 + 0.5) as u8;
+                CommandResult::Accepted
+            }
+
+            CMD_MEM_ACID => {
+                // Memory acid: REQUIRES ARMED flag (deadman switch)
+                if !cmd.is_armed() {
+                    // Not armed = spring return to safe
+                    self.mem_acid = 0.0;
+                    return CommandResult::NotArmed;
+                }
+                // Armed: allow poisoning
+                self.mem_acid = value;
+                CommandResult::Accepted
+            }
+
+            _ => CommandResult::UnknownCommand,
+        }
+    }
+
+    /// Get entropy harvest rate as percentage
+    pub fn entropy_percent(&self) -> u8 {
+        (self.entropy_flux * 100.0) as u8
+    }
+
+    /// Get net choke as queue limit (0 = no limit)
+    pub fn net_queue_limit(&self) -> u16 {
+        if self.net_choke < 0.01 {
+            0  // No throttle
+        } else {
+            // Map 0.01-1.0 to 256-1 (inverse: more choke = smaller queue)
+            // (no_std: manual round via floor + 0.5)
+            let limit = 256.0 * (1.0 - self.net_choke) + 0.5;
+            (limit as u16).max(1)
+        }
+    }
+}
+
+/// Global kernel overrides instance
+pub static mut KERNEL_OVERRIDES: KernelOverrides = KernelOverrides::new();
