@@ -19,6 +19,7 @@ mod pci;
 mod pci_modern;
 mod virtio_modern;
 mod interrupts;
+mod arachnid;
 
 use crate::uart::Uart;
 use crate::capability::ChaosCapability;

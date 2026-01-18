@@ -29,6 +29,7 @@
             font-family: var(--font-stack);
             display: grid;
             grid-template-columns: 1fr 1.2fr 1fr;
+            grid-template-rows: 1fr auto;
             height: 100vh;
             overflow: hidden;
         }
@@ -581,6 +582,174 @@
             animation: jitter 0.2s ease-in-out;
         }
 
+        /* ============================================================
+         * PROJECT ARACHNID - Visual Cortex Pane
+         * "The web is a trap. We are the spider."
+         * ============================================================ */
+
+        .arachnid-display {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            background: #020202;
+            border-top: 1px solid var(--grid-line);
+            padding: 0;
+            max-height: 280px;
+            min-height: 200px;
+        }
+
+        .arachnid-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--grid-line);
+            background: rgba(57, 255, 20, 0.02);
+        }
+
+        .arachnid-header h2 {
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: var(--bio-green-dim);
+            margin: 0;
+        }
+
+        .spider-status {
+            font-size: 10px;
+            letter-spacing: 2px;
+            padding: 4px 12px;
+            border: 1px solid var(--grid-line);
+            color: var(--bio-green-dim);
+        }
+
+        .spider-status.active {
+            border-color: var(--bio-green);
+            color: var(--bio-green);
+            animation: pulse 1s infinite;
+        }
+
+        .spider-status.harvesting {
+            border-color: var(--throttle-yellow);
+            color: var(--throttle-yellow);
+        }
+
+        .spider-status.error {
+            border-color: var(--alert-red);
+            color: var(--alert-red);
+        }
+
+        .crt-screen {
+            flex: 1;
+            background: #050505;
+            padding: 12px 15px;
+            overflow-y: auto;
+            position: relative;
+            /* The Green Phosphor Look */
+            color: var(--bio-green);
+            font-family: 'VT323', 'Share Tech Mono', monospace;
+            font-size: 14px;
+            text-shadow: 0 0 4px rgba(57, 255, 20, 0.6);
+            white-space: pre-wrap;
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        .crt-screen::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .crt-screen::-webkit-scrollbar-track {
+            background: #020202;
+        }
+
+        .crt-screen::-webkit-scrollbar-thumb {
+            background: var(--grid-line);
+        }
+
+        /* CRT Scanline overlay */
+        .crt-screen::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%,
+                rgba(0, 0, 0, 0.25) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* System messages in the terminal */
+        .sys-msg {
+            color: var(--bio-green-dim);
+            display: block;
+        }
+
+        /* Bookmark indicator */
+        .bookmark-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 10px;
+        }
+
+        .bookmark-label {
+            color: var(--bio-green);
+            letter-spacing: 1px;
+        }
+
+        .bookmark-ip {
+            color: var(--bio-green-dim);
+            font-family: var(--font-stack);
+        }
+
+        .arachnid-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border-top: 1px solid var(--grid-line);
+            font-size: 10px;
+            letter-spacing: 1px;
+            color: var(--bio-green-dim);
+        }
+
+        .meta-readout {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .meta-readout b {
+            color: var(--bio-green);
+        }
+
+        /* Mode indicator */
+        .mode-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mode-badge {
+            padding: 2px 8px;
+            border: 1px solid var(--grid-line);
+            font-size: 9px;
+            letter-spacing: 2px;
+        }
+
+        .mode-badge.telemetry {
+            border-color: var(--bio-green);
+            color: var(--bio-green);
+        }
+
+        .mode-badge.arachnid {
+            border-color: var(--throttle-yellow);
+            color: var(--throttle-yellow);
+        }
+
         /* Connection Status Bar */
         #connection-bar {
             position: fixed;
@@ -705,6 +874,38 @@
                         <span class="deadman-lock">LOCKED</span>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PROJECT ARACHNID: Visual Cortex Pane -->
+    <section class="arachnid-display">
+        <div class="arachnid-header">
+            <h2>ARACHNID // HYPERTEXT_HARVESTER</h2>
+            <div class="bookmark-indicator">
+                <span class="bookmark-label" id="bookmark-label">CLOUDFLARE_DNS</span>
+                <span class="bookmark-ip" id="bookmark-ip">1.1.1.1</span>
+            </div>
+            <div class="spider-status" id="spider-status">IDLE</div>
+        </div>
+
+        <div class="crt-screen" id="arachnid-viewport">
+            <span class="sys-msg">> SYSTEM_READY</span>
+            <span class="sys-msg">> AWAITING_TARGET_DESIGNATION...</span>
+            <span class="sys-msg">> ENTROPY_FLUX: Tune to select bookmark</span>
+            <span class="sys-msg">> MEM_ACID: ARM + SLIDE to ignite</span>
+        </div>
+
+        <div class="arachnid-footer">
+            <div class="meta-readout">
+                <span>THROTTLE: <b id="disp-choke">0%</b></span>
+                <span>BYTES: <b id="disp-bytes">0</b></span>
+                <span>FILTER: <b>ACID_BATH</b></span>
+            </div>
+            <div class="mode-indicator">
+                <span>MODE:</span>
+                <span class="mode-badge telemetry" id="mode-telemetry">TELEMETRY</span>
+                <span class="mode-badge" id="mode-arachnid">ARACHNID</span>
             </div>
         </div>
     </section>
@@ -1050,6 +1251,13 @@
                 // Send command when velocity significant
                 if (Math.abs(entropyVelocity) > 0.001) {
                     commandDeck.dispatch(CMD.ENTROPY, entropyVal);
+
+                    // ARACHNID: Update bookmark selection
+                    const newIdx = entropyToBookmark(entropyVal);
+                    if (newIdx !== arachnid.bookmarkIdx) {
+                        arachnid.bookmarkIdx = newIdx;
+                        updateBookmarkDisplay(newIdx);
+                    }
                 }
 
                 requestAnimationFrame(entropyPhysics);
@@ -1089,6 +1297,9 @@
                 choke.dataset.lastY = e.clientY;
 
                 commandDeck.dispatch(CMD.CHOKE, chokeVal);
+
+                // ARACHNID: Update baud throttle display
+                updateChokeDisplay(chokeVal);
             });
 
             choke.addEventListener('pointerup', (e) => {
@@ -1160,12 +1371,16 @@
                 acid.classList.toggle('armed', armToggle.checked);
                 if (armToggle.checked) {
                     logEvent('WARN', 'MEM_ACID: System ARMED');
+                    logEvent('ARACHNID', 'Ready for ignition - slide to harvest');
                 } else {
                     // Spring return when disarmed
                     acidVal = 0;
                     acidFill.style.width = '0%';
                     commandDeck.dispatch(CMD.ACID, 0.0, 0x00);
                     logEvent('SYSTEM', 'MEM_ACID: System SAFE');
+
+                    // ARACHNID: Abort on disarm
+                    handleArachnidIgnition(false, 0);
                 }
             });
 
@@ -1194,6 +1409,9 @@
 
                 // Send with ARMED flag (0x01)
                 commandDeck.dispatch(CMD.ACID, acidVal, 0x01);
+
+                // ARACHNID: Check for ignition threshold
+                handleArachnidIgnition(armToggle.checked, acidVal);
             });
 
             const releaseAcid = (e) => {
@@ -1206,10 +1424,249 @@
                 acidFill.style.width = '0%';
                 commandDeck.dispatch(CMD.ACID, 0.0, 0x00);
                 logEvent('SYSTEM', 'MEM_ACID: Spring return to SAFE');
+
+                // ARACHNID: Abort on release (deadman switch)
+                handleArachnidIgnition(false, 0);
             };
 
             acid.addEventListener('pointerup', releaseAcid);
             acid.addEventListener('pointercancel', releaseAcid);
+        }
+
+        // ================================================================
+        // PROJECT ARACHNID - Visual Cortex Controller
+        // "The web is a trap. We are the spider."
+        // ================================================================
+
+        // Bookmark table (must match kernel's BOOKMARKS array)
+        const BOOKMARKS = [
+            { ip: '1.1.1.1', label: 'CLOUDFLARE_DNS', host: '1.1.1.1', path: '/' },
+            { ip: '93.184.216.34', label: 'EXAMPLE_COM', host: 'example.com', path: '/' },
+            { ip: '192.168.1.1', label: 'LOCAL_GATEWAY', host: '192.168.1.1', path: '/' },
+            { ip: '10.0.0.1', label: 'INTERNAL_WIKI', host: '10.0.0.1', path: '/' },
+            { ip: '127.0.0.1:8080', label: 'LOCALHOST', host: 'localhost', path: '/' },
+        ];
+
+        // Spider state enum (must match kernel)
+        const SpiderState = {
+            IDLE: 0,
+            TUNING: 1,
+            CONNECTING: 2,
+            REQUESTING: 3,
+            HARVESTING: 4,
+            DISSOLVING: 5,
+            COMPLETE: 6,
+            ERROR: 7,
+        };
+
+        const SpiderStateNames = ['IDLE', 'TUNING', 'CONNECTING', 'REQUESTING', 'HARVESTING', 'DISSOLVING', 'COMPLETE', 'ERROR'];
+
+        // ARACHNID state
+        const arachnid = {
+            mode: 'telemetry',  // 'telemetry' or 'arachnid'
+            bookmarkIdx: 0,
+            spiderState: SpiderState.IDLE,
+            bytesHarvested: 0,
+            streamBuffer: '',  // Accumulated text from ring buffer
+            lastChokeValue: 0,
+        };
+
+        // Map entropy value to bookmark index
+        function entropyToBookmark(entropy) {
+            const idx = Math.floor(entropy * BOOKMARKS.length);
+            return Math.min(idx, BOOKMARKS.length - 1);
+        }
+
+        // Update bookmark display
+        function updateBookmarkDisplay(idx) {
+            const bm = BOOKMARKS[idx];
+            document.getElementById('bookmark-label').textContent = bm.label;
+            document.getElementById('bookmark-ip').textContent = bm.ip;
+        }
+
+        // Update spider status display
+        function updateSpiderStatus(state) {
+            const statusEl = document.getElementById('spider-status');
+            statusEl.textContent = SpiderStateNames[state] || 'UNKNOWN';
+
+            statusEl.classList.remove('active', 'harvesting', 'error');
+            if (state === SpiderState.HARVESTING) {
+                statusEl.classList.add('harvesting');
+            } else if (state === SpiderState.ERROR) {
+                statusEl.classList.add('error');
+            } else if (state !== SpiderState.IDLE && state !== SpiderState.COMPLETE) {
+                statusEl.classList.add('active');
+            }
+        }
+
+        // Update mode badges
+        function updateModeBadges() {
+            const telBadge = document.getElementById('mode-telemetry');
+            const araBadge = document.getElementById('mode-arachnid');
+
+            if (arachnid.mode === 'telemetry') {
+                telBadge.classList.add('telemetry');
+                araBadge.classList.remove('arachnid');
+            } else {
+                telBadge.classList.remove('telemetry');
+                araBadge.classList.add('arachnid');
+            }
+        }
+
+        // Append text to ARACHNID viewport
+        function appendToViewport(text) {
+            const viewport = document.getElementById('arachnid-viewport');
+            const textNode = document.createTextNode(text);
+            viewport.appendChild(textNode);
+
+            // Auto-scroll to bottom
+            viewport.scrollTop = viewport.scrollHeight;
+
+            arachnid.bytesHarvested += text.length;
+            document.getElementById('disp-bytes').textContent = arachnid.bytesHarvested;
+        }
+
+        // Add system message to viewport
+        function addSystemMessage(msg) {
+            const viewport = document.getElementById('arachnid-viewport');
+            const span = document.createElement('span');
+            span.className = 'sys-msg';
+            span.textContent = `> ${msg}`;
+            viewport.appendChild(span);
+            viewport.scrollTop = viewport.scrollHeight;
+        }
+
+        // Clear viewport
+        function clearViewport() {
+            const viewport = document.getElementById('arachnid-viewport');
+            viewport.innerHTML = '';
+            arachnid.bytesHarvested = 0;
+            document.getElementById('disp-bytes').textContent = '0';
+        }
+
+        // Handle ARACHNID mode activation via MEM_ACID
+        function handleArachnidIgnition(armed, slideValue) {
+            if (!armed) {
+                // Deadman released - abort if active
+                if (arachnid.spiderState !== SpiderState.IDLE &&
+                    arachnid.spiderState !== SpiderState.COMPLETE) {
+                    addSystemMessage('CONNECTION_ABORTED (Deadman released)');
+                    arachnid.spiderState = SpiderState.IDLE;
+                    updateSpiderStatus(SpiderState.IDLE);
+                }
+                return false;
+            }
+
+            // Slide > 0.5 to ignite
+            if (slideValue > 0.5 && arachnid.spiderState === SpiderState.IDLE) {
+                // Switch to ARACHNID mode
+                arachnid.mode = 'arachnid';
+                updateModeBadges();
+
+                // Clear and prepare viewport
+                clearViewport();
+                addSystemMessage('INITIATING_HARVEST');
+                addSystemMessage(`TARGET: ${BOOKMARKS[arachnid.bookmarkIdx].label}`);
+                addSystemMessage(`ADDRESS: ${BOOKMARKS[arachnid.bookmarkIdx].ip}`);
+                addSystemMessage('CONNECTING...');
+
+                arachnid.spiderState = SpiderState.CONNECTING;
+                updateSpiderStatus(SpiderState.CONNECTING);
+
+                logEvent('ARACHNID', `Igniting harvest: ${BOOKMARKS[arachnid.bookmarkIdx].label}`);
+
+                // Simulate connection (in real impl, kernel handles this)
+                simulateHarvest();
+
+                return true;
+            }
+
+            return false;
+        }
+
+        // Simulated harvest for demo mode (real implementation would use kernel)
+        function simulateHarvest() {
+            const bm = BOOKMARKS[arachnid.bookmarkIdx];
+
+            // Simulate connection delay
+            setTimeout(() => {
+                if (arachnid.spiderState !== SpiderState.CONNECTING) return;
+
+                arachnid.spiderState = SpiderState.REQUESTING;
+                updateSpiderStatus(SpiderState.REQUESTING);
+                addSystemMessage('SENDING_REQUEST...');
+
+                // Simulate request delay
+                setTimeout(() => {
+                    if (arachnid.spiderState !== SpiderState.REQUESTING) return;
+
+                    arachnid.spiderState = SpiderState.HARVESTING;
+                    updateSpiderStatus(SpiderState.HARVESTING);
+                    addSystemMessage('RESPONSE_RECEIVED');
+                    addSystemMessage('ACID_BATH: Sanitizing stream...');
+                    addSystemMessage('---');
+
+                    // Stream simulated content
+                    streamDemoContent();
+
+                }, 500);
+            }, 800);
+        }
+
+        // Stream demo content character by character
+        function streamDemoContent() {
+            const demoContent = `
+Welcome to the World Wide Web.
+
+This is a demonstration of PROJECT ARACHNID, the kernel-resident hypertext harvester.
+
+All HTML tags have been DISSOLVED in the Acid Bath.
+All scripts have been NEUTRALIZED.
+All trackers have been ELIMINATED.
+
+What remains is pure, sanitized text.
+
+The NET_CHOKE control adjusts the baud rate:
+- 0% = Full speed
+- 100% = 300 baud (character by character)
+
+You are seeing the internet as it was meant to be seen:
+Raw. Pure. Text.
+
+--- END OF TRANSMISSION ---
+`;
+
+            let idx = 0;
+            function streamChar() {
+                if (arachnid.spiderState !== SpiderState.HARVESTING) return;
+                if (idx >= demoContent.length) {
+                    arachnid.spiderState = SpiderState.COMPLETE;
+                    updateSpiderStatus(SpiderState.COMPLETE);
+                    addSystemMessage('---');
+                    addSystemMessage('HARVEST_COMPLETE');
+                    arachnid.mode = 'telemetry';
+                    updateModeBadges();
+                    return;
+                }
+
+                // Apply baud throttling from NET_CHOKE
+                const baseDelay = 5;  // ms per char at full speed
+                const maxDelay = 100; // ms per char at full choke
+                const delay = baseDelay + (arachnid.lastChokeValue * (maxDelay - baseDelay));
+
+                appendToViewport(demoContent[idx]);
+                idx++;
+
+                setTimeout(streamChar, delay);
+            }
+
+            streamChar();
+        }
+
+        // Update choke display in ARACHNID footer
+        function updateChokeDisplay(value) {
+            arachnid.lastChokeValue = value;
+            document.getElementById('disp-choke').textContent = `${Math.round(value * 100)}%`;
         }
 
         // ================================================================
@@ -1228,9 +1685,12 @@
         logEvent('SYSTEM', 'NEON//SYSTOLE v1.0 initializing...');
         logEvent('SYSTEM', 'BIO-S/1.0 protocol ready (downstream)');
         logEvent('SYSTEM', 'BIO-C/1.0 protocol ready (upstream)');
+        logEvent('ARACHNID', 'Hypertext Harvester ONLINE');
         render();
         connect();
         setupTactileControls();
+        updateBookmarkDisplay(0);  // Initialize bookmark display
+        updateModeBadges();
 
         // Demo mode - simulate data when not connected
         setInterval(() => {
