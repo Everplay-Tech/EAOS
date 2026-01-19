@@ -1211,6 +1211,8 @@ pub struct KernelOverrides {
     pub verbosity: u8,
     /// Memory page poisoning level (0.0 - 1.0, requires ARMED)
     pub mem_acid: f32,
+    /// Deadman switch armed state (from last command)
+    pub armed: bool,
     /// Last received sequence ID (for replay detection)
     last_seq: u16,
 }
@@ -1223,14 +1225,23 @@ impl KernelOverrides {
             net_choke: 0.0,    // No throttling
             verbosity: 2,      // Default log level
             mem_acid: 0.0,     // No poisoning
+            armed: false,      // Deadman switch off
             last_seq: 0,
         }
+    }
+
+    /// Check if the deadman switch is armed
+    pub fn is_armed(&self) -> bool {
+        self.armed
     }
 
     /// Process a received BioCommand
     ///
     /// Returns the result of dispatch (accepted/rejected/etc).
     pub fn dispatch(&mut self, cmd: &BioCommand) -> CommandResult {
+        // Update armed state from command flags
+        self.armed = cmd.is_armed();
+
         // Replay detection: reject if seq_id is not newer
         // Handle wraparound with signed comparison trick
         let seq_diff = cmd.seq_id.wrapping_sub(self.last_seq) as i16;

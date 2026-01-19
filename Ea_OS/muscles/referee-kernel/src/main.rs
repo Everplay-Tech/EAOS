@@ -158,7 +158,7 @@ fn efi_main(_image: Handle, mut st: SystemTable<Boot>) -> Status {
         }
 
         // ========================================================================
-        // Phase 4: Scan for IVSHMEM Device (Optic Nerve)
+        // Phase 4-5: Scan for IVSHMEM Device (Optic Nerve) and Ignite
         // ========================================================================
         uart.log("INFO", "Scanning for IVSHMEM device...");
 
@@ -166,9 +166,20 @@ fn efi_main(_image: Handle, mut st: SystemTable<Boot>) -> Status {
             let mut info_buf = [0u8; 64];
             let info_str = ivshmem.format_info(&mut info_buf);
             uart.log("IVSHMEM", info_str);
-            uart.log("IVSHMEM", "Optic Nerve connected - host bridge ready");
+
+            // Phase 5: Ignite the Optic Nerve - swizzle stream pointer to IVSHMEM
+            let shm_ptr = pci_ivshmem::get_biostream_ptr();
+            arachnid::ignite_optic_nerve(shm_ptr);
+
+            if arachnid::is_optic_nerve_active() {
+                uart.log("IVSHMEM", "Optic Nerve ACTIVE - visual cortex bridged");
+            } else {
+                uart.log("WARN", "Optic Nerve failed to ignite");
+            }
         } else {
-            uart.log("WARN", "No IVSHMEM device found - bio-bridge unavailable");
+            uart.log("WARN", "No IVSHMEM device found - using local stream");
+            // Initialize with local fallback
+            arachnid::ignite_optic_nerve(None);
         }
     };
 

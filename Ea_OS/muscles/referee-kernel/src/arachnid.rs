@@ -1324,14 +1324,71 @@ fn copy_slice(dst: &mut [u8], src: &[u8]) -> usize {
 // Global Instances
 // ============================================================================
 
-/// Global BIO-STREAM ring buffer
+/// Local BIO-STREAM ring buffer (fallback for demo/no-IVSHMEM mode)
 ///
-/// Memory-mapped at a known address for bridge/UI access.
-/// Magic number 0xB105_73A1 allows validation.
-pub static mut ARACHNID_STREAM: BioStream = BioStream::new();
+/// This is the default when no IVSHMEM device is found.
+static mut LOCAL_STREAM: BioStream = BioStream::new();
+
+/// The Active Cortex Pointer
+///
+/// Defaults to LOCAL_STREAM, but can be "swizzled" to IVSHMEM during boot
+/// via ignite_optic_nerve(). This allows the Spider's output to be visible
+/// to the host bio-bridge tool.
+static mut STREAM_PTR: *mut BioStream = unsafe { core::ptr::null_mut() };
+
+/// Flag to track if optic nerve has been initialized
+static mut OPTIC_NERVE_ACTIVE: bool = false;
 
 /// Global spider instance
 pub static mut SPIDER: Arachnid = Arachnid::new();
+
+// ============================================================================
+// Optic Nerve Integration (Phase 5)
+// ============================================================================
+
+/// Initialize the optic nerve by swizzling the stream pointer to IVSHMEM
+///
+/// Call this during kmain after IVSHMEM device is probed.
+/// If ivshmem_ptr is Some, the stream is mapped to shared memory.
+/// If None, uses the local fallback stream.
+///
+/// # Safety
+/// Must be called once during boot before any stream access.
+pub unsafe fn ignite_optic_nerve(ivshmem_ptr: Option<*mut u8>) {
+    if let Some(ptr) = ivshmem_ptr {
+        STREAM_PTR = ptr as *mut BioStream;
+
+        // Initialize Ring Buffer Header if fresh (magic not set)
+        let stream = &mut *STREAM_PTR;
+        if stream.magic != BIOSTREAM_MAGIC {
+            *stream = BioStream::new();
+        }
+
+        OPTIC_NERVE_ACTIVE = true;
+    } else {
+        // Fallback to local stream
+        STREAM_PTR = &mut LOCAL_STREAM as *mut BioStream;
+        OPTIC_NERVE_ACTIVE = false;
+    }
+}
+
+/// Get the active stream (IVSHMEM or local fallback)
+///
+/// # Safety
+/// Must only be called after ignite_optic_nerve() has been called.
+#[inline]
+pub unsafe fn get_stream() -> &'static mut BioStream {
+    // If not initialized yet, use local
+    if STREAM_PTR.is_null() {
+        STREAM_PTR = &mut LOCAL_STREAM as *mut BioStream;
+    }
+    &mut *STREAM_PTR
+}
+
+/// Check if optic nerve is connected to IVSHMEM
+pub fn is_optic_nerve_active() -> bool {
+    unsafe { OPTIC_NERVE_ACTIVE }
+}
 
 // ============================================================================
 // Integration Functions
@@ -1339,15 +1396,17 @@ pub static mut SPIDER: Arachnid = Arachnid::new();
 
 /// Update spider state in ring buffer (call after state changes)
 pub unsafe fn sync_state() {
-    ARACHNID_STREAM.state = SPIDER.state() as u8;
-    ARACHNID_STREAM.bookmark_idx = SPIDER.bookmark_idx as u8;
+    let stream = get_stream();
+    stream.state = SPIDER.state() as u8;
+    stream.bookmark_idx = SPIDER.bookmark_idx as u8;
 }
 
 /// Push system message to stream
 pub unsafe fn push_system_message(msg: &str) {
-    ARACHNID_STREAM.push_str("> ");
-    ARACHNID_STREAM.push_str(msg);
-    ARACHNID_STREAM.push(b'\n');
+    let stream = get_stream();
+    stream.push_str("> ");
+    stream.push_str(msg);
+    stream.push(b'\n');
 }
 
 // ============================================================================

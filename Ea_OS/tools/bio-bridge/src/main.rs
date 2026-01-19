@@ -137,25 +137,41 @@ async fn main() -> IoResult<()> {
         open_shm(&args.shm)?
     };
 
-    let mmap = Arc::new(mmap);
+    let mmap = Arc::new(tokio::sync::RwLock::new(mmap));
     let state = Arc::new(BridgeState::new());
 
-    // Validate magic number
-    let magic = read_u32(&mmap, OFF_MAGIC);
-    if magic != BIOSTREAM_MAGIC {
-        if args.create {
+    // Validate magic number (with retry for kernel boot)
+    info!("Waiting for kernel to initialize BIO-STREAM...");
+    let mut retries = 0;
+    loop {
+        let magic = {
+            let guard = mmap.read().await;
+            read_u32(&guard, OFF_MAGIC)
+        };
+
+        if magic == BIOSTREAM_MAGIC {
+            info!("BIO-STREAM magic validated: 0x{:08X}", magic);
+            break;
+        }
+
+        if args.create && retries == 0 {
             info!("Initializing shared memory with magic number");
-            // Note: Can't write to mmap directly in this mode, would need MmapMut
-        } else {
-            error!("Invalid magic: 0x{:08X} (expected 0x{:08X})", magic, BIOSTREAM_MAGIC);
-            error!("Shared memory may not be initialized by kernel");
+            let mut guard = mmap.write().await;
+            write_u32(&mut guard, OFF_MAGIC, BIOSTREAM_MAGIC);
+            write_u32(&mut guard, OFF_CAPACITY, BIOSTREAM_CAPACITY as u32);
+            break;
+        }
+
+        retries += 1;
+        if retries > 100 {
+            error!("Timeout waiting for kernel (magic=0x{:08X})", magic);
             return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                "Invalid BIO-STREAM magic number",
+                std::io::ErrorKind::TimedOut,
+                "Kernel did not initialize BIO-STREAM",
             ));
         }
-    } else {
-        info!("BIO-STREAM magic validated: 0x{:08X}", magic);
+
+        tokio::time::sleep(Duration::from_millis(100)).await;
     }
 
     // Create broadcast channel for sending to clients
@@ -197,15 +213,18 @@ async fn main() -> IoResult<()> {
 // Shared Memory Operations
 // ============================================================================
 
-/// Open existing shared memory file
-fn open_shm(path: &PathBuf) -> IoResult<memmap2::Mmap> {
-    let file = OpenOptions::new().read(true).open(path)?;
+/// Open existing shared memory file (read-write for SPSC tail updates)
+fn open_shm(path: &PathBuf) -> IoResult<memmap2::MmapMut> {
+    let file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(path)?;
 
-    unsafe { MmapOptions::new().map(&file) }
+    unsafe { MmapOptions::new().map_mut(&file) }
 }
 
 /// Create shared memory file (for testing)
-fn create_shm(path: &PathBuf) -> IoResult<memmap2::Mmap> {
+fn create_shm(path: &PathBuf) -> IoResult<memmap2::MmapMut> {
     let file = OpenOptions::new()
         .read(true)
         .write(true)
@@ -215,7 +234,7 @@ fn create_shm(path: &PathBuf) -> IoResult<memmap2::Mmap> {
     // Set file size
     file.set_len((BIOSTREAM_HEADER_SIZE + BIOSTREAM_CAPACITY) as u64)?;
 
-    unsafe { MmapOptions::new().map(&file) }
+    unsafe { MmapOptions::new().map_mut(&file) }
 }
 
 /// Read u32 from mmap at offset (little-endian)
@@ -237,13 +256,24 @@ fn read_u8(mmap: &[u8], offset: usize) -> u8 {
     }
 }
 
+/// Write u32 to mmap at offset (little-endian)
+fn write_u32(mmap: &mut [u8], offset: usize, value: u32) {
+    if offset + 4 <= mmap.len() {
+        mmap[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+    }
+}
+
 // ============================================================================
 // Poll Loop
 // ============================================================================
 
 /// Main poll loop - reads ring buffer and broadcasts to clients
+///
+/// Implements proper SPSC (Single Producer Single Consumer) ring buffer protocol:
+/// - Kernel (producer) writes to write_head
+/// - Bridge (consumer) reads data, then commits by writing read_tail
 async fn poll_loop(
-    mmap: Arc<memmap2::Mmap>,
+    mmap: Arc<RwLock<memmap2::MmapMut>>,
     state: Arc<BridgeState>,
     tx: Arc<broadcast::Sender<Vec<u8>>>,
     interval: Duration,
@@ -254,37 +284,58 @@ async fn poll_loop(
     loop {
         interval_timer.tick().await;
 
-        // Read header
-        let write_head = read_u32(&mmap, OFF_WRITE_HEAD);
-        let capacity = read_u32(&mmap, OFF_CAPACITY) as usize;
-        let spider_state = read_u8(&mmap, OFF_STATE);
-        let _bookmark = read_u8(&mmap, OFF_BOOKMARK);
-        let _error = read_u8(&mmap, OFF_ERROR);
-        let _harvested = read_u32(&mmap, OFF_HARVESTED);
+        // Phase 1: Read with shared lock
+        let (write_head, capacity, spider_state, read_tail, frame_opt) = {
+            let guard = mmap.read().await;
 
-        // Get our local read tail
-        let read_tail = state.read_tail.load(Ordering::Relaxed);
+            let write_head = read_u32(&guard, OFF_WRITE_HEAD);
+            let capacity = read_u32(&guard, OFF_CAPACITY) as usize;
+            let spider_state = read_u8(&guard, OFF_STATE);
+            let _bookmark = read_u8(&guard, OFF_BOOKMARK);
+            let _error = read_u8(&guard, OFF_ERROR);
+            let _harvested = read_u32(&guard, OFF_HARVESTED);
 
-        // Calculate available bytes
-        let available = write_head.wrapping_sub(read_tail);
+            // Get our local read tail
+            let read_tail = state.read_tail.load(Ordering::Acquire);
 
-        if available > 0 && capacity > 0 {
-            // Build binary frame to send (include header for client parsing)
-            let mut frame = Vec::with_capacity(BIOSTREAM_HEADER_SIZE + available as usize);
+            // Calculate available bytes
+            let available = write_head.wrapping_sub(read_tail);
 
-            // Copy header (32 bytes)
-            frame.extend_from_slice(&mmap[..BIOSTREAM_HEADER_SIZE]);
+            let frame_opt = if available > 0 && capacity > 0 {
+                // Build binary frame to send (include header for client parsing)
+                let mut frame = Vec::with_capacity(BIOSTREAM_HEADER_SIZE + available as usize);
 
-            // Copy ring buffer data (handling wrap-around)
-            let cap = capacity.min(BIOSTREAM_CAPACITY);
-            for i in 0..available {
-                let idx = ((read_tail + i) as usize) % cap;
-                let byte = mmap.get(OFF_DATA + idx).copied().unwrap_or(0);
-                frame.push(byte);
-            }
+                // Copy header (32 bytes)
+                frame.extend_from_slice(&guard[..BIOSTREAM_HEADER_SIZE]);
 
+                // Copy ring buffer data (handling wrap-around)
+                let cap = capacity.min(BIOSTREAM_CAPACITY);
+                for i in 0..available {
+                    let idx = ((read_tail + i) as usize) % cap;
+                    let byte = guard.get(OFF_DATA + idx).copied().unwrap_or(0);
+                    frame.push(byte);
+                }
+
+                Some((frame, available))
+            } else {
+                None
+            };
+
+            (write_head, capacity, spider_state, read_tail, frame_opt)
+        };
+
+        // Phase 2: Process and commit
+        if let Some((frame, available)) = frame_opt {
             // Update our local tail
-            state.read_tail.store(write_head, Ordering::Relaxed);
+            state.read_tail.store(write_head, Ordering::Release);
+
+            // Phase 3: Write read_tail back to shared memory (SPSC commit)
+            {
+                let mut guard = mmap.write().await;
+                write_u32(&mut guard, OFF_READ_TAIL, write_head);
+                // Ensure write is visible to kernel
+                std::sync::atomic::fence(Ordering::Release);
+            }
 
             // Update stats
             state.bytes_relayed.fetch_add(available as u64, Ordering::Relaxed);

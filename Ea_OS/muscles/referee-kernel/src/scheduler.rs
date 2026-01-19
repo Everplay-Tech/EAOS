@@ -1,17 +1,26 @@
+//! EAOS Round-Robin Scheduler with ARACHNID Network Integration
+//!
+//! ## Phase 5: Persistent Physiology & Control Wiring
+//!
+//! - ENTROPY_FLUX: Maps to bookmark selection (Spider::tune)
+//! - MEM_ACID + ARMED: Ignition control (Spider::ignite)
+//! - NET_CHOKE: Baud rate throttling (passed to Spider::poll)
+
+extern crate alloc;
+
 use uefi::table::boot::BootServices;
 use crate::cell::Cell;
 use crate::uart::Uart;
-use crate::arachnid::{SPIDER, ARACHNID_STREAM, NETWORK, sync_state, SpiderState};
+use crate::arachnid::{SPIDER, NETWORK, sync_state, get_stream, SpiderState};
 use crate::virtio_modern::{KERNEL_OVERRIDES, RX_BUFFERS, VirtioModern};
 
-/// Phase 3: Tick the ARACHNID spider with network polling
-///
-/// This handles raw packet processing and feeds data to the Spider.
-/// Full smoltcp TCP integration is scaffolded but requires additional
-/// work to handle the complex socket lifecycle.
+// ============================================================================
+// Phase 5: Tick Functions with Control Wiring
+// ============================================================================
+
+/// Tick the ARACHNID spider with raw packet processing and control wiring
 ///
 /// # Safety
-///
 /// Accesses global mutable statics. Must only be called from single-threaded scheduler.
 unsafe fn tick_arachnid_network(driver: &mut VirtioModern) {
     // Initialize network manager with MAC if needed
@@ -19,40 +28,66 @@ unsafe fn tick_arachnid_network(driver: &mut VirtioModern) {
         NETWORK.init(driver.mac);
     }
 
+    // ========================================================================
+    // Read Control Overrides from Tactile Deck
+    // ========================================================================
+    let entropy = KERNEL_OVERRIDES.entropy_flux;
     let choke = KERNEL_OVERRIDES.net_choke;
+    let mem_acid = KERNEL_OVERRIDES.mem_acid;
+    let armed = KERNEL_OVERRIDES.is_armed();
 
-    // Process any received packets
+    // ========================================================================
+    // CONTROL WIRING: ENTROPY_FLUX -> Bookmark Selection
+    // ========================================================================
+    // Maps the entropy knob (0.0-1.0) to bookmark index
+    SPIDER.tune(entropy);
+
+    // ========================================================================
+    // CONTROL WIRING: MEM_ACID + ARMED -> Ignition / Deadman Switch
+    // ========================================================================
+    // If armed and slide > 0.5: initiate connection
+    // If not armed during operation: abort (deadman switch)
+    SPIDER.ignite(armed, mem_acid);
+
+    // ========================================================================
+    // Process Received Packets
+    // ========================================================================
     while let Some((buffer_id, length)) = driver.process_rx() {
         let data = &RX_BUFFERS.buffers[buffer_id][..length as usize];
 
-        // If harvesting, feed through Spider
+        // If harvesting, feed through Spider's Acid Bath
         if SPIDER.state() == SpiderState::Harvesting {
-            SPIDER.poll(data, &ARACHNID_STREAM, choke);
+            SPIDER.poll(data, get_stream(), choke);
         }
 
-        // TODO: Full smoltcp integration would process packets here:
-        // 1. Pass Ethernet frame to smoltcp interface
-        // 2. Let smoltcp handle ARP, IP, TCP
-        // 3. Read from TCP socket buffer
-        // 4. Feed to Spider.poll()
+        // Re-provision the buffer for next packet
+        driver.reprovision_rx(buffer_id);
     }
 
     // Sync spider state to ring buffer (for UI polling)
     sync_state();
 }
 
-/// Tick for state sync only (no network driver)
+/// Tick for state sync only (no network driver - demo mode)
+///
+/// Still processes control inputs for UI feedback.
 unsafe fn tick_arachnid_sync_only() {
+    // Wire controls even in demo mode
+    let entropy = KERNEL_OVERRIDES.entropy_flux;
+    let mem_acid = KERNEL_OVERRIDES.mem_acid;
+    let armed = KERNEL_OVERRIDES.is_armed();
+
+    SPIDER.tune(entropy);
+    SPIDER.ignite(armed, mem_acid);
+
     sync_state();
 }
 
+// ============================================================================
+// Scheduler Entry Points
+// ============================================================================
+
 /// Round-robin scheduler that executes muscle cells in sequence.
-/// Each muscle is called and expected to return; the scheduler then
-/// moves to the next muscle.
-///
-/// ## Phase 3: Network Integration
-///
-/// Each tick polls the network for received packets.
 pub fn run_scheduler(bt: &BootServices, cells: &[Option<Cell>], uart: &mut Uart) -> ! {
     run_scheduler_with_net(bt, cells, uart, None)
 }
@@ -73,14 +108,20 @@ pub fn run_scheduler_with_net(
     uart.log("INFO", "ARACHNID Spider: ARMED");
 
     if net_driver.is_some() {
-        uart.log("INFO", "Phase 3: Network driver ONLINE");
+        uart.log("INFO", "Phase 5: Network driver ONLINE");
+        uart.log("INFO", "Phase 5: Control wiring active");
     } else {
         uart.log("WARN", "No network driver - ARACHNID in demo mode");
     }
 
+    // Log optic nerve status
+    if crate::arachnid::is_optic_nerve_active() {
+        uart.log("IVSHMEM", "Optic Nerve ACTIVE");
+    }
+
     loop {
         // ================================================================
-        // PHASE 3: Poll ARACHNID network
+        // PHASE 5: Poll ARACHNID with Control Wiring
         // ================================================================
         if let Some(ref mut driver) = net_driver {
             unsafe {
@@ -104,13 +145,12 @@ pub fn run_scheduler_with_net(
 
             execution_count += 1;
 
-            // Log every 1000 executions (using static message)
+            // Log every 1000 executions
             if execution_count % 1000 == 0 {
                 uart.log("DEBUG", "Milestone: 1000 muscle calls executed");
             }
 
-            // Execute muscle - FIXED: removed options(noreturn) so muscles can return
-            // The muscle function is expected to be: extern "C" fn() -> ()
+            // Execute muscle
             unsafe {
                 let func: extern "C" fn() = core::mem::transmute(cell.entry_point);
                 func();
