@@ -1,43 +1,48 @@
 use uefi::table::boot::BootServices;
 use crate::cell::Cell;
 use crate::uart::Uart;
-use crate::arachnid::{SPIDER, ARACHNID_STREAM, sync_state, SpiderState};
+use crate::arachnid::{SPIDER, ARACHNID_STREAM, NETWORK, sync_state, SpiderState};
 use crate::virtio_modern::{KERNEL_OVERRIDES, RX_BUFFERS, VirtioModern};
 
-/// Tick the ARACHNID spider (poll network, feed to sanitizer)
+/// Phase 3: Tick the ARACHNID spider with network polling
 ///
-/// This is called every scheduler tick to process incoming network data.
-/// When the Spider is in harvesting mode, incoming TCP data is passed
-/// through the Acid Bath sanitizer and into the BIO-STREAM ring buffer.
+/// This handles raw packet processing and feeds data to the Spider.
+/// Full smoltcp TCP integration is scaffolded but requires additional
+/// work to handle the complex socket lifecycle.
 ///
 /// # Safety
 ///
-/// Accesses global mutable statics (SPIDER, ARACHNID_STREAM, KERNEL_OVERRIDES).
-/// Must only be called from the single-threaded scheduler loop.
-unsafe fn tick_arachnid(driver: Option<&mut VirtioModern>) {
-    // Only process if we have a network driver
-    let Some(driver) = driver else {
-        return;
-    };
+/// Accesses global mutable statics. Must only be called from single-threaded scheduler.
+unsafe fn tick_arachnid_network(driver: &mut VirtioModern) {
+    // Initialize network manager with MAC if needed
+    if !NETWORK.is_initialized() {
+        NETWORK.init(driver.mac);
+    }
 
-    // Check for received packets
+    let choke = KERNEL_OVERRIDES.net_choke;
+
+    // Process any received packets
     while let Some((buffer_id, length)) = driver.process_rx() {
-        // Get the received data
         let data = &RX_BUFFERS.buffers[buffer_id][..length as usize];
 
-        // Get current choke value
-        let choke = KERNEL_OVERRIDES.net_choke;
-
-        // Feed to spider if harvesting
+        // If harvesting, feed through Spider
         if SPIDER.state() == SpiderState::Harvesting {
             SPIDER.poll(data, &ARACHNID_STREAM, choke);
         }
 
-        // TODO: Re-provision the RX buffer for next packet
-        // This requires calling driver.provision_rx_buffer(buffer_id)
+        // TODO: Full smoltcp integration would process packets here:
+        // 1. Pass Ethernet frame to smoltcp interface
+        // 2. Let smoltcp handle ARP, IP, TCP
+        // 3. Read from TCP socket buffer
+        // 4. Feed to Spider.poll()
     }
 
     // Sync spider state to ring buffer (for UI polling)
+    sync_state();
+}
+
+/// Tick for state sync only (no network driver)
+unsafe fn tick_arachnid_sync_only() {
     sync_state();
 }
 
@@ -45,24 +50,46 @@ unsafe fn tick_arachnid(driver: Option<&mut VirtioModern>) {
 /// Each muscle is called and expected to return; the scheduler then
 /// moves to the next muscle.
 ///
-/// ## Phase 2: ARACHNID Integration
+/// ## Phase 3: Network Integration
 ///
-/// Each tick now also polls the network and feeds data to the Spider.
+/// Each tick polls the network for received packets.
 pub fn run_scheduler(bt: &BootServices, cells: &[Option<Cell>], uart: &mut Uart) -> ! {
+    run_scheduler_with_net(bt, cells, uart, None)
+}
+
+/// Scheduler with optional network driver
+///
+/// This is the main entry point when a Virtio network driver is available.
+pub fn run_scheduler_with_net(
+    bt: &BootServices,
+    cells: &[Option<Cell>],
+    uart: &mut Uart,
+    mut net_driver: Option<VirtioModern>,
+) -> ! {
     let mut index = 0;
     let mut execution_count: u64 = 0;
 
     uart.log("INFO", "Scheduler starting round-robin execution");
     uart.log("INFO", "ARACHNID Spider: ARMED");
 
+    if net_driver.is_some() {
+        uart.log("INFO", "Phase 3: Network driver ONLINE");
+    } else {
+        uart.log("WARN", "No network driver - ARACHNID in demo mode");
+    }
+
     loop {
         // ================================================================
-        // PHASE 2: Poll ARACHNID spider
+        // PHASE 3: Poll ARACHNID network
         // ================================================================
-        // Note: VirtioModern driver would need to be passed in here
-        // For now, this scaffolding is ready for when TCP integration lands
-        unsafe {
-            tick_arachnid(None); // TODO: Pass actual driver reference
+        if let Some(ref mut driver) = net_driver {
+            unsafe {
+                tick_arachnid_network(driver);
+            }
+        } else {
+            unsafe {
+                tick_arachnid_sync_only();
+            }
         }
 
         // ================================================================

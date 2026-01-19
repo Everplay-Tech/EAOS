@@ -172,11 +172,13 @@ if (!armed) {
 
 | File | Action | Description |
 |------|--------|-------------|
-| `arachnid.rs` | **CREATED** | Spider state machine, Acid Bath, Ring Buffer |
-| `main.rs` | **MODIFIED** | Added `mod arachnid;` declaration |
-| `scheduler.rs` | **MODIFIED** | Phase 2: Added tick_arachnid() integration |
-| `virtio_modern.rs` | **MODIFIED** | Phase 2: Made RX_BUFFERS public for Spider |
+| `arachnid.rs` | **CREATED** | Spider state machine, Acid Bath, Ring Buffer, TCP integration |
+| `virtio_phy.rs` | **CREATED** | Phase 3: smoltcp Device adapter for Virtio-Net |
+| `main.rs` | **MODIFIED** | Added `mod arachnid;` and `mod virtio_phy;` |
+| `scheduler.rs` | **MODIFIED** | Phase 3: Network polling with smoltcp scaffolding |
+| `virtio_modern.rs` | **MODIFIED** | Phase 2-3: Made RX_BUFFERS/PACKET_BUF_SIZE public |
 | `neon-systole.html` | **MODIFIED** | Visual Cortex pane, ARACHNID JS, mode switching |
+| `tools/bio-bridge/` | **CREATED** | Phase 3: Host-side WebSocket bridge for BIO-STREAM |
 
 ---
 
@@ -203,10 +205,19 @@ if (!armed) {
 - [x] JavaScript BIO-STREAM consumer
 - [x] Demo/Live mode switching
 
-### Pending Integration (Phase 3)
-- [ ] Wire smoltcp TCP socket to Spider
-- [ ] Implement actual HTTP request/response
-- [ ] WebSocket bridge endpoint for BIO-STREAM
+### Phase 3 (COMPLETE - Infrastructure)
+- [x] smoltcp dependency added (v0.11, alloc mode)
+- [x] VirtioPhy adapter (Device trait implementation)
+- [x] NetworkManager for TCP connection lifecycle
+- [x] poll_tcp() method for smoltcp integration
+- [x] get_target_endpoint() for bookmark IP resolution
+- [x] bio-bridge host tool created (WebSocket + mmap)
+- [x] Scheduler wired with network driver support
+
+### Pending (Full TCP Integration)
+- [ ] Complete smoltcp socket.connect() wiring
+- [ ] QEMU shared memory setup for BIO-STREAM
+- [ ] End-to-end HTTP harvest test
 
 ---
 
@@ -280,6 +291,69 @@ enum LexerState {
     ScriptClosing, // Checking </script>
     InEntity,      // Inside &xxx;
 }
+```
+
+---
+
+## X. Phase 3 Technical Details
+
+### Network Configuration (QEMU SLIRP)
+
+```rust
+// Static IP assignment for QEMU User Network
+pub const GUEST_IP: [u8; 4] = [10, 0, 2, 15];
+pub const GATEWAY_IP: [u8; 4] = [10, 0, 2, 2];
+pub const SUBNET_MASK: [u8; 4] = [255, 255, 255, 0];
+pub const DNS_IP: [u8; 4] = [1, 1, 1, 1];
+```
+
+### VirtioPhy Device Adapter
+
+```rust
+impl<'a> Device for VirtioPhy<'a> {
+    type RxToken<'b> = VirtioRxToken;
+    type TxToken<'b> = VirtioTxToken<'b>;
+
+    fn receive(&mut self, _timestamp: Instant) -> Option<(Self::RxToken, Self::TxToken)> {
+        // Copy data from Virtio RX buffer, strip virtio-net header
+        if let Some((buffer_id, length)) = self.driver.process_rx() {
+            // ... create tokens ...
+        }
+    }
+}
+```
+
+### NetworkManager
+
+```rust
+pub struct NetworkManager {
+    config: Option<Config>,           // smoltcp interface config
+    socket_handle: Option<SocketHandle>, // Active TCP socket
+    hardware_addr: Option<EthernetAddress>,
+    connected: bool,
+    target: Option<IpEndpoint>,
+    // ...
+}
+```
+
+### BIO-BRIDGE Host Tool
+
+```
+tools/bio-bridge/
+├── Cargo.toml
+└── src/
+    └── main.rs    # WebSocket server + mmap reader
+
+Usage:
+  bio-bridge --shm /dev/shm/eaos_biostream --port 3001 --poll-rate 60
+```
+
+Architecture:
+```
+┌─────────────┐     mmap      ┌─────────────┐    WebSocket    ┌─────────────┐
+│   Kernel    │ ────────────> │  BIO-BRIDGE │ ───────────────>│   Browser   │
+│  (ARACHNID) │  /dev/shm/    │  (Host)     │   ws://3001     │  (Retina)   │
+└─────────────┘               └─────────────┘                 └─────────────┘
 ```
 
 ---

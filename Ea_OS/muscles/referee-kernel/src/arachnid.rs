@@ -25,13 +25,32 @@
 //! - NET_CHOKE: Baud Rate Limiter (character-by-character at 100%)
 //! - MEM_ACID: Ignition (ARM + SLIDE to connect, RELEASE to RST)
 //!
+//! ## Phase 3: Vascular Integration
+//!
+//! TCP/IP stack via smoltcp enables real HTTP harvesting:
+//! - VirtioPhy bridges Virtio-Net to smoltcp
+//! - Static IP: 10.0.2.15/24 (QEMU SLIRP)
+//! - Gateway: 10.0.2.2
+//!
 //! ## Safety
 //!
 //! - Zero-allocation streaming sanitizer
 //! - No DOM, no JavaScript, no cookies
 //! - Hardcoded bookmark targets only (no arbitrary URL input)
 
+extern crate alloc;
+
 use core::sync::atomic::{AtomicU32, Ordering};
+use alloc::vec;
+use alloc::vec::Vec;
+
+// Phase 3: smoltcp TCP/IP stack
+use smoltcp::iface::{Config, Interface, SocketSet, SocketHandle};
+use smoltcp::socket::tcp::{Socket as TcpSocket, SocketBuffer as TcpSocketBuffer, State as TcpState};
+use smoltcp::time::Instant;
+use smoltcp::wire::{EthernetAddress, IpAddress, IpCidr, Ipv4Address, IpEndpoint};
+
+use crate::virtio_phy::{GUEST_IP, GATEWAY_IP};
 
 // ============================================================================
 // Spider State Machine
@@ -718,6 +737,192 @@ impl TokenBucket {
 }
 
 // ============================================================================
+// Phase 3: TCP/IP Network Manager
+// ============================================================================
+
+/// TCP socket buffer sizes
+const TCP_RX_BUF_SIZE: usize = 4096;
+const TCP_TX_BUF_SIZE: usize = 4096;
+
+/// Maximum sockets in the socket set
+const MAX_SOCKETS: usize = 4;
+
+/// Network manager for TCP connections
+///
+/// Manages the smoltcp interface and socket set for HTTP harvesting.
+pub struct NetworkManager {
+    /// smoltcp interface configuration
+    config: Option<Config>,
+    /// TCP socket handle (when connected)
+    pub socket_handle: Option<SocketHandle>,
+    /// Connection state
+    connected: bool,
+    /// Target endpoint for current harvest
+    target: Option<IpEndpoint>,
+    /// HTTP request sent flag
+    request_sent: bool,
+    /// Bytes received counter
+    bytes_received: u32,
+    /// Hardware address (MAC)
+    hardware_addr: Option<EthernetAddress>,
+}
+
+impl NetworkManager {
+    /// Create a new network manager
+    pub const fn new() -> Self {
+        Self {
+            config: None,
+            socket_handle: None,
+            connected: false,
+            target: None,
+            request_sent: false,
+            bytes_received: 0,
+            hardware_addr: None,
+        }
+    }
+
+    /// Initialize network interface configuration
+    ///
+    /// Call this once with the MAC address from the Virtio driver.
+    pub fn init(&mut self, mac: [u8; 6]) {
+        let hardware_addr = EthernetAddress(mac);
+        let config = Config::new(hardware_addr.into());
+        self.config = Some(config);
+        self.hardware_addr = Some(hardware_addr);
+    }
+
+    /// Get hardware address
+    pub fn hardware_addr(&self) -> Option<EthernetAddress> {
+        self.hardware_addr
+    }
+
+    /// Check if initialized
+    pub fn is_initialized(&self) -> bool {
+        self.config.is_some()
+    }
+
+    /// Get the interface configuration
+    pub fn config(&self) -> Option<&Config> {
+        self.config.as_ref()
+    }
+
+    /// Set the target endpoint for harvest
+    pub fn set_target(&mut self, ip: [u8; 4], port: u16) {
+        let addr = IpAddress::v4(ip[0], ip[1], ip[2], ip[3]);
+        self.target = Some(IpEndpoint::new(addr, port));
+        self.request_sent = false;
+        self.bytes_received = 0;
+    }
+
+    /// Clear connection state
+    pub fn reset(&mut self) {
+        self.connected = false;
+        self.target = None;
+        self.socket_handle = None;
+        self.request_sent = false;
+        self.bytes_received = 0;
+    }
+
+    /// Check if connected
+    pub fn is_connected(&self) -> bool {
+        self.connected
+    }
+
+    /// Mark as connected
+    pub fn mark_connected(&mut self) {
+        self.connected = true;
+    }
+
+    /// Mark request as sent
+    pub fn mark_request_sent(&mut self) {
+        self.request_sent = true;
+    }
+
+    /// Check if request was sent
+    pub fn request_sent(&self) -> bool {
+        self.request_sent
+    }
+
+    /// Get bytes received
+    pub fn bytes_received(&self) -> u32 {
+        self.bytes_received
+    }
+
+    /// Increment bytes received
+    pub fn add_bytes(&mut self, count: u32) {
+        self.bytes_received = self.bytes_received.saturating_add(count);
+    }
+}
+
+/// Create a new TCP socket with buffers
+pub fn create_tcp_socket() -> TcpSocket<'static> {
+    // Allocate buffers on heap (we have alloc)
+    let rx_buffer = TcpSocketBuffer::new(vec![0u8; TCP_RX_BUF_SIZE]);
+    let tx_buffer = TcpSocketBuffer::new(vec![0u8; TCP_TX_BUF_SIZE]);
+    TcpSocket::new(rx_buffer, tx_buffer)
+}
+
+/// Create the smoltcp interface with static IP configuration
+pub fn create_interface(config: Config) -> Interface {
+    let mut iface = Interface::new(config, &mut DummyDevice, Instant::from_millis(0));
+
+    // Configure static IP: 10.0.2.15/24
+    iface.update_ip_addrs(|addrs| {
+        addrs.push(IpCidr::new(
+            IpAddress::v4(GUEST_IP[0], GUEST_IP[1], GUEST_IP[2], GUEST_IP[3]),
+            24,
+        )).ok();
+    });
+
+    // Configure default gateway: 10.0.2.2
+    iface.routes_mut().add_default_ipv4_route(
+        Ipv4Address::new(GATEWAY_IP[0], GATEWAY_IP[1], GATEWAY_IP[2], GATEWAY_IP[3])
+    ).ok();
+
+    iface
+}
+
+/// Dummy device for interface creation (replaced with VirtioPhy during poll)
+struct DummyDevice;
+
+impl smoltcp::phy::Device for DummyDevice {
+    type RxToken<'a> = DummyRxToken;
+    type TxToken<'a> = DummyTxToken;
+
+    fn receive(&mut self, _: Instant) -> Option<(Self::RxToken<'_>, Self::TxToken<'_>)> {
+        None
+    }
+
+    fn transmit(&mut self, _: Instant) -> Option<Self::TxToken<'_>> {
+        None
+    }
+
+    fn capabilities(&self) -> smoltcp::phy::DeviceCapabilities {
+        let mut caps = smoltcp::phy::DeviceCapabilities::default();
+        caps.medium = smoltcp::phy::Medium::Ethernet;
+        caps.max_transmission_unit = 1500;
+        caps
+    }
+}
+
+struct DummyRxToken;
+impl smoltcp::phy::RxToken for DummyRxToken {
+    fn consume<R, F>(self, f: F) -> R where F: FnOnce(&mut [u8]) -> R {
+        f(&mut [])
+    }
+}
+
+struct DummyTxToken;
+impl smoltcp::phy::TxToken for DummyTxToken {
+    fn consume<R, F>(self, _len: usize, f: F) -> R where F: FnOnce(&mut [u8]) -> R {
+        f(&mut [])
+    }
+}
+
+/// Global network manager
+pub static mut NETWORK: NetworkManager = NetworkManager::new();
+
+// ============================================================================
 // The Spider: HTTP/1.0 State Machine
 // ============================================================================
 
@@ -983,6 +1188,128 @@ impl Arachnid {
     /// Get bytes harvested count
     pub fn bytes_harvested(&self) -> u32 {
         self.bytes_harvested
+    }
+
+    /// Phase 3: Poll TCP network with smoltcp
+    ///
+    /// This is the main integration point for TCP/IP networking.
+    /// Call this from the scheduler tick with the smoltcp interface and socket set.
+    ///
+    /// # Arguments
+    /// * `iface` - smoltcp Interface
+    /// * `sockets` - smoltcp SocketSet
+    /// * `phy` - VirtioPhy device adapter
+    /// * `timestamp` - Current time in milliseconds
+    /// * `ring` - BIO-STREAM ring buffer for output
+    /// * `choke` - NET_CHOKE value for baud rate limiting
+    ///
+    /// # Returns
+    /// `true` if the connection is still active, `false` if complete or error
+    pub fn poll_tcp<D: smoltcp::phy::Device>(
+        &mut self,
+        iface: &mut Interface,
+        sockets: &mut SocketSet<'_>,
+        device: &mut D,
+        timestamp_ms: u64,
+        ring: &BioStream,
+        choke: f32,
+        socket_handle: SocketHandle,
+    ) -> bool {
+        let timestamp = Instant::from_millis(timestamp_ms as i64);
+
+        // Poll the interface (processes packets)
+        let _ = iface.poll(timestamp, device, sockets);
+
+        // Get our socket
+        let socket = sockets.get_mut::<TcpSocket>(socket_handle);
+
+        match self.state {
+            SpiderState::Connecting => {
+                // Check socket state
+                match socket.state() {
+                    TcpState::Established => {
+                        self.state = SpiderState::Requesting;
+                        unsafe { NETWORK.mark_connected(); }
+                        true
+                    }
+                    TcpState::Closed | TcpState::TimeWait => {
+                        self.state = SpiderState::Error;
+                        false
+                    }
+                    _ => true, // Still connecting
+                }
+            }
+
+            SpiderState::Requesting => {
+                // Send HTTP request
+                if socket.can_send() {
+                    let (request, len) = self.build_request();
+                    if socket.send_slice(&request[..len]).is_ok() {
+                        self.state = SpiderState::Harvesting;
+                        unsafe { NETWORK.mark_request_sent(); }
+                    }
+                }
+                true
+            }
+
+            SpiderState::Harvesting => {
+                // Receive data with baud throttling
+                if socket.can_recv() {
+                    let mut buf = [0u8; 512];
+
+                    // Limit bytes read based on choke (simulate baud rate)
+                    let max_bytes = if choke > 0.99 {
+                        1 // Extreme choke: 1 byte at a time
+                    } else {
+                        let speed = 1.0 - choke;
+                        ((512.0 * speed) as usize).max(1)
+                    };
+
+                    match socket.recv_slice(&mut buf[..max_bytes]) {
+                        Ok(len) if len > 0 => {
+                            // Process through existing poll (HTTP parsing + Acid Bath)
+                            self.poll(&buf[..len], ring, choke);
+                            unsafe { NETWORK.add_bytes(len as u32); }
+                        }
+                        Ok(_) => {} // No data
+                        Err(_) => {
+                            // Connection closed or error
+                            self.state = SpiderState::Complete;
+                            return false;
+                        }
+                    }
+                }
+
+                // Check if connection closed
+                if socket.state() == TcpState::Closed || socket.state() == TcpState::TimeWait {
+                    self.state = SpiderState::Complete;
+                    return false;
+                }
+
+                true
+            }
+
+            SpiderState::Dissolving => {
+                // Close the socket
+                socket.close();
+                self.state = SpiderState::Idle;
+                false
+            }
+
+            SpiderState::Complete | SpiderState::Error | SpiderState::Idle | SpiderState::Tuning => {
+                false
+            }
+        }
+    }
+
+    /// Phase 3: Initiate TCP connection to current bookmark
+    ///
+    /// Call this when transitioning from Idle to Connecting.
+    /// Returns the target endpoint for socket.connect().
+    pub fn get_target_endpoint(&self) -> IpEndpoint {
+        let bm = self.bookmark();
+        let addr = IpAddress::v4(bm.ip[0], bm.ip[1], bm.ip[2], bm.ip[3]);
+        IpEndpoint::new(addr, bm.port)
     }
 }
 

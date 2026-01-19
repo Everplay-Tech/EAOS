@@ -20,6 +20,18 @@ log = "0.4"
 permfs-bridge = { path = "../permfs-bridge", default-features = false, features = ["uefi"] }
 x86_64 = { version = "0.15.4", default-features = false, features = ["instructions"] }
 
+# Phase 3: TCP/IP Stack for ARACHNID HTTP harvesting
+[dependencies.smoltcp]
+version = "0.11"
+default-features = false
+features = [
+    "medium-ethernet",  # Raw Ethernet frames from Virtio
+    "proto-ipv4",       # IPv4 stack
+    "socket-tcp",       # TCP sockets for HTTP
+    "alloc",            # Dynamic allocation for socket buffers
+    "log",              # Hook to kernel logger
+]
+
 [dev-dependencies]
 proptest = "1.4"
 

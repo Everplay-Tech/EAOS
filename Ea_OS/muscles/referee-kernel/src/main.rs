@@ -17,7 +17,9 @@ mod graphics;
 mod font;
 mod pci;
 mod pci_modern;
+mod pci_ivshmem;
 mod virtio_modern;
+mod virtio_phy;
 mod interrupts;
 mod arachnid;
 
@@ -153,6 +155,20 @@ fn efi_main(_image: Handle, mut st: SystemTable<Boot>) -> Status {
             }
         } else {
             uart.log("WARN", "No Virtio-Net device found");
+        }
+
+        // ========================================================================
+        // Phase 4: Scan for IVSHMEM Device (Optic Nerve)
+        // ========================================================================
+        uart.log("INFO", "Scanning for IVSHMEM device...");
+
+        if let Some(ivshmem) = pci_ivshmem::scan_for_ivshmem() {
+            let mut info_buf = [0u8; 64];
+            let info_str = ivshmem.format_info(&mut info_buf);
+            uart.log("IVSHMEM", info_str);
+            uart.log("IVSHMEM", "Optic Nerve connected - host bridge ready");
+        } else {
+            uart.log("WARN", "No IVSHMEM device found - bio-bridge unavailable");
         }
     };
 

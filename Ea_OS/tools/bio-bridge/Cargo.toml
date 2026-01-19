@@ -1,0 +1,30 @@
+[package]
+name = "bio-bridge"
+version = "1.0.0"
+edition = "2021"
+authors = ["EAOS Team"]
+description = "Host-side WebSocket bridge for ARACHNID BIO-STREAM"
+license = "Apache-2.0 OR MIT"
+
+[[bin]]
+name = "bio-bridge"
+path = "src/main.rs"
+
+[dependencies]
+# WebSocket server
+tokio = { version = "1.35", features = ["full"] }
+tokio-tungstenite = "0.21"
+futures-util = "0.3"
+
+# Memory mapping
+memmap2 = "0.9"
+
+# CLI arguments
+clap = { version = "4.4", features = ["derive"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Utilities
+byteorder = "1.5"

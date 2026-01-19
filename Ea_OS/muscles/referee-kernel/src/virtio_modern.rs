@@ -196,7 +196,8 @@ static mut RX_QUEUE: VirtqueueMem = VirtqueueMem::zeroed();
 static mut TX_QUEUE: VirtqueueMem = VirtqueueMem::zeroed();
 
 /// RX Packet Buffers
-const PACKET_BUF_SIZE: usize = 2048;
+/// Packet buffer size (2KB per buffer)
+pub const PACKET_BUF_SIZE: usize = 2048;
 const NUM_RX_BUFFERS: usize = 64;
 
 /// RX buffer pool for received packets
@@ -210,6 +211,13 @@ pub struct RxBufferPool {
 ///
 /// Phase 2: Made public for ARACHNID Spider access from scheduler.
 pub static mut RX_BUFFERS: RxBufferPool = RxBufferPool {
+    buffers: [[0u8; PACKET_BUF_SIZE]; NUM_RX_BUFFERS],
+};
+
+/// TX packet buffer pool
+///
+/// Phase 4: Added for transmit operations.
+pub static mut TX_BUFFERS: RxBufferPool = RxBufferPool {
     buffers: [[0u8; PACKET_BUF_SIZE]; NUM_RX_BUFFERS],
 };
 
@@ -602,6 +610,83 @@ impl VirtioModern {
 
             self.rx_queue.last_used_idx = self.rx_queue.last_used_idx.wrapping_add(1);
             Some((elem.id as usize, elem.len)) // Returns (Buffer ID, Byte Length)
+        }
+    }
+
+    /// Phase 4: Re-provision an RX buffer after consumption
+    ///
+    /// After processing a received packet, call this to make the buffer
+    /// available for the device to use again.
+    pub fn reprovision_rx(&mut self, buffer_id: usize) {
+        unsafe {
+            let avail = &mut RX_QUEUE.avail.avail;
+
+            // Add buffer back to available ring
+            let idx = (self.rx_queue.next_avail_idx as usize) % QUEUE_SIZE;
+            avail.ring[idx] = buffer_id as u16;
+
+            // Memory barrier before updating index
+            fence(Ordering::Release);
+
+            // Increment available index
+            self.rx_queue.next_avail_idx = self.rx_queue.next_avail_idx.wrapping_add(1);
+            write_volatile(&mut avail.idx as *mut u16, self.rx_queue.next_avail_idx);
+
+            // Ring doorbell to notify device
+            self.ring_doorbell(0);
+        }
+    }
+
+    /// Phase 4: Transmit an Ethernet frame
+    ///
+    /// Submits a frame (with virtio-net header) to the TX queue.
+    /// The frame should include the 12-byte virtio-net header at the start.
+    ///
+    /// Returns `true` if the frame was queued, `false` if TX queue is full.
+    pub fn transmit(&mut self, frame: &[u8]) -> bool {
+        unsafe {
+            // Check if we have space in the TX queue
+            let avail = &mut TX_QUEUE.avail.avail;
+            let used = &TX_QUEUE.used.used;
+
+            let used_idx = read_volatile(&used.idx as *const u16);
+            let pending = self.tx_queue.next_avail_idx.wrapping_sub(used_idx);
+
+            if pending as usize >= QUEUE_SIZE - 1 {
+                return false; // TX queue full
+            }
+
+            // Use a TX buffer slot based on available index
+            let buf_idx = (self.tx_queue.next_avail_idx as usize) % NUM_RX_BUFFERS;
+
+            // Copy frame to TX buffer (reusing RX buffer pool for simplicity)
+            // In production, would have separate TX buffers
+            let tx_buf = &mut TX_BUFFERS.buffers[buf_idx];
+            let len = frame.len().min(PACKET_BUF_SIZE);
+            tx_buf[..len].copy_from_slice(&frame[..len]);
+
+            // Setup descriptor
+            let desc = &mut TX_QUEUE.desc.desc;
+            desc[buf_idx].addr = tx_buf.as_ptr() as u64;
+            desc[buf_idx].len = len as u32;
+            desc[buf_idx].flags = 0; // Device reads from here
+            desc[buf_idx].next = 0;
+
+            // Add to available ring
+            let avail_idx = (self.tx_queue.next_avail_idx as usize) % QUEUE_SIZE;
+            avail.ring[avail_idx] = buf_idx as u16;
+
+            // Memory barrier
+            fence(Ordering::Release);
+
+            // Update available index
+            self.tx_queue.next_avail_idx = self.tx_queue.next_avail_idx.wrapping_add(1);
+            write_volatile(&mut avail.idx as *mut u16, self.tx_queue.next_avail_idx);
+
+            // Ring TX doorbell
+            self.ring_doorbell(1);
+
+            true
         }
     }
 

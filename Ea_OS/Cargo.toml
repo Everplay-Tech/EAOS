@@ -17,6 +17,7 @@ members = [
     "defense/sefirot",
     "signals/quenyan/reference/rust",
     "IHP-main",
+    "tools/bio-bridge",
 ]
 
 # referee-kernel requires UEFI target, exclude from default workspace builds
@@ -35,6 +36,7 @@ default-members = [
     "defense/sefirot",
     "signals/quenyan/reference/rust",
     "IHP-main",
+    "tools/bio-bridge",
 ]
 
 # Exclude non-Rust projects or those with custom build systems
