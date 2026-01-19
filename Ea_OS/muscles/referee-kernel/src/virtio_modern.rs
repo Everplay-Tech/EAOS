@@ -199,12 +199,17 @@ static mut TX_QUEUE: VirtqueueMem = VirtqueueMem::zeroed();
 const PACKET_BUF_SIZE: usize = 2048;
 const NUM_RX_BUFFERS: usize = 64;
 
+/// RX buffer pool for received packets
 #[repr(C, align(4096))]
-struct RxBufferPool {
-    buffers: [[u8; PACKET_BUF_SIZE]; NUM_RX_BUFFERS],
+pub struct RxBufferPool {
+    /// Array of packet buffers
+    pub buffers: [[u8; PACKET_BUF_SIZE]; NUM_RX_BUFFERS],
 }
 
-static mut RX_BUFFERS: RxBufferPool = RxBufferPool {
+/// RX packet buffer pool
+///
+/// Phase 2: Made public for ARACHNID Spider access from scheduler.
+pub static mut RX_BUFFERS: RxBufferPool = RxBufferPool {
     buffers: [[0u8; PACKET_BUF_SIZE]; NUM_RX_BUFFERS],
 };
 

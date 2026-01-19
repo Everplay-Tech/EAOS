@@ -933,6 +933,24 @@
         const OFF_UPTIME = 20;       // u64: system uptime
         const OFF_FLAGS = 28;        // u32: status flags
 
+        // ====================================================================
+        // BIO-STREAM Protocol Constants (Phase 2: ARACHNID Ring Buffer)
+        // ====================================================================
+        const BIOSTREAM_MAGIC = 0xB10573A1;
+        const BIOSTREAM_CAPACITY = 65536;
+        const BIOSTREAM_HEADER_SIZE = 0x20;  // 32 bytes header
+
+        // BioStream offsets (ring buffer protocol)
+        const BS_OFF_MAGIC = 0;           // u32: magic number
+        const BS_OFF_CAPACITY = 4;        // u32: buffer capacity
+        const BS_OFF_WRITE_HEAD = 8;      // u32: write position
+        const BS_OFF_READ_TAIL = 12;      // u32: read position
+        const BS_OFF_STATE = 16;          // u8: spider state
+        const BS_OFF_BOOKMARK = 17;       // u8: bookmark index
+        const BS_OFF_ERROR = 18;          // u8: error code
+        const BS_OFF_HARVESTED = 20;      // u32: bytes harvested
+        const BS_OFF_DATA = 32;           // data[65536]: ring buffer
+
         // State with LERP targets for smooth animation
         const state = {
             cpu: 0, targetCpu: 0,
@@ -981,6 +999,143 @@
                     handleBioFrame(event.data);
                 }
             };
+        }
+
+        // ====================================================================
+        // BIO-STREAM WebSocket (Phase 2: ARACHNID Ring Buffer Consumer)
+        // ====================================================================
+
+        const WS_STREAM_URL = `ws://${window.location.hostname}:8080/bio-stream`;
+
+        /**
+         * Connect to BIO-STREAM endpoint for live kernel data
+         */
+        function connectBioStream() {
+            if (arachnid.wsStream && arachnid.wsStream.readyState === WebSocket.OPEN) return;
+
+            arachnid.wsStream = new WebSocket(WS_STREAM_URL);
+            arachnid.wsStream.binaryType = 'arraybuffer';
+
+            arachnid.wsStream.onopen = () => {
+                logEvent('ARACHNID', 'BIO-STREAM connected');
+                addSystemMessage('KERNEL_LINK: ESTABLISHED');
+            };
+
+            arachnid.wsStream.onclose = () => {
+                logEvent('ARACHNID', 'BIO-STREAM disconnected');
+                arachnid.wsStream = null;
+            };
+
+            arachnid.wsStream.onerror = () => {
+                logEvent('ALERT', 'BIO-STREAM error');
+                arachnid.wsStream = null;
+            };
+
+            arachnid.wsStream.onmessage = (event) => {
+                if (event.data instanceof ArrayBuffer) {
+                    handleBioStreamFrame(event.data);
+                }
+            };
+        }
+
+        /**
+         * Disconnect from BIO-STREAM
+         */
+        function disconnectBioStream() {
+            if (arachnid.wsStream) {
+                arachnid.wsStream.close();
+                arachnid.wsStream = null;
+            }
+        }
+
+        /**
+         * Handle BIO-STREAM binary frame (ring buffer snapshot)
+         *
+         * Protocol:
+         * - Magic: 0xB10573A1 at offset 0
+         * - write_head at offset 8 (u32)
+         * - read_tail at offset 12 (u32) - we update this
+         * - state at offset 16 (u8)
+         * - bookmark_idx at offset 17 (u8)
+         * - data at offset 32 (ring buffer)
+         */
+        function handleBioStreamFrame(buffer) {
+            if (buffer.byteLength < BIOSTREAM_HEADER_SIZE) return;
+
+            const dv = new DataView(buffer);
+
+            // Validate magic number
+            const magic = dv.getUint32(BS_OFF_MAGIC, true);
+            if (magic !== BIOSTREAM_MAGIC) {
+                logEvent('ALERT', `Invalid BIO-STREAM magic: 0x${magic.toString(16).toUpperCase()}`);
+                return;
+            }
+
+            // Read header fields
+            const capacity = dv.getUint32(BS_OFF_CAPACITY, true);
+            const writeHead = dv.getUint32(BS_OFF_WRITE_HEAD, true);
+            const spiderState = dv.getUint8(BS_OFF_STATE);
+            const bookmarkIdx = dv.getUint8(BS_OFF_BOOKMARK);
+            const errorCode = dv.getUint8(BS_OFF_ERROR);
+            const bytesHarvested = dv.getUint32(BS_OFF_HARVESTED, true);
+
+            // Update spider state from kernel
+            if (arachnid.spiderState !== spiderState) {
+                arachnid.spiderState = spiderState;
+                updateSpiderStatus(spiderState);
+            }
+
+            // Update bookmark from kernel
+            if (arachnid.bookmarkIdx !== bookmarkIdx) {
+                arachnid.bookmarkIdx = bookmarkIdx;
+                updateBookmarkDisplay(bookmarkIdx);
+            }
+
+            // Handle errors
+            if (errorCode !== 0) {
+                addSystemMessage(`ERROR: Code ${errorCode}`);
+            }
+
+            // Drain ring buffer: read from lastTail to writeHead
+            const dataOffset = BS_OFF_DATA;
+            let tail = arachnid.lastTail;
+            let bytesRead = 0;
+            const maxBytesPerFrame = 1024; // Limit to prevent UI freeze
+
+            // Calculate available bytes (handle wrap-around)
+            let available = (writeHead - tail) & 0xFFFFFFFF;
+            if (available > capacity) {
+                // Overflow: we've fallen behind, skip to head
+                tail = writeHead;
+                available = 0;
+                addSystemMessage('BUFFER_OVERRUN: Data lost');
+            }
+
+            // Read bytes with baud throttle simulation
+            const bytesToRead = Math.min(available, maxBytesPerFrame);
+            let textChunk = '';
+
+            for (let i = 0; i < bytesToRead; i++) {
+                const idx = (tail + i) % capacity;
+                const byte = dv.getUint8(dataOffset + idx);
+
+                // Only append printable ASCII
+                if (byte >= 0x20 && byte <= 0x7E || byte === 0x0A || byte === 0x09) {
+                    textChunk += String.fromCharCode(byte);
+                }
+                bytesRead++;
+            }
+
+            // Update tail position
+            arachnid.lastTail = (tail + bytesRead) % capacity;
+
+            // Append to viewport
+            if (textChunk.length > 0) {
+                appendToViewport(textChunk);
+            }
+
+            // Update harvested counter from kernel
+            document.getElementById('disp-bytes').textContent = bytesHarvested;
         }
 
         // Zero-Copy BioFrame Parser with SeqLock Tearing Prevention
@@ -1469,6 +1624,10 @@
             bytesHarvested: 0,
             streamBuffer: '',  // Accumulated text from ring buffer
             lastChokeValue: 0,
+            // Phase 2: BIO-STREAM ring buffer consumer state
+            lastTail: 0,       // Last read position in ring buffer
+            wsStream: null,    // BIO-STREAM WebSocket connection
+            demoMode: true,    // Use simulated content (false = live kernel)
         };
 
         // Map entropy value to bookmark index
@@ -1553,6 +1712,11 @@
                     addSystemMessage('CONNECTION_ABORTED (Deadman released)');
                     arachnid.spiderState = SpiderState.IDLE;
                     updateSpiderStatus(SpiderState.IDLE);
+
+                    // Phase 2: Disconnect BIO-STREAM on abort
+                    if (!arachnid.demoMode) {
+                        disconnectBioStream();
+                    }
                 }
                 return false;
             }
@@ -1565,9 +1729,12 @@
 
                 // Clear and prepare viewport
                 clearViewport();
+                arachnid.lastTail = 0;  // Reset ring buffer read position
+
                 addSystemMessage('INITIATING_HARVEST');
                 addSystemMessage(`TARGET: ${BOOKMARKS[arachnid.bookmarkIdx].label}`);
                 addSystemMessage(`ADDRESS: ${BOOKMARKS[arachnid.bookmarkIdx].ip}`);
+                addSystemMessage(`MODE: ${arachnid.demoMode ? 'DEMO' : 'LIVE_KERNEL'}`);
                 addSystemMessage('CONNECTING...');
 
                 arachnid.spiderState = SpiderState.CONNECTING;
@@ -1575,8 +1742,14 @@
 
                 logEvent('ARACHNID', `Igniting harvest: ${BOOKMARKS[arachnid.bookmarkIdx].label}`);
 
-                // Simulate connection (in real impl, kernel handles this)
-                simulateHarvest();
+                // Phase 2: Choose between demo and live kernel mode
+                if (arachnid.demoMode) {
+                    simulateHarvest();
+                } else {
+                    // Connect to BIO-STREAM for live kernel data
+                    connectBioStream();
+                    addSystemMessage('KERNEL_LINK: Establishing...');
+                }
 
                 return true;
             }

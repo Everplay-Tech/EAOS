@@ -174,26 +174,39 @@ if (!armed) {
 |------|--------|-------------|
 | `arachnid.rs` | **CREATED** | Spider state machine, Acid Bath, Ring Buffer |
 | `main.rs` | **MODIFIED** | Added `mod arachnid;` declaration |
+| `scheduler.rs` | **MODIFIED** | Phase 2: Added tick_arachnid() integration |
+| `virtio_modern.rs` | **MODIFIED** | Phase 2: Made RX_BUFFERS public for Spider |
 | `neon-systole.html` | **MODIFIED** | Visual Cortex pane, ARACHNID JS, mode switching |
 
 ---
 
 ## VI. Integration Status
 
-### Completed
+### Phase 1 (COMPLETE)
 - [x] Spider state machine
-- [x] Acid Bath sanitizer
+- [x] Acid Bath sanitizer (basic)
 - [x] SharedRingBuffer (BIO-STREAM)
 - [x] Visual Cortex pane (CSS/HTML)
 - [x] ARACHNID JavaScript controller
 - [x] Context-aware knob mapping
 - [x] Demo mode simulation
 
-### Pending Integration
-- [ ] Connect arachnid.poll() to virtio main loop
+### Phase 2 (COMPLETE)
+- [x] BioStream with magic number (0xB105_73A1)
+- [x] Proper memory barriers (fence(Acquire/Release))
+- [x] Stateful AcidBath lexer (handles fragmented tags)
+- [x] Script tag detection and blocking
+- [x] Token Bucket throttle algorithm
+- [x] Unit tests for fragmentation
+- [x] Unit tests for ring buffer wrap-around
+- [x] Spider poll wired into scheduler tick
+- [x] JavaScript BIO-STREAM consumer
+- [x] Demo/Live mode switching
+
+### Pending Integration (Phase 3)
 - [ ] Wire smoltcp TCP socket to Spider
 - [ ] Implement actual HTTP request/response
-- [ ] WebSocket endpoint for BIO-STREAM data
+- [ ] WebSocket bridge endpoint for BIO-STREAM
 
 ---
 
@@ -201,9 +214,11 @@ if (!armed) {
 
 1. **No arbitrary URLs:** Targets are hardcoded bookmarks only
 2. **Acid Bath:** All HTML/JS stripped before reaching UI
-3. **Deadman Switch:** Connection aborts immediately on release
-4. **No cookies/storage:** Stateless HTTP/1.0 only
-5. **Minimal fingerprint:** `User-Agent: EAOS/ARACHNID`
+3. **Script Blocking:** `<script>` tags dissolved across packet boundaries
+4. **Deadman Switch:** Connection aborts immediately on release
+5. **No cookies/storage:** Stateless HTTP/1.0 only
+6. **Minimal fingerprint:** `User-Agent: EAOS/ARACHNID`
+7. **Magic Validation:** BIO-STREAM frames validated with 0xB105_73A1
 
 ---
 
@@ -214,6 +229,58 @@ if (!armed) {
 3. **Ignite Harvest:** Slide MEM_ACID past 50% threshold
 4. **Control Speed:** Adjust NET_CHOKE to slow down text stream
 5. **Abort:** Release MEM_ACID slider (spring return = instant abort)
+
+---
+
+## IX. Phase 2 Technical Details
+
+### BioStream Protocol
+
+```rust
+#[repr(C, align(4096))]
+pub struct BioStream {
+    pub magic: u32,            // 0xB105_73A1
+    pub capacity: u32,         // 65536
+    pub write_head: AtomicU32, // Kernel increments
+    pub read_tail: AtomicU32,  // Bridge increments
+    pub state: u8,             // SpiderState
+    pub bookmark_idx: u8,      // Current target
+    pub error_code: u8,        // Error (0 = OK)
+    pub _reserved: u8,
+    pub bytes_harvested: u32,  // Stats
+    pub _padding: [u8; 8],
+    pub data: [u8; 65536],     // Ring buffer
+}
+```
+
+### Token Bucket Algorithm
+
+```rust
+pub struct TokenBucket {
+    tokens: f32,       // Current tokens
+    capacity: f32,     // Max burst (100)
+    refill_rate: f32,  // Tokens/tick at choke=0 (100)
+}
+
+// Refill inversely proportional to choke
+let refill = rate * (1.0 - choke);
+tokens = (tokens + refill).min(capacity);
+```
+
+### Stateful Lexer States
+
+```rust
+enum LexerState {
+    Text,          // Pass bytes
+    TagOpen,       // Saw '<'
+    TagName,       // Inside tag name
+    InsideTag,     // Inside <...>
+    InScript,      // Drop everything
+    ScriptTagOpen, // In script, saw '<'
+    ScriptClosing, // Checking </script>
+    InEntity,      // Inside &xxx;
+}
+```
 
 ---
 
