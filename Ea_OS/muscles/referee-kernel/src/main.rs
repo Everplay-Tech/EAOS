@@ -26,9 +26,10 @@ mod arachnid;
 use crate::uart::Uart;
 use crate::capability::ChaosCapability;
 use crate::cell::Cell;
-use crate::scheduler::run_scheduler;
+use crate::scheduler::run_scheduler_with_net;
 use crate::graphics::{Color, Framebuffer};
 use crate::font::{VGA_FONT_8X16, FONT_HEIGHT};
+use crate::virtio_phy::init_timer;
 
 const N_CELLS: usize = 50;
 
@@ -71,6 +72,12 @@ fn efi_main(_image: Handle, mut st: SystemTable<Boot>) -> Status {
     }
 
     uart.log("INFO", "Ea referee v3.0 awakens - production ready");
+
+    // ========================================================================
+    // Phase 6.5: Initialize RDTSC Monotonic Timer
+    // ========================================================================
+    init_timer();
+    uart.log("INFO", "RDTSC timer initialized - epoch set");
 
     // ========================================================================
     // Scan PCI Bus for Virtio Devices
@@ -183,8 +190,7 @@ fn efi_main(_image: Handle, mut st: SystemTable<Boot>) -> Status {
         }
     };
 
-    // Store driver for later use
-    let _net_driver = net_driver;
+    // Driver will be passed to scheduler
 
     // ========================================================================
     // Initialize Graphics (GOP)
@@ -296,8 +302,8 @@ fn efi_main(_image: Handle, mut st: SystemTable<Boot>) -> Status {
         render_shell_prompt(fb);
     }
 
-    // Transfer control to scheduler
-    run_scheduler(bt, &cells, &mut uart)
+    // Transfer control to scheduler with network driver
+    run_scheduler_with_net(bt, &cells, &mut uart, net_driver)
 }
 
 // ============================================================================

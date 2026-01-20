@@ -17,11 +17,17 @@
 //!
 //! For Phase 3 stability, we use copy-based tokens rather than zero-copy DMA.
 //! This simplifies buffer management at the cost of one memcpy per packet.
+//!
+//! ## Phase 6.5: RDTSC Monotonic Clock
+//!
+//! Uses x86 Time Stamp Counter for millisecond-precision timestamps.
+//! Calibrated for ~2GHz (QEMU default). In production, calibrate against PIT/HPET.
 
 extern crate alloc;
 
 use alloc::vec;
 use alloc::vec::Vec;
+use core::sync::atomic::{AtomicU64, Ordering};
 use smoltcp::phy::{Device, DeviceCapabilities, Medium, RxToken, TxToken};
 use smoltcp::time::Instant;
 
@@ -32,6 +38,41 @@ const MTU: usize = 1500;
 
 /// Virtio-Net header size (we strip this before passing to smoltcp)
 const VIRTIO_NET_HDR_SIZE: usize = 12;
+
+// ============================================================================
+// Phase 6.5: RDTSC Monotonic Clock
+// ============================================================================
+
+/// Epoch timestamp (TSC value at init)
+static EPOCH: AtomicU64 = AtomicU64::new(0);
+
+/// Calibration: ~2GHz clock (2,000,000 cycles per ms)
+/// In production we would calibrate against PIT/HPET, but this suffices for QEMU.
+const CYCLES_PER_MS: u64 = 2_000_000;
+
+/// Initialize the monotonic timer
+///
+/// Call this once during boot to establish the epoch.
+pub fn init_timer() {
+    let now = unsafe { core::arch::x86_64::_rdtsc() };
+    EPOCH.store(now, Ordering::Relaxed);
+}
+
+/// Get current timestamp in milliseconds (for smoltcp)
+///
+/// Uses x86 RDTSC for monotonic timing. Returns milliseconds since init_timer().
+pub fn get_timestamp_ms() -> u64 {
+    let now = unsafe { core::arch::x86_64::_rdtsc() };
+    let start = EPOCH.load(Ordering::Relaxed);
+
+    // If not initialized, return 0
+    if start == 0 {
+        return 0;
+    }
+
+    // Calculate elapsed cycles and convert to milliseconds
+    now.wrapping_sub(start) / CYCLES_PER_MS
+}
 
 // ============================================================================
 // VirtioPhy: The Device Adapter
@@ -60,6 +101,9 @@ impl<'a> Device for VirtioPhy<'a> {
     fn receive(&mut self, _timestamp: Instant) -> Option<(Self::RxToken<'_>, Self::TxToken<'_>)> {
         // Check for received packet
         if let Some((buffer_id, length)) = self.driver.process_rx() {
+            // Phase 6.5: VASCULAR INSTRUMENTATION - Track RX
+            RX_COUNT.fetch_add(1, Ordering::Relaxed);
+
             // Copy data from Virtio RX buffer (skip virtio-net header)
             let data = unsafe {
                 let raw = &RX_BUFFERS.buffers[buffer_id];
@@ -127,11 +171,20 @@ pub struct VirtioTxToken<'a> {
     driver: &'a mut VirtioModern,
 }
 
+/// Global RX packet counter for instrumentation
+static RX_COUNT: AtomicU64 = AtomicU64::new(0);
+
+/// Global TX packet counter for instrumentation
+static TX_COUNT: AtomicU64 = AtomicU64::new(0);
+
 impl<'a> TxToken for VirtioTxToken<'a> {
     fn consume<R, F>(self, len: usize, f: F) -> R
     where
         F: FnOnce(&mut [u8]) -> R,
     {
+        // Phase 6.5: VASCULAR INSTRUMENTATION - Track TX
+        TX_COUNT.fetch_add(1, Ordering::Relaxed);
+
         // Allocate buffer with virtio-net header space
         let total_len = VIRTIO_NET_HDR_SIZE + len;
         let mut buffer = vec![0u8; total_len];
@@ -151,6 +204,16 @@ impl<'a> TxToken for VirtioTxToken<'a> {
     }
 }
 
+/// Get RX packet count (for instrumentation)
+pub fn get_rx_count() -> u64 {
+    RX_COUNT.load(Ordering::Relaxed)
+}
+
+/// Get TX packet count (for instrumentation)
+pub fn get_tx_count() -> u64 {
+    TX_COUNT.load(Ordering::Relaxed)
+}
+
 // ============================================================================
 // Network Configuration Constants
 // ============================================================================
@@ -166,17 +229,3 @@ pub const SUBNET_MASK: [u8; 4] = [255, 255, 255, 0];
 
 /// DNS server (Cloudflare)
 pub const DNS_IP: [u8; 4] = [1, 1, 1, 1];
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/// Get current timestamp in milliseconds (for smoltcp)
-///
-/// Uses UEFI timer or a simple counter if not available.
-pub fn get_timestamp_ms() -> u64 {
-    // TODO: Hook into actual UEFI timer
-    // For now, use a static counter incremented each poll
-    static COUNTER: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
-    COUNTER.fetch_add(1, core::sync::atomic::Ordering::Relaxed)
-}

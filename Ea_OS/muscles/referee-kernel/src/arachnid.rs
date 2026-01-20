@@ -985,6 +985,11 @@ impl Arachnid {
         self.state
     }
 
+    /// Set state (for scheduler TCP state machine)
+    pub fn set_state(&mut self, state: SpiderState) {
+        self.state = state;
+    }
+
     /// Get selected bookmark
     pub fn bookmark(&self) -> &'static Bookmark {
         &BOOKMARKS[self.bookmark_idx]
