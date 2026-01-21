@@ -1,0 +1,13 @@
+[package]
+name = "ea-sentry"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ea Foundation"]
+description = "Sentry - Cryptographic Keymaster"
+
+[dependencies]
+muscle-contract = { path = "../../muscle-contract", default-features = false }
+ed25519-dalek = { workspace = true, default-features = false }
+
+[lib]
+crate-type = ["rlib"]

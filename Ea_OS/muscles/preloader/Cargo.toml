@@ -11,3 +11,4 @@ name = "preloader"
 path = "src/lib.rs"
 
 [dependencies]
+muscle-contract = { path = "../../muscle-contract", default-features = false }

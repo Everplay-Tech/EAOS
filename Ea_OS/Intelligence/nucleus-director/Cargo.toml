@@ -11,16 +11,26 @@ path = "src/main.rs"
 
 [features]
 default = ["std"]
-std = []
+std = ["biowerk-agent/std", "ea-symbiote/std", "ea-cardio/std", "roulette-rs/std", "permfs/std", "serde/std"]
+no-std = ["alloc"]
+alloc = []
 
 [dependencies]
-biowerk-agent = { path = "../../organs/biowerk-agent" }
-ea-symbiote = { path = "../../muscles/symbiote" }
-ea-cardio = { path = "../../organs/cardio" }
-roulette-rs = { path = "../../muscles/roulette-rs" }
-permfs = { path = "../../permfs", default-features = false, features = ["std"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+biowerk-agent = { path = "../../organs/biowerk-agent", default-features = false }
+ea-symbiote = { path = "../../muscles/symbiote", default-features = false }
+ea-cardio = { path = "../../organs/cardio", default-features = false }
+roulette-rs = { path = "../../muscles/roulette-rs", default-features = false }
+permfs = { path = "../../permfs", default-features = false }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+muscle-contract = { path = "../../muscle-contract", default-features = false }
+ed25519-dalek = { workspace = true, default-features = false }
+blake3 = { workspace = true, default-features = false }
+ea-broca = { path = "../../muscles/broca", default-features = false }
+ea-dreamer = { path = "../../muscles/dreamer", default-features = false }
+ea-mirror = { path = "../../muscles/mirror", default-features = false }
+ea-sentry = { path = "../../muscles/sentry", default-features = false }
+ea-mitochondria = { path = "../../muscles/mitochondria", default-features = false }
 
 [dev-dependencies]
 ea-cardio = { path = "../../organs/cardio" }

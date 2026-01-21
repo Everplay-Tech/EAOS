@@ -28,7 +28,8 @@ serde_json = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "io-util", "sync", "fs", "time"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
-ed25519-dalek = { workspace = true }
+ed25519-dalek = { workspace = true, features = ["rand_core"] }
+rand_core = { workspace = true, features = ["std"] }
 
 ledger-core = { path = "../core" }
 ledger-spec = { path = "../spec" }

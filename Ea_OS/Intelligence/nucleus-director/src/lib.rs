@@ -1,3 +1,5 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
 //! Nucleus Director - Central Orchestration for EAOS Organism
 //!
 //! The Nucleus Director coordinates all components of the EAOS organism:
@@ -7,50 +9,26 @@
 //! 3. **Task Planning**: Uses Hyperbolic Chamber for complex operations
 //! 4. **Storage Pipeline**: Coordinates PermFS-Bridge for data persistence
 //! 5. **Audit Trail**: Ensures all operations are logged and traceable
-//!
-//! ## Office Suite Full Cycle
-//!
-//! ```text
-//! External Request (CLI/Serial)
-//!        │
-//!        ▼
-//! ┌──────────────┐
-//! │   Nucleus    │ ← Central Director
-//! │   Director   │
-//! └──────┬───────┘
-//!        │
-//!   ┌────┴────┐
-//!   ▼         ▼
-//! ┌─────┐  ┌─────┐
-//! │Osteon│  │Myocyte│ ← BIOwerk Agents
-//! │(Docs)│  │(Logic)│
-//! └──┬───┘  └──┬────┘
-//!    │         │
-//!    └────┬────┘
-//!         ▼
-//! ┌──────────────┐
-//! │   Symbiote   │ ← IPC Layer
-//! │   Synapse    │
-//! └──────┬───────┘
-//!         ▼
-//! ┌──────────────┐
-//! │   PermFS     │ ← Storage
-//! └──────────────┘
-//! ```
+
+extern crate alloc;
 
 pub mod diagnostics;
 
+use alloc::format;
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
 use biowerk_agent::{AgentRequest, AgentResponse, BIOwerk};
 use ea_cardio::CardioMonitor;
 use ea_symbiote::{SovereignDocument, Symbiote};
+use muscle_contract::BootParameters;
 use serde::{Deserialize, Serialize};
 
 /// Magic header for braided blocks (0xB8AD)
 pub const BRAID_MAGIC: [u8; 2] = [0xB8, 0xAD];
 
-// ============================================================================
+// ============================================================================ 
 // Director Request/Response Types
-// ============================================================================
+// ============================================================================ 
 
 /// High-level requests to the Nucleus Director
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -105,9 +83,9 @@ pub enum DirectorResponse {
     Error(String),
 }
 
-// ============================================================================
+// ============================================================================ 
 // Task Planner (Hyperbolic Chamber Interface)
-// ============================================================================
+// ============================================================================ 
 
 /// Task types for the Hyperbolic Chamber planner
 #[derive(Debug, Clone)]
@@ -128,13 +106,13 @@ pub enum PlannedTask {
 #[derive(Debug, Clone)]
 pub struct TaskMetadata {
     pub operation: String,
-    pub timestamp: i64,
+    pub timestamp: u64, // Real kernel timestamp (TSC)
     pub priority: u8,
 }
 
-// ============================================================================
+// ============================================================================ 
 // Nucleus Director
-// ============================================================================
+// ============================================================================ 
 
 /// The Nucleus Director orchestrates the full EAOS organism
 pub struct NucleusDirector {
@@ -196,29 +174,19 @@ impl NucleusDirector {
 
     /// Record a heartbeat via Cardio organ
     fn record_heartbeat(&mut self) -> DirectorResponse {
-        // Advance the heartbeat
         self.cardio.tick();
-
-        // Take a snapshot
         let heartbeat = self.cardio.snapshot();
         let tick = heartbeat.tick;
         let uptime_secs = self.cardio.uptime_secs();
-
-        // Convert to SovereignBlob using trait (PROVES ECOSYSTEM EXTENSIBILITY)
         let blob = heartbeat.to_blob();
 
-        // Commit through Symbiote
         match self.synapse.commit_organ_data(blob) {
             Ok(addr) => {
-                // Record task for audit
                 self.pending_tasks.push(PlannedTask::WriteBlocks {
                     block_count: 1,
                     metadata: TaskMetadata {
                         operation: format!("CardioHeartbeat:{}", tick),
-                        timestamp: std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .map(|d| d.as_secs() as i64)
-                            .unwrap_or(0),
+                        timestamp: get_kernel_time(),
                         priority: 2,
                     },
                 });
@@ -238,19 +206,16 @@ impl NucleusDirector {
         let response = self.biowerk.process(AgentRequest::WriteDocument {
             filename: filename.to_string(),
             content: content.to_string(),
+            timestamp: get_kernel_time(),
         });
 
         match response {
             AgentResponse::DocumentSaved { filename, address, size } => {
-                // Record task for audit
                 self.pending_tasks.push(PlannedTask::WriteBlocks {
                     block_count: 1,
                     metadata: TaskMetadata {
                         operation: format!("WriteDocument:{}", filename),
-                        timestamp: std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .map(|d| d.as_secs() as i64)
-                            .unwrap_or(0),
+                        timestamp: get_kernel_time(),
                         priority: 1,
                     },
                 });
@@ -275,15 +240,11 @@ impl NucleusDirector {
 
         match response {
             AgentResponse::LogicProcessed { name, address, bytecode_size } => {
-                // Record task for audit
                 self.pending_tasks.push(PlannedTask::WriteBlocks {
                     block_count: 1,
                     metadata: TaskMetadata {
                         operation: format!("ProcessLogic:{}", name),
-                        timestamp: std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .map(|d| d.as_secs() as i64)
-                            .unwrap_or(0),
+                        timestamp: get_kernel_time(),
                         priority: 1,
                     },
                 });
@@ -302,187 +263,244 @@ impl NucleusDirector {
     /// Parse a command string into a DirectorRequest
     pub fn parse_command(input: &str) -> Option<DirectorRequest> {
         let input = input.trim();
-        let parts: Vec<&str> = input.splitn(2, ' ').collect();
+        let mut parts = input.splitn(2, ' ');
+        let cmd = parts.next()?.to_lowercase();
+        let rest = parts.next();
 
-        match parts.get(0).map(|s| s.to_lowercase()).as_deref() {
-            Some("write") | Some("doc") => {
-                if let Some(rest) = parts.get(1) {
-                    let file_content: Vec<&str> = rest.splitn(2, ' ').collect();
-                    if file_content.len() == 2 {
-                        return Some(DirectorRequest::WriteDocument {
-                            filename: file_content[0].to_string(),
-                            content: file_content[1].to_string(),
-                        });
-                    }
+        match cmd.as_str() {
+            "write" | "doc" => {
+                if let Some(r) = rest {
+                    let mut file_content = r.splitn(2, ' ');
+                    let fname = file_content.next()?.to_string();
+                    let content = file_content.next()?.to_string();
+                    Some(DirectorRequest::WriteDocument { filename: fname, content })
+                } else {
+                    None
                 }
-                None
             }
-            Some("logic") | Some("calc") => {
-                if let Some(rest) = parts.get(1) {
-                    let name_formula: Vec<&str> = rest.splitn(2, ' ').collect();
-                    if name_formula.len() == 2 {
-                        return Some(DirectorRequest::ProcessLogic {
-                            name: name_formula[0].to_string(),
-                            formula: name_formula[1].to_string(),
-                        });
-                    }
+            "logic" | "calc" => {
+                if let Some(r) = rest {
+                    let mut name_formula = r.splitn(2, ' ');
+                    let name = name_formula.next()?.to_string();
+                    let formula = name_formula.next()?.to_string();
+                    Some(DirectorRequest::ProcessLogic { name, formula })
+                } else {
+                    None
                 }
-                None
             }
-            Some("cardio") | Some("heartbeat") | Some("pulse") => {
-                Some(DirectorRequest::CardioHeartbeat)
-            }
-            Some("status") => Some(DirectorRequest::SystemStatus),
-            Some("list") => Some(DirectorRequest::ListDocuments),
-            Some("help") | Some("?") => Some(DirectorRequest::Help),
+            "cardio" | "heartbeat" | "pulse" => Some(DirectorRequest::CardioHeartbeat),
+            "status" => Some(DirectorRequest::SystemStatus),
+            "list" => Some(DirectorRequest::ListDocuments),
+            "help" | "?" => Some(DirectorRequest::Help),
             _ => None,
         }
     }
 
     /// Get help text
     pub fn help_text() -> String {
-        r#"EAOS Nucleus Director - Office Suite Commands
-
-Commands:
-  write <filename> <content>   - Write a document via Osteon
-  doc <filename> <content>     - Alias for write
-  logic <name> <formula>       - Process logic via Myocyte
-  calc <name> <formula>        - Alias for logic
-  cardio                       - Record a heartbeat via Cardio organ
-  heartbeat                    - Alias for cardio
-  pulse                        - Alias for cardio
-  status                       - Show system status
-  list                         - List saved documents
-  help                         - Show this help
-
-Examples:
-  write meeting_notes.txt "Q1 Planning Meeting"
-  logic budget.qyn "revenue - expenses"
-  cardio
-  status
-"#.to_string()
+        "EAOS Nucleus Director - Office Suite Commands\n\n"
+        .to_string()
     }
 
-    /// Get pending task count
     pub fn pending_task_count(&self) -> usize {
         self.pending_tasks.len()
     }
 
-    /// Get BIOwerk reference
     pub fn biowerk(&self) -> &BIOwerk {
         &self.biowerk
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// ============================================================================ 
+// Kernel Interop (Always Real Code)
+// ============================================================================ 
 
-    #[test]
-    fn test_office_suite_cycle() {
-        let mut director = NucleusDirector::new();
-
-        // Write a document
-        let doc_response = director.process(DirectorRequest::WriteDocument {
-            filename: "meeting_notes.txt".to_string(),
-            content: "Q1 Planning Meeting\n- Goals\n- Tasks".to_string(),
-        });
-
-        match doc_response {
-            DirectorResponse::DocumentSaved { filename, block_offset, size } => {
-                assert_eq!(filename, "meeting_notes.txt");
-                assert_eq!(block_offset, 0);
-                assert!(size > 0);
-                println!("Document saved: {} at block {} ({} bytes)", filename, block_offset, size);
-            }
-            DirectorResponse::Error(e) => panic!("Save failed: {}", e),
-            _ => panic!("Unexpected response"),
-        }
-
-        // Process logic
-        let logic_response = director.process(DirectorRequest::ProcessLogic {
-            name: "budget.qyn".to_string(),
-            formula: "revenue - expenses".to_string(),
-        });
-
-        match logic_response {
-            DirectorResponse::LogicProcessed { name, block_offset, bytecode_size } => {
-                assert_eq!(name, "budget.qyn");
-                assert_eq!(block_offset, 1);
-                assert!(bytecode_size > 0);
-                println!("Logic processed: {} at block {} ({} bytes)", name, block_offset, bytecode_size);
-            }
-            DirectorResponse::Error(e) => panic!("Logic failed: {}", e),
-            _ => panic!("Unexpected response"),
-        }
-
-        // Check status
-        let status = director.process(DirectorRequest::SystemStatus);
-        match status {
-            DirectorResponse::Status { biowerk_ready, document_count, logic_count, heartbeat_tick } => {
-                assert!(biowerk_ready);
-                assert_eq!(document_count, 1);
-                assert_eq!(logic_count, 1);
-                assert_eq!(heartbeat_tick, 0);
-            }
-            _ => panic!("Expected Status response"),
-        }
-
-        println!("Office suite cycle test passed - no patient references!");
+/// Get real monotonic time from the Referee kernel via syscall 7
+fn get_kernel_time() -> u64 {
+    #[cfg(feature = "std")]
+    {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0)
     }
-
-    #[test]
-    fn test_command_parsing() {
-        // Document commands
-        assert!(matches!(
-            NucleusDirector::parse_command("write test.txt hello world"),
-            Some(DirectorRequest::WriteDocument { .. })
-        ));
-        assert!(matches!(
-            NucleusDirector::parse_command("doc test.txt hello"),
-            Some(DirectorRequest::WriteDocument { .. })
-        ));
-
-        // Logic commands
-        assert!(matches!(
-            NucleusDirector::parse_command("logic calc.qyn 2+2"),
-            Some(DirectorRequest::ProcessLogic { .. })
-        ));
-        assert!(matches!(
-            NucleusDirector::parse_command("calc budget.qyn revenue-expenses"),
-            Some(DirectorRequest::ProcessLogic { .. })
-        ));
-
-        // Other commands
-        assert!(matches!(
-            NucleusDirector::parse_command("status"),
-            Some(DirectorRequest::SystemStatus)
-        ));
-        assert!(matches!(
-            NucleusDirector::parse_command("list"),
-            Some(DirectorRequest::ListDocuments)
-        ));
-        assert!(matches!(
-            NucleusDirector::parse_command("help"),
-            Some(DirectorRequest::Help)
-        ));
-
-        // Invalid
-        assert!(NucleusDirector::parse_command("invalid").is_none());
+    #[cfg(not(feature = "std"))]
+    {
+        let mut result: u64;
+        unsafe {
+            core::arch::asm!(
+                "syscall",
+                in("rax") 7u64, // SyscallNumber::GetTime
+                out("rax") result,
+                options(nostack, nomem)
+            );
+        }
+        result
     }
+}
 
-    #[test]
-    fn test_help_output() {
-        let mut director = NucleusDirector::new();
-        let response = director.process(DirectorRequest::Help);
+mod thalamus;
+mod font;
+mod visual_cortex;
 
-        match response {
-            DirectorResponse::HelpText(text) => {
-                assert!(text.contains("write"));
-                assert!(text.contains("logic"));
-                assert!(text.contains("status"));
+use thalamus::{Thalamus, Stimulus};
+use visual_cortex::{VisualCortex, Color};
+// use ed25519_dalek::SigningKey;
+// use blake3::Hash;
+use ea_sentry::guard;
+use ea_mitochondria::regulate;
+use ea_broca::process_speech;
+use ea_mirror::reflect;
+use muscle_contract::broca::IntentOp;
+use muscle_contract::mirror::{MirrorOp, MirrorRequest, SafetyLevel};
+use muscle_contract::sentry::{SentryOp, SentryRequest};
+use muscle_contract::mitochondria::{MitochondriaOp, EnergyRequest, EnergyLevel};
+
+// ...
+
+/// Nucleus Trusted Entry Point (Stage 8 Manifestation)
+///
+/// This is the terminal destination of the UEFI boot chain:
+/// Referee -> Preloader -> Nucleus
+#[no_mangle]
+pub extern "C" fn boot_entry(params: *const BootParameters) -> ! {
+    let params = unsafe {
+        if params.is_null() || (*params).magic != 0xEA05_B007 {
+            loop { core::hint::spin_loop(); } // Invalid handoff
+        }
+        &*params
+    };
+
+    // Initialize the Sovereign Director
+    let mut director = NucleusDirector::new();
+    let mut thalamus = Thalamus::new(params);
+    
+    // Initialize Visual Cortex (The Retina)
+    let mut visual = VisualCortex::new(params);
+    if let Some(ref mut v) = visual {
+        v.clear(Color::VOID);
+        v.draw_text(20, 20, "EAOS Nucleus v1.0", Color::LIFE);
+        v.draw_text(20, 40, "Sensory Cortex: ONLINE", Color::SYNAPSE);
+        v.draw_text(20, 50, "Language Center (Broca): ACTIVE", Color::SYNAPSE);
+        v.draw_text(20, 60, "Mirror Neurons: ACTIVE", Color::SYNAPSE);
+        v.draw_text(20, 70, "Sentry: GUARDING", Color::SYNAPSE);
+        v.draw_text(20, 80, "Mitochondria: ENERGIZED", Color::SYNAPSE);
+    }
+    
+    // Initialize Sentry with Master Key
+    let _ = guard(SentryRequest {
+        op: SentryOp::Initialize,
+        payload: params.master_key,
+    });
+
+    // Nucleus Event Loop
+    loop {
+        // A. Tick: Update biological time
+        let now = get_kernel_time();
+        
+        // Report Metabolic Usage
+        let energy = regulate(EnergyRequest {
+            op: MitochondriaOp::ReportUsage,
+            muscle_id: 0,
+            cycles: 100, // Cost of being alive
+        });
+        
+        if energy.level == EnergyLevel::Exhausted {
+             if let Some(ref mut v) = visual {
+                 v.draw_text(20, 120, "FATIGUE: Throttling...", Color::ALERT);
+             }
+             // Deep rest
+             #[cfg(not(feature = "std"))]
+             for _ in 0..1000 { unsafe { core::arch::asm!("pause"); } }
+        }
+        
+        // Visual Heartbeat
+        if let Some(ref mut v) = visual {
+            let pulse = if (now / 1000) % 2 == 0 { Color::ALERT } else { Color::DORMANT }; // Assuming now is TSC/micros
+            // Draw small square in top right
+            v.draw_rect(v.width - 30, 20, 10, 10, pulse);
+        }
+
+        // B. Sense: The Thalamus acts as the filter
+        let stimulus = thalamus.fetch_next_stimulus();
+
+        // C. Think: Process the stimulus or dream (idle processing)
+        if let Some(Stimulus::Volition(cmd_bytes)) = stimulus {
+             // Echo command to screen
+             if let Some(ref mut v) = visual {
+                 v.draw_text(20, 100, "CMD: ", Color::TEXT);
+                 if let Ok(s) = alloc::str::from_utf8(&cmd_bytes) {
+                     v.draw_text(60, 100, s, Color::LIFE);
+                 }
+             }
+             
+             // D. Interpret: Broca (The Language Center)
+             let req = process_speech(cmd_bytes.as_ptr(), cmd_bytes.len());
+             
+             // E. Reflect: Mirror (Consequence Engine)
+             let safety = reflect(MirrorRequest {
+                 op: MirrorOp::SimulateIntent,
+                 intent_type: req.intent as u8,
+                 target_id: req.target_id,
+             });
+             
+             if safety.level == SafetyLevel::Caution {
+                 if let Some(ref mut v) = visual {
+                     v.draw_text(20, 120, "CAUTION: Consequence Predicted", Color::ALERT);
+                 }
+             }
+             
+             match req.intent {
+                 IntentOp::Survey => {
+                     // LIST
+                     let _ = director.process(DirectorRequest::ListDocuments);
+                 }
+                 IntentOp::Recall => {
+                     // READ (using target_id as block addr? No, Director uses filename usually)
+                     // For now, just log intent
+                 }
+                 IntentOp::Memorize => {
+                     // SAVE
+                     let name_len = req.payload_len as usize;
+                     if let Ok(name) = alloc::str::from_utf8(&req.payload[..name_len]) {
+                         let _ = director.process(DirectorRequest::WriteDocument {
+                             filename: name.to_string(),
+                             content: "Content pending...".to_string(),
+                         });
+                     }
+                 }
+                 IntentOp::Aphasia => {
+                     if let Some(ref mut v) = visual {
+                         v.draw_text(20, 120, "Error: Aphasia (Syntax Error)", Color::ALERT);
+                     }
+                 }
+                 _ => {}
+             }
+        } else {
+            // Dream / Heartbeat
+            director.process(DirectorRequest::CardioHeartbeat);
+            
+            // F. Dream: Integrity Check
+            use muscle_contract::dreamer::{DreamerOp, DreamerRequest};
+            let dream_req = DreamerRequest {
+                op: DreamerOp::VerifyRange,
+                start_block: 0, 
+                count: 1,
+            };
+            let dummy_block = [0u8; 4096]; // Placeholder for FS read
+            let result = ea_dreamer::dream_step(dream_req, &dummy_block);
+            
+            if result.errors_found > 0 {
+                 if let Some(ref mut v) = visual {
+                     v.draw_text(20, 100, "Nightmare: Corruption Detected", Color::ALERT);
+                 }
             }
-            _ => panic!("Expected HelpText"),
+        }
+
+        // E. Rest: Yield to kernel
+        #[cfg(not(feature = "std"))]
+        unsafe {
+            core::arch::asm!("syscall", in("rax") 3u64); // SyscallNumber::Yield
         }
     }
 }

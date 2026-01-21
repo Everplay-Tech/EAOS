@@ -54,9 +54,10 @@ impl OsteonAgent {
         synapse: &mut Symbiote,
         filename: &str,
         content: &str,
+        timestamp: u64,
     ) -> AgentResponse {
         // Create the document
-        let doc = Document::new(filename, content);
+        let doc = Document::new(filename, content, timestamp);
 
         // Convert to SovereignBlob using the trait
         let blob = doc.to_blob().with_label(filename);
@@ -147,6 +148,7 @@ mod tests {
             &mut synapse,
             "hello.txt",
             "Hello Sovereign World",
+            1000,
         );
 
         match response {
@@ -166,9 +168,9 @@ mod tests {
         let mut synapse = Symbiote::new();
         let mut osteon = OsteonAgent::new();
 
-        osteon.write_text(&mut synapse, "doc1.txt", "First document");
-        osteon.write_text(&mut synapse, "doc2.txt", "Second document");
-        osteon.write_text(&mut synapse, "doc3.txt", "Third document");
+        osteon.write_text(&mut synapse, "doc1.txt", "First document", 1);
+        osteon.write_text(&mut synapse, "doc2.txt", "Second document", 2);
+        osteon.write_text(&mut synapse, "doc3.txt", "Third document", 3);
 
         assert_eq!(osteon.document_count(), 3);
 
@@ -186,7 +188,7 @@ mod tests {
         let mut synapse = Symbiote::new();
         let mut osteon = OsteonAgent::new();
 
-        let doc = Document::new("meeting_notes.txt", "Q1 Planning Meeting")
+        let doc = Document::new("meeting_notes.txt", "Q1 Planning Meeting", 12345)
             .with_author("Team Lead")
             .with_tag("meeting")
             .with_tag("q1");

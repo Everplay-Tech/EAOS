@@ -115,6 +115,11 @@ impl Framebuffer {
         self.stride * self.height * 4
     }
 
+    /// Get raw base pointer
+    pub fn base(&self) -> *mut u32 {
+        self.base
+    }
+
     // ========================================================================
     // Primitive Drawing Operations
     // ========================================================================

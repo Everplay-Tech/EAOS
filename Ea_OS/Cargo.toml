@@ -9,6 +9,7 @@ members = [
     "muscles/roulette-rs",
     "muscles/symbiote",
     "muscles/net-stack",
+    "muscles/preloader",
     "organs/biowerk-agent",
     "organs/cardio",
     "organs/prism",
@@ -18,6 +19,19 @@ members = [
     "signals/quenyan/reference/rust",
     "IHP-main",
     "tools/bio-bridge",
+    "muscle-contract",
+    "muscle-compiler",
+    "muscle-ea-core",
+    "muscle-ea-pathfinder",
+    "muscle-ea-axonwasm",
+    "muscle-ea-dendritewasm",
+    "muscle-ea-neurowasm",
+    "ledger/core",
+    "ledger/spec",
+    "ledger/transport",
+    "ledger/arda",
+    "ledger/ledgerd",
+    "ledger/ui-shell",
 ]
 
 # referee-kernel requires UEFI target, exclude from default workspace builds
@@ -52,6 +66,22 @@ license = "MIT OR Apache-2.0"
 [workspace.dependencies]
 # Shared dependencies across EAOS components
 blake3 = { version = "1.5", default-features = false }
+rand_core = { version = "0.6", default-features = false }
+rand = { version = "0.8", default-features = false }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+anyhow = { version = "1.0", default-features = false }
+async-trait = { version = "0.1", default-features = false }
+tokio = { version = "1.30", default-features = false, features = ["rt", "rt-multi-thread", "macros", "net", "time", "sync", "io-util"] }
+bytes = { version = "1.5", default-features = false }
+tracing = { version = "0.1", default-features = false }
+bincode = { version = "1.3", default-features = false }
+futures = { version = "0.3", default-features = false }
+ed25519-dalek = { version = "2.1", default-features = false }
+parking_lot = { version = "0.12", default-features = false }
+thiserror = { version = "1.0", default-features = false }
+clap = { version = "4.4", default-features = false, features = ["std", "derive", "help", "usage", "error-context"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "ansi", "env-filter", "smallvec", "parking_lot"] }
 
 # Profile settings for no_std builds
 [profile.dev]

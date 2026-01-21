@@ -1,0 +1,12 @@
+[package]
+name = "ea-mitochondria"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ea Foundation"]
+description = "Mitochondria - Economic Governor"
+
+[dependencies]
+muscle-contract = { path = "../../muscle-contract", default-features = false }
+
+[lib]
+crate-type = ["rlib"]

@@ -1,0 +1,12 @@
+[package]
+name = "ea-atlas"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ea Foundation"]
+description = "Atlas - Motor Cortex (Input Processing)"
+
+[dependencies]
+muscle-contract = { path = "../../muscle-contract", default-features = false }
+
+[lib]
+crate-type = ["rlib"]

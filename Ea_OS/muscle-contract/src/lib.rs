@@ -1,8 +1,18 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(feature = "crypto")]
 use blake3::Hasher;
+#[cfg(feature = "crypto")]
 use chacha20poly1305::aead::{AeadInPlace, KeyInit};
+#[cfg(feature = "crypto")]
 use chacha20poly1305::{ChaCha20Poly1305, Nonce, Tag};
+
+pub mod broca;
+pub mod dreamer;
+pub mod mirror;
+pub mod sentry;
+pub mod mitochondria;
+pub mod abi;
 
 pub const BLOB_LEN: usize = 8256;
 pub const HEADER_LEN: usize = 24;
@@ -190,6 +200,7 @@ impl MuscleManifestV1 {
         }
     }
 
+    #[cfg(feature = "crypto")]
     pub fn with_code_hash(mut self, code: &[u8]) -> Self {
         let hash = blake3::hash(code);
         self.code_hash.copy_from_slice(hash.as_bytes());
@@ -295,6 +306,7 @@ pub enum ContractError {
     ManifestMismatch,
 }
 
+#[cfg(feature = "crypto")]
 pub fn build_payload(
     manifest: &MuscleManifestV1,
     code: &[u8],
@@ -317,6 +329,7 @@ pub fn parse_manifest(payload: &[u8; PAYLOAD_LEN]) -> Result<MuscleManifestV1, C
     MuscleManifestV1::from_bytes(&payload[0..MANIFEST_LEN])
 }
 
+#[cfg(feature = "crypto")]
 pub fn verify_code_hash(
     manifest: &MuscleManifestV1,
     payload: &[u8; PAYLOAD_LEN],
@@ -330,6 +343,7 @@ pub fn verify_code_hash(
     Ok(())
 }
 
+#[cfg(feature = "crypto")]
 pub fn seal_with_nonce(
     master_key: &[u8; 32],
     header: &EaM6Header,
@@ -362,6 +376,7 @@ pub fn seal_with_nonce(
     Ok(blob)
 }
 
+#[cfg(feature = "crypto")]
 pub fn open(
     master_key: &[u8; 32],
     blob: &[u8; BLOB_LEN],
@@ -389,6 +404,7 @@ pub fn open(
     Ok((header, payload_out))
 }
 
+#[cfg(feature = "crypto")]
 fn derive_key(master_key: &[u8; 32], header: &[u8; HEADER_LEN], nonce: &[u8]) -> [u8; 32] {
     let mut hasher = Hasher::new_keyed(master_key);
     hasher.update(KEY_CONTEXT);
@@ -455,6 +471,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "crypto")]
     fn seal_open_roundtrip() {
         let master_key = [0x42; 32];
         let header = EaM6Header::new(1, 0x01, FLAG_DETERMINISTIC_NONCE);
@@ -485,4 +502,50 @@ mod tests {
         let parsed_manifest = parse_manifest(&opened_payload).unwrap();
         verify_code_hash(&parsed_manifest, &opened_payload).unwrap();
     }
+}
+
+// ============================================================================
+// Boot Parameters ABI (Referee -> Preloader)
+// ============================================================================
+
+/// Parameters passed from Referee to Preloader in x0
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct BootParameters {
+    /// Magic signature (0xEA05_B007)
+    pub magic: u32,
+    /// Physical address of the Nucleus blob
+    pub nucleus_addr: u64,
+    /// Size of the Nucleus blob
+    pub nucleus_size: u64,
+    /// Master key (for Preloader to decrypt Nucleus)
+    pub master_key: [u8; 32],
+    /// Physical address of the Framebuffer (if available)
+    pub framebuffer_addr: u64,
+    /// Framebuffer size
+    pub framebuffer_size: u64,
+    /// Entry point offset within the Nucleus blob
+    pub entry_point: u64,
+    /// Hash of the Nucleus blob (BLAKE3)
+    pub nucleus_hash: [u8; 32],
+    /// Address of the Afferent Signal (AtomicBool) for Thalamic gating
+    pub afferent_signal_addr: u64,
+    /// Framebuffer width in pixels
+    pub framebuffer_width: u32,
+    /// Framebuffer height in pixels
+    pub framebuffer_height: u32,
+    /// Framebuffer stride (pixels per scanline)
+    pub framebuffer_stride: u32,
+    /// Pixel format (0 = RGB, 1 = BGR)
+    pub framebuffer_format: u32,
+}
+
+// ============================================================================
+// Sovereign Traits
+// ============================================================================
+
+/// Trait for retrieving system time in no_std environments
+pub trait TimeSource {
+    /// Get current time in seconds since UNIX EPOCH (or system start)
+    fn now(&self) -> u64;
 }

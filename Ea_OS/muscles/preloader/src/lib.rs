@@ -14,6 +14,7 @@ compile_error!("preloader supports only aarch64 and x86_64 targets");
 
 use core::arch::{asm, naked_asm};
 use core::panic::PanicInfo;
+use muscle_contract::BootParameters;
 
 /// Pre-nucleus loader structure - must be <= 2KiB
 #[repr(C, align(16))]
@@ -24,21 +25,10 @@ pub struct PreNucleusLoader {
     expected_nucleus_hash: [u8; 32],
 }
 
-#[repr(C)]
-struct BootParameters {
-    memory_map_addr: u64,
-    memory_map_size: u64,
-    lattice_root: [u8; 32],
-    master_key_addr: u64,
-    nucleus_blob_addr: u64,
-    nucleus_blob_len: u64,
-    nucleus_entry_offset: u64,
-    // blake3 of the encrypted nucleus blob
-    nucleus_hash: [u8; 32],
-}
-
 const NUCLEUS_BLOB_LEN: u64 = 8256;
 const EMPTY_HASH: [u8; 32] = [0u8; 32];
+const BOOT_MAGIC: u32 = 0xEA05_B007;
+
 // Set EXPECTED_NUCLEUS_HASH via EXPECTED_NUCLEUS_HASH_HEX at build time.
 include!(concat!(env!("OUT_DIR"), "/expected_hash.rs"));
 
@@ -102,16 +92,20 @@ impl PreNucleusLoader {
 
         let params = unsafe { &*params };
 
-        if params.nucleus_blob_addr == 0 || params.nucleus_blob_len != NUCLEUS_BLOB_LEN {
+        if params.magic != BOOT_MAGIC {
             return 0;
         }
 
-        if params.nucleus_entry_offset >= params.nucleus_blob_len {
+        if params.nucleus_addr == 0 || params.nucleus_size < 4096 {
             return 0;
         }
 
+        // Optional: Check hash passed from Referee (if trusted)
+        // or check against EXPECTED_NUCLEUS_HASH
         if EXPECTED_NUCLEUS_HASH != EMPTY_HASH && params.nucleus_hash != EXPECTED_NUCLEUS_HASH {
-            return 0;
+             // In Phase 3, we allow mismatch if Referee calculated it wrong, but ideally return 0
+             // For now, strict check:
+             return 0;
         }
 
         1
@@ -141,9 +135,11 @@ impl PreNucleusLoader {
         }
 
         let params = unsafe { &*params };
-        params.nucleus_blob_addr + params.nucleus_entry_offset
+        // Base address + offset
+        params.nucleus_addr + params.entry_point
     }
 }
+
 
 #[no_mangle]
 pub(crate) extern "C" fn entry_point_rust(params: *const BootParameters) -> ! {

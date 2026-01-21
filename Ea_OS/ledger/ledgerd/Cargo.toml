@@ -12,8 +12,8 @@ tracing-subscriber = { workspace = true }
 ledger-core = { path = "../core" }
 ledger-transport = { path = "../transport" }
 ledger-spec = { path = "../spec" }
-ed25519-dalek = { workspace = true }
-rand_core = { workspace = true }
+ed25519-dalek = { workspace = true, features = ["rand_core"] }
+rand_core = { workspace = true, features = ["std"] }
 serde_json = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 prometheus = "0.13"

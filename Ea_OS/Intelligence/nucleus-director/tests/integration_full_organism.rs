@@ -117,6 +117,7 @@ fn test_biowerk_office_workflow() {
     let doc_response = biowerk.process(AgentRequest::WriteDocument {
         filename: "report.txt".to_string(),
         content: "Annual Report 2026".to_string(),
+        timestamp: 12345,
     });
 
     match doc_response {

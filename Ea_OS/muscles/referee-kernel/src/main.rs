@@ -13,8 +13,10 @@ mod errors;
 mod audit;
 mod syscall;
 mod bridge;
+mod storage;
 mod graphics;
 mod font;
+mod input;
 mod pci;
 mod pci_modern;
 mod pci_ivshmem;
@@ -281,7 +283,7 @@ fn efi_main(_image: Handle, mut st: SystemTable<Boot>) -> Status {
     let node_id: u64 = 0;
     let volume_id: u32 = 1;
 
-    let bridge_ok = bridge::init_bridge(node_id, volume_id);
+    let bridge_ok = bridge::init_bridge(bt, node_id, volume_id);
 
     if bridge_ok {
         uart.log("INFO", "PermFS bridge connected - Braid ready");
@@ -303,7 +305,7 @@ fn efi_main(_image: Handle, mut st: SystemTable<Boot>) -> Status {
     }
 
     // Transfer control to scheduler with network driver
-    run_scheduler_with_net(bt, &cells, &mut uart, net_driver)
+    run_scheduler_with_net(bt, &cells, &mut uart, net_driver, &master_key, framebuffer.as_ref())
 }
 
 // ============================================================================

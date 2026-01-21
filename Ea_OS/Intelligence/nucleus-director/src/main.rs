@@ -1,11 +1,17 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), no_main)]
+
 //! Nucleus CLI - Command Loop for EAOS Office Suite
 //!
 //! This binary provides a simple command-line interface to the Nucleus Director,
 //! allowing users to interact with the BIOwerk Office Suite via Osteon and Myocyte.
 
+#[cfg(feature = "std")]
 use nucleus_director::{DirectorResponse, NucleusDirector};
+#[cfg(feature = "std")]
 use std::io::{self, BufRead, Write};
 
+#[cfg(feature = "std")]
 fn main() {
     println!("EAOS Nucleus Director v0.2.0");
     println!("Office Suite Command Interface");
@@ -24,7 +30,7 @@ fn main() {
         let mut input = String::new();
         match stdin.lock().read_line(&mut input) {
             Ok(0) => break, // EOF
-            Ok(_) => {}
+            Ok(_) => {} 
             Err(e) => {
                 eprintln!("Error reading input: {}", e);
                 continue;
@@ -58,6 +64,7 @@ fn main() {
 }
 
 /// Print a DirectorResponse in a user-friendly format
+#[cfg(feature = "std")]
 fn print_response(response: &DirectorResponse) {
     match response {
         DirectorResponse::DocumentSaved { filename, block_offset, size } => {
@@ -84,7 +91,7 @@ fn print_response(response: &DirectorResponse) {
             println!("  Heartbeat tick: {}", heartbeat_tick);
         }
         DirectorResponse::DocumentList { count, documents } => {
-            println!("Documents ({}):", count);
+            println!("Documents ({})", count);
             for doc in documents {
                 println!("  - {}", doc);
             }
@@ -96,4 +103,10 @@ fn print_response(response: &DirectorResponse) {
             println!("Error: {}", e);
         }
     }
+}
+
+#[cfg(not(feature = "std"))]
+#[panic_handler]
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+    loop { core::hint::spin_loop(); }
 }

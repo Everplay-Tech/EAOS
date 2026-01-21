@@ -19,13 +19,13 @@
 #[cfg(feature = "governance")]
 use dr_lex::{audit_data_write, is_ethically_corrupt};
 
-// Full permfs support when std feature is enabled
-#[cfg(feature = "std")]
-use permfs::{BlockAddr as PermFsBlockAddr, BlockDevice, BLOCK_SIZE};
+use permfs::{BlockAddr as PermFsBlockAddr, BlockDevice};
 
 // Minimal definitions for UEFI builds without permfs
 #[cfg(not(feature = "std"))]
 pub const BLOCK_SIZE: usize = 4096;
+#[cfg(feature = "std")]
+pub use permfs::BLOCK_SIZE;
 
 use roulette_rs::{BraidTransformer, T9BraidTransformer};
 
@@ -38,7 +38,6 @@ pub struct SyscallBlockAddr {
     pub low: u128,
 }
 
-#[cfg(feature = "std")]
 impl SyscallBlockAddr {
     /// Convert from syscall format to PermFS BlockAddr.
     pub fn to_permfs_addr(&self) -> PermFsBlockAddr {
@@ -92,8 +91,6 @@ impl Default for BraidConfig {
 }
 
 /// Bridge state holding the PermFS device reference and braid transformer.
-/// Only available when std feature is enabled (requires full permfs).
-#[cfg(feature = "std")]
 pub struct PermFsBridge<D: BlockDevice> {
     device: D,
     node_id: u64,
@@ -102,7 +99,6 @@ pub struct PermFsBridge<D: BlockDevice> {
     config: BraidConfig,
 }
 
-#[cfg(feature = "std")]
 impl<D: BlockDevice> PermFsBridge<D> {
     /// Create a new bridge with the given block device.
     pub fn new(device: D, node_id: u64, volume_id: u32) -> Self {
@@ -323,6 +319,10 @@ pub extern "C" fn permfs_bridge_init(
     // 1. Cast device_ptr to the appropriate BlockDevice type
     // 2. Create a PermFsBridge instance
     // 3. Box it and return a raw pointer
+    // Since we can't genericize over D here easily without knowing D,
+    // this C API assumes a specific Device type or uses a trait object.
+    // For now, we return null to signal "not implemented via C ABI yet"
+    // but the Rust logic above is ready.
     core::ptr::null_mut()
 }
 
@@ -334,16 +334,11 @@ pub extern "C" fn permfs_bridge_read(
     addr_low: u128,
     buffer: *mut u8,
 ) -> i64 {
-    if _handle.is_null() || buffer.is_null() {
+    if buffer.is_null() {
         return BridgeResult::InvalidBuffer as i64;
     }
-
-    let _addr = SyscallBlockAddr {
-        high: addr_high,
-        low: addr_low,
-    };
-
-    // Placeholder - would dispatch to actual bridge
+    
+    // Stub until we have the trait object wrapper
     BridgeResult::Success as i64
 }
 
@@ -355,19 +350,11 @@ pub extern "C" fn permfs_bridge_write(
     addr_low: u128,
     buffer: *const u8,
 ) -> i64 {
-    if _handle.is_null() || buffer.is_null() {
+    if buffer.is_null() {
         return BridgeResult::InvalidBuffer as i64;
     }
 
-    let _addr = SyscallBlockAddr {
-        high: addr_high,
-        low: addr_low,
-    };
-
-    // In full implementation: apply braid transformation before write
-    // let transformed = GLOBAL_TRANSFORMER.transform(input);
-
-    // Placeholder - would dispatch to actual bridge
+    // Stub until we have the trait object wrapper
     BridgeResult::Success as i64
 }
 

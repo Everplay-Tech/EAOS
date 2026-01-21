@@ -18,6 +18,7 @@ use alloc::vec;
 use uefi::table::boot::BootServices;
 use crate::cell::Cell;
 use crate::uart::Uart;
+use muscle_contract::BootParameters;
 use crate::arachnid::{
     SPIDER, NETWORK, sync_state, get_stream, SpiderState,
     create_interface, BOOKMARKS,
@@ -197,13 +198,24 @@ unsafe fn tick_arachnid_sync_only() {
     sync_state();
 }
 
+use uefi::proto::console::gop::PixelFormat;
+use crate::graphics::Framebuffer;
+
+// ...
+
 // ============================================================================
 // Scheduler Entry Points
 // ============================================================================
 
 /// Round-robin scheduler that executes muscle cells in sequence.
-pub fn run_scheduler(bt: &BootServices, cells: &[Option<Cell>], uart: &mut Uart) -> ! {
-    run_scheduler_with_net(bt, cells, uart, None)
+pub fn run_scheduler(
+    bt: &BootServices,
+    cells: &[Option<Cell>],
+    uart: &mut Uart,
+    master_key: &[u8; 32],
+    framebuffer: Option<&Framebuffer>,
+) -> ! {
+    run_scheduler_with_net(bt, cells, uart, None, master_key, framebuffer)
 }
 
 /// Scheduler with optional network driver
@@ -217,12 +229,46 @@ pub fn run_scheduler_with_net(
     cells: &[Option<Cell>],
     uart: &mut Uart,
     mut net_driver: Option<VirtioModern>,
+    master_key: &[u8; 32],
+    framebuffer: Option<&Framebuffer>,
 ) -> ! {
     let mut index = 0;
     let mut execution_count: u64 = 0;
 
     uart.log("INFO", "Scheduler starting round-robin execution");
     uart.log("INFO", "ARACHNID Spider: ARMED");
+
+    // Extract framebuffer info if available
+    let (fb_addr, fb_size, fb_width, fb_height, fb_stride, fb_format) = if let Some(fb) = framebuffer {
+        let fmt = match fb.format {
+            PixelFormat::Rgb => 0,
+            PixelFormat::Bgr => 1,
+            _ => 2, // Bitmask/Unsupported
+        };
+        // fb.base is *mut u32
+        // We need physical address. In UEFI identity map, pointer value is physical address.
+        (fb.base() as u64, fb.size_bytes() as u64, fb.width as u32, fb.height as u32, fb.stride as u32, fmt)
+    } else {
+        (0, 0, 0, 0, 0, 0)
+    };
+
+    // Construct BootParameters for trusted handoff
+    let boot_params = BootParameters {
+        magic: 0xEA05_B007,
+        nucleus_addr: 0x9100_2000, // Cell 1 (0x9100_0000 + 8192)
+        nucleus_size: 8192,
+        master_key: *master_key,
+        framebuffer_addr: fb_addr,
+        framebuffer_size: fb_size,
+        framebuffer_width: fb_width,
+        framebuffer_height: fb_height,
+        framebuffer_stride: fb_stride,
+        framebuffer_format: fb_format,
+        entry_point: 0,
+        nucleus_hash: [0u8; 32],
+        afferent_signal_addr: &crate::uart::AFFERENT_SIGNAL as *const _ as u64,
+    };
+
 
     // ========================================================================
     // Phase 6: INITIALIZE VITAL ORGANS (ONCE, OUTSIDE LOOP)
@@ -277,6 +323,18 @@ pub fn run_scheduler_with_net(
     // THE LIFE LOOP (EVERY TICK)
     // ========================================================================
     loop {
+        // Poll Somatic Nerve (UART)
+        uart.poll();
+        
+        // Poll Atlas (Keyboard)
+        if let Some(scancode) = crate::input::Ps2Controller::poll() {
+            if let Some(ascii) = crate::input::Ps2Controller::to_ascii(scancode) {
+                uart.inject(ascii);
+                // Local Echo
+                uart.write_byte(ascii);
+            }
+        }
+
         // ================================================================
         // PHASE 6: Poll ARACHNID with Persistent Organs
         // ================================================================
@@ -313,8 +371,8 @@ pub fn run_scheduler_with_net(
             }
 
             unsafe {
-                let func: extern "C" fn() = core::mem::transmute(cell.entry_point);
-                func();
+                let func: extern "C" fn(*const BootParameters) = core::mem::transmute(cell.entry_point);
+                func(&boot_params as *const _);
             }
         }
 

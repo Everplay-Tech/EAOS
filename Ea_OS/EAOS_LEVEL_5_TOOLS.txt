@@ -1,0 +1,1482 @@
+--- scripts/make-iso.sh ---
+#!/bin/bash
+# =============================================================================
+# EAOS Bootable ISO Builder
+# =============================================================================
+# Creates a bootable UEFI ISO image containing:
+#   1. referee.efi - The EAOS UEFI bootloader
+#   2. sovereign_health.json - Organ manifest
+#   3. startup.nsh - UEFI shell startup script
+#
+# Usage: ./make-iso.sh [output-dir]
+# =============================================================================
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+OUTPUT_DIR="${1:-$PROJECT_ROOT/dist}"
+ISO_NAME="eaos-health-pod.iso"
+ISO_PATH="$OUTPUT_DIR/$ISO_NAME"
+
+# Source paths
+MANIFEST="$PROJECT_ROOT/manifests/sovereign_health.json"
+EFI_BINARY="$PROJECT_ROOT/target/x86_64-unknown-uefi/release/referee.efi"
+
+# Temporary build directory
+BUILD_DIR=$(mktemp -d)
+trap "rm -rf $BUILD_DIR" EXIT
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+log() { echo -e "${CYAN}[ISO]${NC} $1"; }
+log_ok() { echo -e "${GREEN}[ISO]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[ISO]${NC} $1"; }
+log_err() { echo -e "${RED}[ISO]${NC} $1"; }
+
+# =============================================================================
+# Banner
+# =============================================================================
+echo ""
+echo "========================================================================"
+echo "             EAOS BOOTABLE ISO BUILDER"
+echo "          Sovereign Health Pod - Braid Magic: 0xB8AD"
+echo "========================================================================"
+echo ""
+
+# =============================================================================
+# Pre-flight Checks
+# =============================================================================
+log "Checking prerequisites..."
+
+mkdir -p "$OUTPUT_DIR"
+
+# Check for required tools
+MISSING_TOOLS=""
+for cmd in xorriso mformat mcopy; do
+    if ! command -v $cmd &> /dev/null; then
+        MISSING_TOOLS="$MISSING_TOOLS $cmd"
+    fi
+done
+
+if [ -n "$MISSING_TOOLS" ]; then
+    log_err "Missing required tools:$MISSING_TOOLS"
+    echo ""
+    echo "Install with:"
+    echo "  macOS:  brew install xorriso mtools"
+    echo "  Debian: apt install xorriso mtools"
+    echo "  Fedora: dnf install xorriso mtools"
+    exit 1
+fi
+log_ok "All tools available"
+
+# Check for manifest
+if [ ! -f "$MANIFEST" ]; then
+    log_err "Manifest not found: $MANIFEST"
+    exit 1
+fi
+log_ok "Manifest found"
+
+# Check for EFI binary
+USE_STUB=0
+if [ ! -f "$EFI_BINARY" ]; then
+    log_warn "EFI binary not found at: $EFI_BINARY"
+    log_warn "Building with stub EFI (for testing ISO structure)"
+    USE_STUB=1
+fi
+
+# =============================================================================
+# Create ISO Structure
+# =============================================================================
+log "Creating ISO directory structure..."
+
+# Create directories - use 'boot' for efiboot.img to avoid macOS case insensitivity issues
+mkdir -p "$BUILD_DIR/iso/EFI/BOOT"
+mkdir -p "$BUILD_DIR/iso/boot"
+mkdir -p "$BUILD_DIR/iso/EAOS/manifests"
+mkdir -p "$BUILD_DIR/iso/EAOS/storage"
+
+# =============================================================================
+# Populate EFI Boot Files
+# =============================================================================
+log "Populating EFI boot files..."
+
+if [ "$USE_STUB" = "0" ]; then
+    cp "$EFI_BINARY" "$BUILD_DIR/iso/EFI/BOOT/BOOTX64.EFI"
+    log_ok "Copied referee.efi as BOOTX64.EFI"
+else
+    # Create minimal stub EFI
+    log_warn "Creating placeholder BOOTX64.EFI"
+    dd if=/dev/zero of="$BUILD_DIR/iso/EFI/BOOT/BOOTX64.EFI" bs=512 count=1 2>/dev/null
+fi
+
+# Create startup.nsh for UEFI shell
+cat > "$BUILD_DIR/iso/startup.nsh" << 'EOF'
+@echo -off
+cls
+echo ""
+echo "==========================================="
+echo "  EAOS Sovereign Health Pod"
+echo "  Version 1.0.0"
+echo "==========================================="
+echo ""
+echo "  Braid Magic: 0xB8AD"
+echo "  Compression: T9-Braid (7.9%)"
+echo "  Governance:  Dr-Lex Healthcare Constitution"
+echo ""
+echo "Loading referee.efi..."
+echo ""
+\EFI\BOOT\BOOTX64.EFI
+EOF
+log_ok "Created startup.nsh"
+
+# =============================================================================
+# Populate EAOS Data
+# =============================================================================
+log "Populating EAOS data..."
+
+# Copy manifest
+cp "$MANIFEST" "$BUILD_DIR/iso/EAOS/manifests/sovereign_health.json"
+log_ok "Installed sovereign_health.json"
+
+# Create version file
+cat > "$BUILD_DIR/iso/EAOS/VERSION" << EOF
+EAOS Sovereign Health Pod
+Version: 1.0.0
+Built: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+Braid Magic: 0xB8AD
+Target Compression: 7.9%
+EOF
+log_ok "Created VERSION file"
+
+# Create README
+cat > "$BUILD_DIR/iso/README.txt" << 'EOF'
+EAOS Sovereign Health Pod
+=========================
+
+This ISO contains the EAOS healthcare operating system.
+
+Contents:
+  /EFI/BOOT/BOOTX64.EFI  - UEFI bootloader (referee.efi)
+  /EAOS/manifests/       - Organ manifests
+  /EAOS/storage/         - PermFS data storage
+  /startup.nsh           - UEFI shell startup script
+
+Boot Options:
+  1. UEFI Direct Boot: Boot from BOOTX64.EFI
+  2. UEFI Shell: Run startup.nsh
+
+For QEMU testing:
+  qemu-system-x86_64 \
+    -m 512M \
+    -bios /usr/local/share/qemu/edk2-x86_64-code.fd \
+    -cdrom eaos-health-pod.iso \
+    -serial stdio \
+    -nographic
+EOF
+
+# =============================================================================
+# Create EFI Boot Image (FAT)
+# =============================================================================
+log "Creating EFI boot image..."
+
+EFI_IMG="$BUILD_DIR/efiboot.img"
+EFI_IMG_SIZE=4096  # 4MB
+
+# Create FAT image
+dd if=/dev/zero of="$EFI_IMG" bs=1K count=$EFI_IMG_SIZE 2>/dev/null
+mformat -i "$EFI_IMG" -F ::
+
+# Create directory structure in FAT image
+mmd -i "$EFI_IMG" ::/EFI
+mmd -i "$EFI_IMG" ::/EFI/BOOT
+
+# Copy boot files to FAT image
+mcopy -i "$EFI_IMG" "$BUILD_DIR/iso/EFI/BOOT/BOOTX64.EFI" ::/EFI/BOOT/BOOTX64.EFI
+mcopy -i "$EFI_IMG" "$BUILD_DIR/iso/startup.nsh" ::/startup.nsh
+
+# Also add startup.nsh that references fs0: (ISO filesystem)
+# Note: @echo -off removed so we can see what's happening
+cat > "$BUILD_DIR/startup-fs.nsh" << 'EOFNSH'
+echo "=== EAOS STARTUP ==="
+echo "EAOS Sovereign Health Pod v1.0"
+echo "Braid: 0xB8AD"
+map -r
+echo "Attempting to load BOOTX64.EFI..."
+\EFI\BOOT\BOOTX64.EFI
+EOFNSH
+mcopy -oi "$EFI_IMG" "$BUILD_DIR/startup-fs.nsh" ::/startup.nsh
+
+# Copy to ISO structure (in boot/ directory to avoid macOS case issues)
+cp "$EFI_IMG" "$BUILD_DIR/iso/boot/efiboot.img"
+
+log_ok "EFI boot image created"
+
+# =============================================================================
+# Create ISO Image
+# =============================================================================
+log "Creating bootable ISO..."
+
+xorriso -as mkisofs \
+    -o "$ISO_PATH" \
+    -iso-level 3 \
+    -full-iso9660-filenames \
+    -volid "EAOS_HEALTH_POD" \
+    -eltorito-alt-boot \
+    -e "boot/efiboot.img" \
+    -no-emul-boot \
+    "$BUILD_DIR/iso"
+
+log_ok "ISO created: $ISO_PATH"
+
+# =============================================================================
+# Summary
+# =============================================================================
+ISO_SIZE=$(du -h "$ISO_PATH" | cut -f1)
+
+echo ""
+echo "========================================================================"
+echo "              BUILD COMPLETE"
+echo "========================================================================"
+echo "  Output:  $ISO_PATH"
+echo "  Size:    $ISO_SIZE"
+echo "  Type:    UEFI Bootable ISO"
+echo "------------------------------------------------------------------------"
+
+if [ "$USE_STUB" = "0" ]; then
+    echo -e "  Status:  ${GREEN}READY FOR BOOT${NC}"
+else
+    echo -e "  Status:  ${YELLOW}STUB BUILD (no EFI binary)${NC}"
+    echo "  Build referee.efi first:"
+    echo "    cargo build -p referee --release --target x86_64-unknown-uefi"
+fi
+
+echo "========================================================================"
+echo ""
+
+# Print QEMU command for testing
+echo "To test in QEMU:"
+echo ""
+echo "  # macOS with QEMU:"
+echo "  qemu-system-x86_64 \\"
+echo "    -m 512M \\"
+echo "    -bios /opt/homebrew/share/qemu/edk2-x86_64-code.fd \\"
+echo "    -cdrom $ISO_PATH \\"
+echo "    -serial stdio \\"
+echo "    -nographic"
+echo ""
+echo "  # Linux with OVMF:"
+echo "  qemu-system-x86_64 \\"
+echo "    -enable-kvm \\"
+echo "    -m 512M \\"
+echo "    -bios /usr/share/OVMF/OVMF_CODE.fd \\"
+echo "    -cdrom $ISO_PATH \\"
+echo "    -serial stdio"
+echo ""
+
+exit 0
+--- scripts/build-nucleus.sh.before-preloader-blob-link.20260108_030815 ---
+#!/bin/bash
+
+set -e
+
+echo "🧬 Building Eä Nucleus System"
+
+# Configuration
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+MUSCLES_DIR="$ROOT_DIR/muscles"
+COMPILER_DIR="$ROOT_DIR/muscle-compiler"
+BUNDLES_DIR="$ROOT_DIR/bundles"
+TARGET_DIR="$ROOT_DIR/target"
+TARGET="aarch64"
+PRELOADER_TARGETS=("aarch64-unknown-uefi" "x86_64-unknown-uefi")
+
+# Create bundles directory
+mkdir -p "$BUNDLES_DIR"
+
+echo "🔨 Step 1: Building enhanced muscle compiler..."
+cd "$COMPILER_DIR"
+cargo build --release
+cd "$ROOT_DIR"
+
+echo "🔨 Step 2: Compiling nucleus.ea to sealed blob..."
+MUSCLEC_BIN="$TARGET_DIR/release/musclec"
+if [ ! -x "$MUSCLEC_BIN" ]; then
+    echo "❌ musclec not found at $MUSCLEC_BIN"
+    exit 1
+fi
+ "$MUSCLEC_BIN" \
+    --input "$MUSCLES_DIR/nucleus.ea" \
+    --target "$TARGET" \
+    --output "$BUNDLES_DIR/nucleus.blob" \
+    --chaos-master $(openssl rand -hex 32)
+
+# Verify nucleus blob size
+NUCLEUS_SIZE=$(stat -f%z "$BUNDLES_DIR/nucleus.blob" 2>/dev/null || stat -c%s "$BUNDLES_DIR/nucleus.blob")
+if [ "$NUCLEUS_SIZE" -ne 8256 ]; then
+    echo "❌ Nucleus blob size incorrect: $NUCLEUS_SIZE bytes (expected 8256)"
+    exit 1
+fi
+echo "✅ Nucleus blob: $NUCLEUS_SIZE bytes"
+
+echo "🔐 Step 2b: Pinning nucleus blob hash..."
+NUCLEUS_HASH_HEX=$(cargo run --offline -q -p muscle-contract --bin hash-blob -- "$BUNDLES_DIR/nucleus.blob")
+echo "✅ Nucleus hash: $NUCLEUS_HASH_HEX"
+
+echo "🔨 Step 3: Building pre-nucleus loader (static blob)..."
+cd "$MUSCLES_DIR/preloader"
+for PRELOADER_TARGET in "${PRELOADER_TARGETS[@]}"; do
+    echo "   - target: $PRELOADER_TARGET"
+    EXPECTED_NUCLEUS_HASH_HEX=$NUCLEUS_HASH_HEX cargo build --offline --target "$PRELOADER_TARGET" --release
+    PRELOADER_ARCHIVE="$TARGET_DIR/$PRELOADER_TARGET/release/libpreloader.a"
+    if [ ! -f "$PRELOADER_ARCHIVE" ]; then
+        echo "❌ Pre-loader archive missing: $PRELOADER_ARCHIVE"
+        exit 1
+    fi
+    PRELOADER_SIZE=$(stat -f%z "$PRELOADER_ARCHIVE" 2>/dev/null || stat -c%s "$PRELOADER_ARCHIVE")
+    ARCH_TAG="${PRELOADER_TARGET%%-*}"
+    cp "$PRELOADER_ARCHIVE" "$BUNDLES_DIR/preloader.${ARCH_TAG}.a"
+    echo "✅ Pre-loader archive: preloader.${ARCH_TAG}.a ($PRELOADER_SIZE bytes)"
+done
+cd "$ROOT_DIR"
+
+echo "🔨 Step 4: Creating boot bundle..."
+
+echo "🎉 Nucleus build complete!"
+echo "📦 Boot bundle created in $BUNDLES_DIR/:"
+echo "   - preloader.a (static pre-nucleus loader blob, per-arch)"
+echo "     - preloader.aarch64.a"
+echo "     - preloader.x86_64.a"
+echo "   - nucleus.blob (8.06KiB sealed muscle blob)"
+--- scripts/build-nucleus.sh ---
+#!/bin/bash
+
+set -e
+
+echo "🧬 Building Eä Nucleus System"
+
+# Configuration
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+MUSCLES_DIR="$ROOT_DIR/muscles"
+COMPILER_DIR="$ROOT_DIR/muscle-compiler"
+BUNDLES_DIR="$ROOT_DIR/bundles"
+TARGET_DIR="$ROOT_DIR/target"
+TARGET="aarch64"
+PRELOADER_TARGETS=("aarch64-unknown-uefi" "x86_64-unknown-uefi")
+SYSROOT="$(rustc --print sysroot)"
+HOST_TRIPLE="$(rustc -vV | awk '/host:/ {print $2}')"
+LLVM_BIN="$SYSROOT/lib/rustlib/$HOST_TRIPLE/bin"
+LLVM_AR="$LLVM_BIN/llvm-ar"
+LLVM_OBJCOPY="$LLVM_BIN/llvm-objcopy"
+RUST_LLD="$LLVM_BIN/rust-lld"
+
+# Create bundles directory
+mkdir -p "$BUNDLES_DIR"
+
+echo "🔨 Step 1: Building enhanced muscle compiler..."
+cd "$COMPILER_DIR"
+cargo build --release
+cd "$ROOT_DIR"
+
+if [ ! -x "$LLVM_AR" ] || [ ! -x "$LLVM_OBJCOPY" ] || [ ! -x "$RUST_LLD" ]; then
+    echo "❌ Missing LLVM tools in $LLVM_BIN"
+    echo "   Install with: rustup component add llvm-tools-preview"
+    exit 1
+fi
+
+echo "🔨 Step 2: Compiling nucleus.ea to sealed blob..."
+MUSCLEC_BIN="$TARGET_DIR/release/musclec"
+if [ ! -x "$MUSCLEC_BIN" ]; then
+    echo "❌ musclec not found at $MUSCLEC_BIN"
+    exit 1
+fi
+ "$MUSCLEC_BIN" \
+    --input "$MUSCLES_DIR/nucleus.ea" \
+    --target "$TARGET" \
+    --output "$BUNDLES_DIR/nucleus.blob" \
+    --chaos-master $(openssl rand -hex 32)
+
+# Verify nucleus blob size
+NUCLEUS_SIZE=$(stat -f%z "$BUNDLES_DIR/nucleus.blob" 2>/dev/null || stat -c%s "$BUNDLES_DIR/nucleus.blob")
+if [ "$NUCLEUS_SIZE" -ne 8256 ]; then
+    echo "❌ Nucleus blob size incorrect: $NUCLEUS_SIZE bytes (expected 8256)"
+    exit 1
+fi
+echo "✅ Nucleus blob: $NUCLEUS_SIZE bytes"
+
+echo "🔐 Step 2b: Pinning nucleus blob hash..."
+NUCLEUS_HASH_HEX=$(cargo run --offline -q -p muscle-contract --bin hash-blob -- "$BUNDLES_DIR/nucleus.blob")
+echo "✅ Nucleus hash: $NUCLEUS_HASH_HEX"
+
+echo "🔨 Step 3: Building pre-nucleus loader (static blob)..."
+cd "$MUSCLES_DIR/preloader"
+for PRELOADER_TARGET in "${PRELOADER_TARGETS[@]}"; do
+    echo "   - target: $PRELOADER_TARGET"
+    EXPECTED_NUCLEUS_HASH_HEX=$NUCLEUS_HASH_HEX cargo build --offline --target "$PRELOADER_TARGET" --release
+    PRELOADER_ARCHIVE="$TARGET_DIR/$PRELOADER_TARGET/release/libpreloader.a"
+    if [ ! -f "$PRELOADER_ARCHIVE" ]; then
+        echo "❌ Pre-loader archive missing: $PRELOADER_ARCHIVE"
+        exit 1
+    fi
+    ARCH_TAG="${PRELOADER_TARGET%%-*}"
+    cp "$PRELOADER_ARCHIVE" "$BUNDLES_DIR/preloader.${ARCH_TAG}.a"
+
+    PRELOADER_TMP="$(mktemp -d)"
+    (
+        cd "$PRELOADER_TMP"
+        "$LLVM_AR" x "$PRELOADER_ARCHIVE"
+        OBJ_FILES=(*.o)
+        if [ "${#OBJ_FILES[@]}" -eq 0 ]; then
+            echo "❌ No object files extracted from $PRELOADER_ARCHIVE"
+            exit 1
+        fi
+        PRELOADER_EFI="$PRELOADER_TMP/preloader.${ARCH_TAG}.efi"
+        "$RUST_LLD" -flavor link /NOLOGO /NODEFAULTLIB /SUBSYSTEM:EFI_APPLICATION /ENTRY:entry_point /BASE:0 /OUT:"$PRELOADER_EFI" "${OBJ_FILES[@]}"
+        PRELOADER_BIN="$BUNDLES_DIR/preloader.${ARCH_TAG}.bin"
+        "$LLVM_OBJCOPY" -O binary --strip-all --remove-section=.eh_fram --remove-section=.reloc "$PRELOADER_EFI" "$PRELOADER_BIN"
+        PRELOADER_BIN_SIZE=$(stat -f%z "$PRELOADER_BIN" 2>/dev/null || stat -c%s "$PRELOADER_BIN")
+        if [ "$PRELOADER_BIN_SIZE" -gt 2048 ]; then
+            echo "❌ Pre-loader blob exceeds 2KiB: $PRELOADER_BIN_SIZE bytes"
+            exit 1
+        fi
+        echo "✅ Pre-loader blob: preloader.${ARCH_TAG}.bin ($PRELOADER_BIN_SIZE bytes)"
+    )
+    rm -rf "$PRELOADER_TMP"
+done
+cd "$ROOT_DIR"
+
+echo "🔨 Step 4: Creating boot bundle..."
+
+echo "🎉 Nucleus build complete!"
+echo "📦 Boot bundle created in $BUNDLES_DIR/:"
+echo "   - preloader.a (static archive, per-arch)"
+echo "     - preloader.aarch64.a"
+echo "     - preloader.x86_64.a"
+echo "   - preloader.bin (raw loader blob, per-arch)"
+echo "     - preloader.aarch64.bin"
+echo "     - preloader.x86_64.bin"
+echo "   - nucleus.blob (8.06KiB sealed muscle blob)"
+--- scripts/build-all.sh ---
+#!/bin/bash
+# =============================================================================
+# EAOS Complete Build Script
+# =============================================================================
+# Builds the entire EAOS Sovereign Health Pod:
+#   1. Rust workspace (all crates)
+#   2. PermFS bridge static library
+#   3. Referee kernel (UEFI target)
+#   4. Bootable ISO image
+#
+# Usage: ./build-all.sh [--release] [--iso] [--test]
+# =============================================================================
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Parse arguments
+BUILD_RELEASE=0
+BUILD_ISO=0
+RUN_TESTS=0
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --release) BUILD_RELEASE=1; shift ;;
+        --iso) BUILD_ISO=1; shift ;;
+        --test) RUN_TESTS=1; shift ;;
+        *) shift ;;
+    esac
+done
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+log() { echo -e "${CYAN}[BUILD]${NC} $1"; }
+log_ok() { echo -e "${GREEN}[BUILD]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[BUILD]${NC} $1"; }
+log_err() { echo -e "${RED}[BUILD]${NC} $1"; }
+
+cd "$PROJECT_ROOT"
+
+echo ""
+echo "╔═══════════════════════════════════════════════════════════════════╗"
+echo "║            EAOS COMPLETE BUILD                                    ║"
+echo "║         Sovereign Health Pod • Braid Magic: 0xB8AD                ║"
+echo "╚═══════════════════════════════════════════════════════════════════╝"
+echo ""
+
+# =============================================================================
+# Step 1: Build Rust Workspace (default members only - excludes referee-kernel)
+# =============================================================================
+log "Step 1: Building Rust workspace..."
+
+if [ "$BUILD_RELEASE" = "1" ]; then
+    BUILD_FLAGS="--release"
+else
+    BUILD_FLAGS=""
+fi
+
+cargo build $BUILD_FLAGS 2>&1 | tail -20
+log_ok "Workspace built successfully"
+
+# =============================================================================
+# Step 2: Run Tests (optional)
+# =============================================================================
+if [ "$RUN_TESTS" = "1" ]; then
+    log "Step 2: Running tests..."
+    cargo test $BUILD_FLAGS 2>&1 | grep -E "^test |^running |^test result:" | tail -30
+    log_ok "All tests passed"
+fi
+
+# =============================================================================
+# Step 3: Build PermFS Bridge Static Library
+# =============================================================================
+log "Step 3: Building permfs-bridge static library..."
+
+# Check if UEFI target is installed
+if rustup target list --installed | grep -q "x86_64-unknown-uefi"; then
+    log "Building for UEFI target..."
+    cargo build -p permfs-bridge $BUILD_FLAGS \
+        --target x86_64-unknown-uefi \
+        --no-default-features \
+        --features no_std 2>&1 | tail -5
+
+    if [ "$BUILD_RELEASE" = "1" ]; then
+        LIB_PATH="$PROJECT_ROOT/target/x86_64-unknown-uefi/release"
+    else
+        LIB_PATH="$PROJECT_ROOT/target/x86_64-unknown-uefi/debug"
+    fi
+
+    if [ -f "$LIB_PATH/libpermfs_bridge.a" ]; then
+        log_ok "Static library built: $LIB_PATH/libpermfs_bridge.a"
+    else
+        log_warn "Static library not found at expected path"
+    fi
+else
+    log_warn "UEFI target not installed"
+    log_warn "Install with: rustup target add x86_64-unknown-uefi"
+    log "Building for host target instead..."
+    cargo build -p permfs-bridge $BUILD_FLAGS 2>&1 | tail -5
+fi
+
+# =============================================================================
+# Step 4: Build Referee Kernel (UEFI)
+# =============================================================================
+log "Step 4: Building referee-kernel..."
+
+if rustup target list --installed | grep -q "x86_64-unknown-uefi"; then
+    cd "$PROJECT_ROOT/muscles/referee-kernel"
+
+    # Build the kernel
+    cargo build $BUILD_FLAGS --target x86_64-unknown-uefi 2>&1 | tail -10
+
+    if [ "$BUILD_RELEASE" = "1" ]; then
+        EFI_PATH="$PROJECT_ROOT/target/x86_64-unknown-uefi/release/referee.efi"
+    else
+        EFI_PATH="$PROJECT_ROOT/target/x86_64-unknown-uefi/debug/referee.efi"
+    fi
+
+    if [ -f "$EFI_PATH" ]; then
+        log_ok "EFI binary built: $EFI_PATH"
+    else
+        log_warn "EFI binary not found at expected path"
+    fi
+
+    cd "$PROJECT_ROOT"
+else
+    log_warn "Skipping referee-kernel (UEFI target not available)"
+fi
+
+# =============================================================================
+# Step 5: Create Bootable ISO (optional)
+# =============================================================================
+if [ "$BUILD_ISO" = "1" ]; then
+    log "Step 5: Creating bootable ISO..."
+
+    if command -v xorriso &> /dev/null; then
+        bash "$SCRIPT_DIR/make-iso.sh" "$PROJECT_ROOT/dist"
+    else
+        log_warn "xorriso not found - skipping ISO creation"
+        log_warn "Install with: brew install xorriso (macOS) or apt install xorriso (Linux)"
+    fi
+fi
+
+# =============================================================================
+# Summary
+# =============================================================================
+echo ""
+echo "╔═══════════════════════════════════════════════════════════════════╗"
+echo "║              BUILD SUMMARY                                        ║"
+echo "╠═══════════════════════════════════════════════════════════════════╣"
+echo "║  Workspace:      $(if [ "$BUILD_RELEASE" = "1" ]; then echo "RELEASE"; else echo "DEBUG  "; fi)                                        ║"
+echo "║  Tests:          $(if [ "$RUN_TESTS" = "1" ]; then echo "PASSED "; else echo "SKIPPED"; fi)                                        ║"
+
+if rustup target list --installed | grep -q "x86_64-unknown-uefi"; then
+    echo "║  PermFS Bridge:  BUILT                                           ║"
+    echo "║  Referee Kernel: BUILT                                           ║"
+else
+    echo -e "║  PermFS Bridge:  ${YELLOW}HOST ONLY${NC}                                      ║"
+    echo -e "║  Referee Kernel: ${YELLOW}SKIPPED${NC}                                        ║"
+fi
+
+if [ "$BUILD_ISO" = "1" ]; then
+    if [ -f "$PROJECT_ROOT/dist/eaos-health-pod.iso" ]; then
+        echo "║  Bootable ISO:   CREATED                                         ║"
+    else
+        echo -e "║  Bootable ISO:   ${YELLOW}FAILED${NC}                                         ║"
+    fi
+fi
+
+echo "╚═══════════════════════════════════════════════════════════════════╝"
+echo ""
+
+# Print next steps
+echo "Next steps:"
+echo "  1. Install UEFI target: rustup target add x86_64-unknown-uefi"
+echo "  2. Build for UEFI: ./scripts/build-all.sh --release --iso"
+echo "  3. Test in QEMU: See scripts/make-iso.sh output for commands"
+echo ""
+
+exit 0
+--- scripts/make-disk.sh ---
+#!/bin/bash
+# =============================================================================
+# EAOS Disk Image Builder
+# =============================================================================
+# Creates eaos-disk.img with:
+#   1. GPT partition table
+#   2. EFI System Partition (ESP) with referee.efi
+#   3. EAOS Data Partition with sovereign_health.json manifest
+#
+# Usage: ./make-disk.sh [output-path]
+# =============================================================================
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+OUTPUT_DIR="${1:-$PROJECT_ROOT/dist}"
+DISK_IMAGE="$OUTPUT_DIR/eaos-disk.img"
+MANIFEST="$PROJECT_ROOT/manifests/sovereign_health.json"
+EFI_BINARY="$PROJECT_ROOT/target/x86_64-unknown-uefi/release/referee.efi"
+
+# Disk geometry
+DISK_SIZE_MB=128
+ESP_SIZE_MB=64
+DATA_SIZE_MB=62
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+log() { echo -e "${CYAN}[DISK]${NC} $1"; }
+log_ok() { echo -e "${GREEN}[DISK]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[DISK]${NC} $1"; }
+log_err() { echo -e "${RED}[DISK]${NC} $1"; }
+
+# =============================================================================
+# Pre-flight Checks
+# =============================================================================
+log "EAOS Disk Image Builder"
+log "======================"
+
+mkdir -p "$OUTPUT_DIR"
+
+# Check for required tools
+for cmd in dd mkfs.fat parted; do
+    if ! command -v $cmd &> /dev/null; then
+        log_err "Required tool not found: $cmd"
+        exit 1
+    fi
+done
+
+# Check for manifest
+if [ ! -f "$MANIFEST" ]; then
+    log_err "Manifest not found: $MANIFEST"
+    exit 1
+fi
+log_ok "Manifest found: $MANIFEST"
+
+# Check for EFI binary (optional - can build without it)
+if [ -f "$EFI_BINARY" ]; then
+    log_ok "EFI binary found: $EFI_BINARY"
+    HAS_EFI=1
+else
+    log_warn "EFI binary not found - building data-only image"
+    log_warn "Build with: cargo build -p referee --release --target x86_64-unknown-uefi"
+    HAS_EFI=0
+fi
+
+# =============================================================================
+# Create Disk Image
+# =============================================================================
+log "Creating ${DISK_SIZE_MB}MB disk image..."
+
+# Create empty disk image
+dd if=/dev/zero of="$DISK_IMAGE" bs=1M count=$DISK_SIZE_MB status=progress 2>/dev/null
+
+# Create GPT partition table
+log "Creating GPT partition table..."
+parted -s "$DISK_IMAGE" mklabel gpt
+
+# Create EFI System Partition (ESP)
+log "Creating EFI System Partition..."
+parted -s "$DISK_IMAGE" mkpart "EFI System Partition" fat32 1MiB ${ESP_SIZE_MB}MiB
+parted -s "$DISK_IMAGE" set 1 esp on
+
+# Create EAOS Data Partition
+log "Creating EAOS Data Partition..."
+parted -s "$DISK_IMAGE" mkpart "EAOS Data" fat32 ${ESP_SIZE_MB}MiB 100%
+
+log_ok "Partition table created"
+
+# =============================================================================
+# Mount and Populate Partitions (requires root or loop device support)
+# =============================================================================
+
+# Calculate partition offsets (in bytes)
+ESP_START=$((1 * 1024 * 1024))  # 1MB offset
+ESP_SIZE=$(((ESP_SIZE_MB - 1) * 1024 * 1024))
+DATA_START=$((ESP_SIZE_MB * 1024 * 1024))
+
+# Create temporary mount points
+MOUNT_ESP=$(mktemp -d)
+MOUNT_DATA=$(mktemp -d)
+
+cleanup() {
+    # Unmount and cleanup
+    if mountpoint -q "$MOUNT_ESP" 2>/dev/null; then
+        sudo umount "$MOUNT_ESP" || true
+    fi
+    if mountpoint -q "$MOUNT_DATA" 2>/dev/null; then
+        sudo umount "$MOUNT_DATA" || true
+    fi
+    rm -rf "$MOUNT_ESP" "$MOUNT_DATA"
+
+    # Detach loop devices
+    if [ -n "$LOOP_ESP" ]; then
+        sudo losetup -d "$LOOP_ESP" 2>/dev/null || true
+    fi
+    if [ -n "$LOOP_DATA" ]; then
+        sudo losetup -d "$LOOP_DATA" 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT
+
+# Check if we can use loop devices (requires sudo)
+if sudo -n true 2>/dev/null; then
+    log "Setting up loop devices..."
+
+    # Setup loop device for ESP
+    LOOP_ESP=$(sudo losetup -f --show -o $ESP_START --sizelimit $ESP_SIZE "$DISK_IMAGE")
+    log "ESP loop device: $LOOP_ESP"
+
+    # Format ESP as FAT32
+    sudo mkfs.fat -F 32 -n "EFI" "$LOOP_ESP"
+
+    # Mount ESP
+    sudo mount "$LOOP_ESP" "$MOUNT_ESP"
+
+    # Create EFI directory structure
+    sudo mkdir -p "$MOUNT_ESP/EFI/BOOT"
+
+    # Copy EFI binary if available
+    if [ "$HAS_EFI" = "1" ]; then
+        sudo cp "$EFI_BINARY" "$MOUNT_ESP/EFI/BOOT/BOOTX64.EFI"
+        log_ok "Installed referee.efi as BOOTX64.EFI"
+    fi
+
+    # Create startup.nsh for UEFI shell
+    cat << 'EOF' | sudo tee "$MOUNT_ESP/startup.nsh" > /dev/null
+@echo -off
+echo "EAOS Sovereign Health Pod"
+echo "========================="
+echo "Loading referee.efi..."
+\EFI\BOOT\BOOTX64.EFI
+EOF
+    log_ok "Created startup.nsh"
+
+    sudo umount "$MOUNT_ESP"
+    sudo losetup -d "$LOOP_ESP"
+    LOOP_ESP=""
+
+    # Setup loop device for Data partition
+    LOOP_DATA=$(sudo losetup -f --show -o $DATA_START "$DISK_IMAGE")
+    log "Data loop device: $LOOP_DATA"
+
+    # Format Data partition as FAT32
+    sudo mkfs.fat -F 32 -n "EAOS_DATA" "$LOOP_DATA"
+
+    # Mount Data partition
+    sudo mount "$LOOP_DATA" "$MOUNT_DATA"
+
+    # Create EAOS directory structure
+    sudo mkdir -p "$MOUNT_DATA/EAOS/manifests"
+    sudo mkdir -p "$MOUNT_DATA/EAOS/storage"
+    sudo mkdir -p "$MOUNT_DATA/EAOS/logs"
+
+    # Copy manifest
+    sudo cp "$MANIFEST" "$MOUNT_DATA/EAOS/manifests/sovereign_health.json"
+    log_ok "Installed sovereign_health.json"
+
+    # Create version marker
+    echo "EAOS Sovereign Health Pod v1.0.0" | sudo tee "$MOUNT_DATA/EAOS/VERSION" > /dev/null
+    echo "Built: $(date -u +%Y-%m-%dT%H:%M:%SZ)" | sudo tee -a "$MOUNT_DATA/EAOS/VERSION" > /dev/null
+    echo "Braid Magic: 0xB8AD" | sudo tee -a "$MOUNT_DATA/EAOS/VERSION" > /dev/null
+
+    sudo umount "$MOUNT_DATA"
+    sudo losetup -d "$LOOP_DATA"
+    LOOP_DATA=""
+
+    log_ok "Disk image populated successfully"
+else
+    log_warn "No sudo access - creating minimal image without filesystem population"
+    log_warn "Run with sudo to fully populate the disk image"
+fi
+
+# =============================================================================
+# Summary
+# =============================================================================
+echo ""
+log "========================================="
+log "EAOS Disk Image Created Successfully"
+log "========================================="
+log "Output: $DISK_IMAGE"
+log "Size: ${DISK_SIZE_MB}MB"
+log "Partitions:"
+log "  1. EFI System Partition (${ESP_SIZE_MB}MB)"
+log "  2. EAOS Data Partition (${DATA_SIZE_MB}MB)"
+echo ""
+
+if [ "$HAS_EFI" = "1" ]; then
+    log_ok "Ready for boot testing with QEMU"
+else
+    log_warn "No EFI binary - build referee-kernel first"
+fi
+
+exit 0
+--- scripts/build-nucleus.sh.before-preloader-blob-update.20260107_204829 ---
+#!/bin/bash
+
+set -e
+
+echo "🧬 Building Eä Nucleus System"
+
+# Configuration
+MUSCLES_DIR="muscles"
+COMPILER_DIR="muscle-compiler" 
+BUNDLES_DIR="bundles"
+TARGET="aarch64"
+
+# Create bundles directory
+mkdir -p $BUNDLES_DIR
+
+echo "🔨 Step 1: Building enhanced muscle compiler..."
+cd $COMPILER_DIR
+cargo build --release
+cd ..
+
+echo "🔨 Step 2: Compiling nucleus.ea to sealed blob..."
+ $COMPILER_DIR/../target/release/musclec \
+    --input $MUSCLES_DIR/nucleus.ea \
+    --target $TARGET \
+    --output $BUNDLES_DIR/nucleus.blob \
+    --chaos-master $(openssl rand -hex 32)
+
+# Verify nucleus blob size
+NUCLEUS_SIZE=$(stat -f%z $BUNDLES_DIR/nucleus.blob 2>/dev/null || stat -c%s $BUNDLES_DIR/nucleus.blob)
+if [ $NUCLEUS_SIZE -ne 8256 ]; then
+    echo "❌ Nucleus blob size incorrect: $NUCLEUS_SIZE bytes (expected 8256)"
+    exit 1
+fi
+echo "✅ Nucleus blob: $NUCLEUS_SIZE bytes"
+
+echo "🔐 Step 2b: Pinning nucleus blob hash..."
+NUCLEUS_HASH_HEX=$(cargo run --offline -q -p muscle-contract --bin hash-blob -- $BUNDLES_DIR/nucleus.blob)
+echo "✅ Nucleus hash: $NUCLEUS_HASH_HEX"
+
+echo "🔨 Step 3: Building pre-nucleus loader..."
+cd $MUSCLES_DIR/preloader
+EXPECTED_NUCLEUS_HASH_HEX=$NUCLEUS_HASH_HEX cargo build --target x86_64-unknown-uefi --release
+
+# Verify pre-loader size
+PRELOADER_SIZE=$(stat -f%z ../target/x86_64-unknown-uefi/release/preloader.efi 2>/dev/null || stat -c%s ../target/x86_64-unknown-uefi/release/preloader.efi)
+if [ $PRELOADER_SIZE -gt 2048 ]; then
+    echo "❌ Pre-loader size exceeded: $PRELOADER_SIZE bytes (max 2048)"
+    exit 1
+fi
+echo "✅ Pre-loader: $PRELOADER_SIZE bytes"
+
+cd ../..
+
+echo "🔨 Step 4: Creating boot bundle..."
+cp $MUSCLES_DIR/preloader/target/x86_64-unknown-uefi/release/preloader.efi $BUNDLES_DIR/
+cp $BUNDLES_DIR/nucleus.blob $BUNDLES_DIR/
+
+echo "🎉 Nucleus build complete!"
+echo "📦 Boot bundle created in $BUNDLES_DIR/:"
+echo "   - preloader.efi (2KiB pre-nucleus loader)"
+echo "   - nucleus.blob (8.06KiB sealed muscle blob)"
+--- tools/bio-bridge/Cargo.toml ---
+[package]
+name = "bio-bridge"
+version = "1.0.0"
+edition = "2021"
+authors = ["EAOS Team"]
+description = "Host-side WebSocket bridge for ARACHNID BIO-STREAM"
+license = "Apache-2.0 OR MIT"
+
+[[bin]]
+name = "bio-bridge"
+path = "src/main.rs"
+
+[dependencies]
+# WebSocket server
+tokio = { version = "1.35", features = ["full"] }
+tokio-tungstenite = "0.21"
+futures-util = "0.3"
+
+# Memory mapping
+memmap2 = "0.9"
+
+# CLI arguments
+clap = { version = "4.4", features = ["derive"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Utilities
+byteorder = "1.5"
+--- tools/bio-bridge/src/main.rs ---
+//! BIO-BRIDGE: Host-side WebSocket relay for ARACHNID BIO-STREAM
+//!
+//! This tool acts as the "Optic Nerve" connecting the kernel's visual cortex
+//! (shared memory ring buffer) to the browser-based NEON-SYSTOLE dashboard.
+//!
+//! ## Architecture
+//!
+//! ```text
+//! ┌─────────────┐     mmap      ┌─────────────┐    WebSocket    ┌─────────────┐
+//! │   Kernel    │ ────────────> │  BIO-BRIDGE │ ───────────────>│   Browser   │
+//! │  (ARACHNID) │  /dev/shm/    │  (This)     │   ws://3001     │  (Retina)   │
+//! └─────────────┘               └─────────────┘                 └─────────────┘
+//! ```
+//!
+//! ## Usage
+//!
+//! ```bash
+//! bio-bridge --shm /dev/shm/eaos_biostream --port 3001
+//! ```
+
+use std::collections::HashMap;
+use std::fs::OpenOptions;
+use std::io::Result as IoResult;
+use std::net::SocketAddr;
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use std::sync::Arc;
+use std::time::Duration;
+
+use byteorder::{LittleEndian, ReadBytesExt};
+use clap::Parser;
+use futures_util::{SinkExt, StreamExt};
+use memmap2::MmapOptions;
+use tokio::net::{TcpListener, TcpStream};
+use tokio::sync::{broadcast, RwLock};
+use tokio_tungstenite::tungstenite::Message;
+use tracing::{debug, error, info, warn};
+
+// ============================================================================
+// BIO-STREAM Protocol Constants (must match kernel)
+// ============================================================================
+
+/// BIO-STREAM magic number
+const BIOSTREAM_MAGIC: u32 = 0xB105_73A1;
+
+/// Ring buffer capacity
+const BIOSTREAM_CAPACITY: usize = 65536;
+
+/// Header size (before data)
+const BIOSTREAM_HEADER_SIZE: usize = 32;
+
+// Header offsets
+const OFF_MAGIC: usize = 0;
+const OFF_CAPACITY: usize = 4;
+const OFF_WRITE_HEAD: usize = 8;
+const OFF_READ_TAIL: usize = 12;
+const OFF_STATE: usize = 16;
+const OFF_BOOKMARK: usize = 17;
+const OFF_ERROR: usize = 18;
+const OFF_HARVESTED: usize = 20;
+const OFF_DATA: usize = 32;
+
+// ============================================================================
+// CLI Arguments
+// ============================================================================
+
+#[derive(Parser, Debug)]
+#[command(name = "bio-bridge")]
+#[command(about = "Host-side WebSocket bridge for ARACHNID BIO-STREAM")]
+struct Args {
+    /// Path to shared memory file
+    #[arg(short, long, default_value = "/dev/shm/eaos_biostream")]
+    shm: PathBuf,
+
+    /// WebSocket server port
+    #[arg(short, long, default_value = "3001")]
+    port: u16,
+
+    /// Poll rate in Hz (default 60)
+    #[arg(long, default_value = "60")]
+    poll_rate: u32,
+
+    /// Create shared memory file if it doesn't exist (for testing)
+    #[arg(long)]
+    create: bool,
+}
+
+// ============================================================================
+// Bridge State
+// ============================================================================
+
+/// Shared state for the bridge
+struct BridgeState {
+    /// Last read tail position (bridge-local)
+    read_tail: AtomicU32,
+    /// Connected client count
+    client_count: AtomicU32,
+    /// Total bytes relayed
+    bytes_relayed: AtomicU64,
+}
+
+impl BridgeState {
+    fn new() -> Self {
+        Self {
+            read_tail: AtomicU32::new(0),
+            client_count: AtomicU32::new(0),
+            bytes_relayed: AtomicU64::new(0),
+        }
+    }
+}
+
+// ============================================================================
+// Main Entry Point
+// ============================================================================
+
+#[tokio::main]
+async fn main() -> IoResult<()> {
+    // Initialize logging
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::from_default_env()
+                .add_directive("bio_bridge=info".parse().unwrap())
+        )
+        .init();
+
+    let args = Args::parse();
+
+    info!("BIO-BRIDGE starting...");
+    info!("  Shared memory: {:?}", args.shm);
+    info!("  WebSocket port: {}", args.port);
+    info!("  Poll rate: {} Hz", args.poll_rate);
+
+    // Open or create shared memory
+    let mmap = if args.create {
+        create_shm(&args.shm)?
+    } else {
+        open_shm(&args.shm)?
+    };
+
+    let mmap = Arc::new(tokio::sync::RwLock::new(mmap));
+    let state = Arc::new(BridgeState::new());
+
+    // Validate magic number (with retry for kernel boot)
+    info!("Waiting for kernel to initialize BIO-STREAM...");
+    let mut retries = 0;
+    loop {
+        let magic = {
+            let guard = mmap.read().await;
+            read_u32(&guard, OFF_MAGIC)
+        };
+
+        if magic == BIOSTREAM_MAGIC {
+            info!("BIO-STREAM magic validated: 0x{:08X}", magic);
+            break;
+        }
+
+        if args.create && retries == 0 {
+            info!("Initializing shared memory with magic number");
+            let mut guard = mmap.write().await;
+            write_u32(&mut guard, OFF_MAGIC, BIOSTREAM_MAGIC);
+            write_u32(&mut guard, OFF_CAPACITY, BIOSTREAM_CAPACITY as u32);
+            break;
+        }
+
+        retries += 1;
+        if retries > 100 {
+            error!("Timeout waiting for kernel (magic=0x{:08X})", magic);
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::TimedOut,
+                "Kernel did not initialize BIO-STREAM",
+            ));
+        }
+
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+
+    // Create broadcast channel for sending to clients
+    let (tx, _rx) = broadcast::channel::<Vec<u8>>(64);
+    let tx = Arc::new(tx);
+
+    // Start the poll loop
+    let poll_mmap = Arc::clone(&mmap);
+    let poll_state = Arc::clone(&state);
+    let poll_tx = Arc::clone(&tx);
+    let poll_interval = Duration::from_micros(1_000_000 / args.poll_rate as u64);
+
+    tokio::spawn(async move {
+        poll_loop(poll_mmap, poll_state, poll_tx, poll_interval).await;
+    });
+
+    // Start WebSocket server
+    let addr = SocketAddr::from(([127, 0, 0, 1], args.port));
+    let listener = TcpListener::bind(&addr).await?;
+    info!("WebSocket server listening on ws://{}", addr);
+
+    while let Ok((stream, peer)) = listener.accept().await {
+        info!("New connection from: {}", peer);
+        let client_tx = tx.subscribe();
+        let client_state = Arc::clone(&state);
+
+        tokio::spawn(async move {
+            if let Err(e) = handle_client(stream, client_tx, client_state).await {
+                warn!("Client {} error: {}", peer, e);
+            }
+            info!("Client {} disconnected", peer);
+        });
+    }
+
+    Ok(())
+}
+
+// ============================================================================
+// Shared Memory Operations
+// ============================================================================
+
+/// Open existing shared memory file (read-write for SPSC tail updates)
+fn open_shm(path: &PathBuf) -> IoResult<memmap2::MmapMut> {
+    let file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(path)?;
+
+    unsafe { MmapOptions::new().map_mut(&file) }
+}
+
+/// Create shared memory file (for testing)
+fn create_shm(path: &PathBuf) -> IoResult<memmap2::MmapMut> {
+    let file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open(path)?;
+
+    // Set file size
+    file.set_len((BIOSTREAM_HEADER_SIZE + BIOSTREAM_CAPACITY) as u64)?;
+
+    unsafe { MmapOptions::new().map_mut(&file) }
+}
+
+/// Read u32 from mmap at offset (little-endian)
+fn read_u32(mmap: &[u8], offset: usize) -> u32 {
+    if offset + 4 <= mmap.len() {
+        let mut cursor = std::io::Cursor::new(&mmap[offset..offset + 4]);
+        cursor.read_u32::<LittleEndian>().unwrap_or(0)
+    } else {
+        0
+    }
+}
+
+/// Read u8 from mmap at offset
+fn read_u8(mmap: &[u8], offset: usize) -> u8 {
+    if offset < mmap.len() {
+        mmap[offset]
+    } else {
+        0
+    }
+}
+
+/// Write u32 to mmap at offset (little-endian)
+fn write_u32(mmap: &mut [u8], offset: usize, value: u32) {
+    if offset + 4 <= mmap.len() {
+        mmap[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+    }
+}
+
+// ============================================================================
+// Poll Loop
+// ============================================================================
+
+/// Main poll loop - reads ring buffer and broadcasts to clients
+///
+/// Implements proper SPSC (Single Producer Single Consumer) ring buffer protocol:
+/// - Kernel (producer) writes to write_head
+/// - Bridge (consumer) reads data, then commits by writing read_tail
+async fn poll_loop(
+    mmap: Arc<RwLock<memmap2::MmapMut>>,
+    state: Arc<BridgeState>,
+    tx: Arc<broadcast::Sender<Vec<u8>>>,
+    interval: Duration,
+) {
+    let mut interval_timer = tokio::time::interval(interval);
+    let mut last_log = std::time::Instant::now();
+
+    loop {
+        interval_timer.tick().await;
+
+        // Phase 1: Read with shared lock
+        let (write_head, capacity, spider_state, read_tail, frame_opt) = {
+            let guard = mmap.read().await;
+
+            let write_head = read_u32(&guard, OFF_WRITE_HEAD);
+            let capacity = read_u32(&guard, OFF_CAPACITY) as usize;
+            let spider_state = read_u8(&guard, OFF_STATE);
+            let _bookmark = read_u8(&guard, OFF_BOOKMARK);
+            let _error = read_u8(&guard, OFF_ERROR);
+            let _harvested = read_u32(&guard, OFF_HARVESTED);
+
+            // Get our local read tail
+            let read_tail = state.read_tail.load(Ordering::Acquire);
+
+            // Calculate available bytes
+            let available = write_head.wrapping_sub(read_tail);
+
+            let frame_opt = if available > 0 && capacity > 0 {
+                // Build binary frame to send (include header for client parsing)
+                let mut frame = Vec::with_capacity(BIOSTREAM_HEADER_SIZE + available as usize);
+
+                // Copy header (32 bytes)
+                frame.extend_from_slice(&guard[..BIOSTREAM_HEADER_SIZE]);
+
+                // Copy ring buffer data (handling wrap-around)
+                let cap = capacity.min(BIOSTREAM_CAPACITY);
+                for i in 0..available {
+                    let idx = ((read_tail + i) as usize) % cap;
+                    let byte = guard.get(OFF_DATA + idx).copied().unwrap_or(0);
+                    frame.push(byte);
+                }
+
+                Some((frame, available))
+            } else {
+                None
+            };
+
+            (write_head, capacity, spider_state, read_tail, frame_opt)
+        };
+
+        // Phase 2: Process and commit
+        if let Some((frame, available)) = frame_opt {
+            // Update our local tail
+            state.read_tail.store(write_head, Ordering::Release);
+
+            // Phase 3: Write read_tail back to shared memory (SPSC commit)
+            {
+                let mut guard = mmap.write().await;
+                write_u32(&mut guard, OFF_READ_TAIL, write_head);
+                // Ensure write is visible to kernel
+                std::sync::atomic::fence(Ordering::Release);
+            }
+
+            // Update stats
+            state.bytes_relayed.fetch_add(available as u64, Ordering::Relaxed);
+
+            // Broadcast to all connected clients
+            let _ = tx.send(frame);
+
+            debug!("Relayed {} bytes (state={})", available, spider_state);
+        }
+
+        // Periodic status log
+        if last_log.elapsed() > Duration::from_secs(10) {
+            let clients = state.client_count.load(Ordering::Relaxed);
+            let relayed = state.bytes_relayed.load(Ordering::Relaxed);
+            info!(
+                "Status: {} clients, {} bytes relayed, spider_state={}",
+                clients, relayed, spider_state
+            );
+            last_log = std::time::Instant::now();
+        }
+    }
+}
+
+// ============================================================================
+// WebSocket Client Handler
+// ============================================================================
+
+/// Handle a single WebSocket client connection
+async fn handle_client(
+    stream: TcpStream,
+    mut rx: broadcast::Receiver<Vec<u8>>,
+    state: Arc<BridgeState>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // Upgrade to WebSocket
+    let ws_stream = tokio_tungstenite::accept_async(stream).await?;
+    let (mut write, mut read) = ws_stream.split();
+
+    // Track client
+    state.client_count.fetch_add(1, Ordering::Relaxed);
+
+    // Main loop: relay broadcast messages to this client
+    loop {
+        tokio::select! {
+            // Receive data from broadcast channel
+            result = rx.recv() => {
+                match result {
+                    Ok(data) => {
+                        // Send as binary WebSocket frame
+                        if let Err(e) = write.send(Message::Binary(data)).await {
+                            debug!("Send error: {}", e);
+                            break;
+                        }
+                    }
+                    Err(broadcast::error::RecvError::Lagged(n)) => {
+                        warn!("Client lagged {} messages", n);
+                    }
+                    Err(broadcast::error::RecvError::Closed) => {
+                        break;
+                    }
+                }
+            }
+
+            // Handle client messages (for future bidirectional control)
+            msg = read.next() => {
+                match msg {
+                    Some(Ok(Message::Close(_))) | None => {
+                        break;
+                    }
+                    Some(Ok(Message::Ping(data))) => {
+                        let _ = write.send(Message::Pong(data)).await;
+                    }
+                    Some(Ok(_)) => {
+                        // Ignore other messages for now
+                    }
+                    Some(Err(e)) => {
+                        debug!("Receive error: {}", e);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // Cleanup
+    state.client_count.fetch_sub(1, Ordering::Relaxed);
+
+    Ok(())
+}
+--- Cargo.toml ---
+[workspace]
+resolver = "2"
+
+members = [
+    "permfs",
+    "muscles/referee-kernel",
+    "muscles/hyperbolic-chamber",
+    "muscles/permfs-bridge",
+    "muscles/roulette-rs",
+    "muscles/symbiote",
+    "muscles/net-stack",
+    "muscles/preloader",
+    "organs/biowerk-agent",
+    "organs/cardio",
+    "organs/prism",
+    "intelligence/nucleus-director",
+    "intelligence/dr-lex",
+    "defense/sefirot",
+    "signals/quenyan/reference/rust",
+    "IHP-main",
+    "tools/bio-bridge",
+    "muscle-contract",
+    "muscle-compiler",
+    "muscle-ea-core",
+    "muscle-ea-pathfinder",
+    "muscle-ea-axonwasm",
+    "muscle-ea-dendritewasm",
+    "muscle-ea-neurowasm",
+    "ledger/core",
+    "ledger/spec",
+    "ledger/transport",
+    "ledger/arda",
+    "ledger/ledgerd",
+    "ledger/ui-shell",
+]
+
+# referee-kernel requires UEFI target, exclude from default workspace builds
+default-members = [
+    "permfs",
+    "muscles/hyperbolic-chamber",
+    "muscles/permfs-bridge",
+    "muscles/roulette-rs",
+    "muscles/symbiote",
+    "muscles/net-stack",
+    "organs/biowerk-agent",
+    "organs/cardio",
+    "organs/prism",
+    "intelligence/nucleus-director",
+    "intelligence/dr-lex",
+    "defense/sefirot",
+    "signals/quenyan/reference/rust",
+    "IHP-main",
+    "tools/bio-bridge",
+]
+
+# Exclude non-Rust projects or those with custom build systems
+exclude = [
+    "muscles/musclekernel-main",
+    "muscles/roulette-kernel-rs-main",
+]
+
+[workspace.package]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+# Shared dependencies across EAOS components
+blake3 = { version = "1.5", default-features = false }
+rand_core = { version = "0.6", default-features = false }
+rand = { version = "0.8", default-features = false }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+anyhow = { version = "1.0", default-features = false }
+async-trait = { version = "0.1", default-features = false }
+tokio = { version = "1.30", default-features = false, features = ["rt", "rt-multi-thread", "macros", "net", "time", "sync", "io-util"] }
+bytes = { version = "1.5", default-features = false }
+tracing = { version = "0.1", default-features = false }
+bincode = { version = "1.3", default-features = false }
+futures = { version = "0.3", default-features = false }
+ed25519-dalek = { version = "2.1", default-features = false }
+parking_lot = { version = "0.12", default-features = false }
+thiserror = { version = "1.0", default-features = false }
+clap = { version = "4.4", default-features = false, features = ["std", "derive", "help", "usage", "error-context"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "ansi", "env-filter", "smallvec", "parking_lot"] }
+
+# Profile settings for no_std builds
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"

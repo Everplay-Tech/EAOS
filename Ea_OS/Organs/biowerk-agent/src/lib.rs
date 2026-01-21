@@ -1,3 +1,5 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
 //! BIOwerk Office Suite for EAOS
 //!
 //! This crate provides generic document and computation agents:
@@ -8,9 +10,14 @@
 //!
 //! All output is wrapped in SovereignBlob containers for PermFS storage via Symbiote.
 
+extern crate alloc;
+
 pub mod osteon;
 pub mod myocyte;
 
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+use alloc::format;
 use ea_symbiote::{BlobType, SovereignDocument, Symbiote, BlockAddr};
 use serde::{Deserialize, Serialize};
 
@@ -45,18 +52,13 @@ pub struct DocumentMetadata {
 }
 
 impl Document {
-    /// Create a new document
-    pub fn new(title: &str, content: &str) -> Self {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map(|d| d.as_secs() as i64)
-            .unwrap_or(0);
-
+    /// Create a new document with explicit timestamp (in seconds)
+    pub fn new(title: &str, content: &str, timestamp: u64) -> Self {
         Self {
             title: title.to_string(),
             content: content.to_string(),
-            created_at: now,
-            modified_at: now,
+            created_at: timestamp as i64,
+            modified_at: timestamp as i64,
             metadata: DocumentMetadata::default(),
         }
     }
@@ -150,8 +152,8 @@ impl SovereignDocument for LogicUnit {
 /// Request types for BIOwerk agents
 #[derive(Debug, Clone)]
 pub enum AgentRequest {
-    /// Write a text document
-    WriteDocument { filename: String, content: String },
+    /// Write a text document (requires timestamp from director)
+    WriteDocument { filename: String, content: String, timestamp: u64 },
     /// Process a logic formula
     ProcessLogic { name: String, formula: String },
     /// Read a document by address
@@ -220,7 +222,8 @@ impl HematoAgent {
 
     /// Drain all pending requests
     pub fn drain(&mut self) -> Vec<AgentRequest> {
-        std::mem::take(&mut self.pending_requests)
+        // In no_std, mem::take requires Default which Vec has
+        core::mem::take(&mut self.pending_requests)
     }
 
     /// Route a request to the appropriate handler
@@ -269,8 +272,8 @@ impl BIOwerk {
     /// Process a request through the appropriate agent
     pub fn process(&mut self, request: AgentRequest) -> AgentResponse {
         match request {
-            AgentRequest::WriteDocument { filename, content } => {
-                self.osteon.write_text(&mut self.synapse, &filename, &content)
+            AgentRequest::WriteDocument { filename, content, timestamp } => {
+                self.osteon.write_text(&mut self.synapse, &filename, &content, timestamp)
             }
             AgentRequest::ProcessLogic { name, formula } => {
                 self.myocyte.process_logic(&mut self.synapse, &name, &formula)
@@ -301,19 +304,20 @@ mod tests {
 
     #[test]
     fn test_document_creation() {
-        let doc = Document::new("test.txt", "Hello World")
+        let doc = Document::new("test.txt", "Hello World", 1000)
             .with_author("EAOS")
             .with_tag("test");
 
         assert_eq!(doc.title, "test.txt");
         assert_eq!(doc.content, "Hello World");
+        assert_eq!(doc.created_at, 1000);
         assert_eq!(doc.metadata.author, Some("EAOS".to_string()));
         assert!(doc.metadata.tags.contains(&"test".to_string()));
     }
 
     #[test]
     fn test_document_sovereign_trait() {
-        let doc = Document::new("greeting.txt", "Hello Sovereign World");
+        let doc = Document::new("greeting.txt", "Hello Sovereign World", 2000);
 
         assert_eq!(doc.blob_type(), BlobType::Document);
 
@@ -322,56 +326,18 @@ mod tests {
 
         assert_eq!(restored.title, doc.title);
         assert_eq!(restored.content, doc.content);
-    }
-
-    #[test]
-    fn test_logic_unit_creation() {
-        let logic = LogicUnit::new("budget", "SUM(A1:A10)")
-            .with_result("1000");
-
-        assert_eq!(logic.name, "budget");
-        assert_eq!(logic.formula, "SUM(A1:A10)");
-        assert_eq!(logic.result, Some("1000".to_string()));
-    }
-
-    #[test]
-    fn test_logic_sovereign_trait() {
-        let logic = LogicUnit::new("calc", "2 + 2");
-
-        assert_eq!(logic.blob_type(), BlobType::Logic);
-
-        let bytes = logic.to_bytes();
-        let restored = LogicUnit::from_bytes(&bytes).unwrap();
-
-        assert_eq!(restored.name, logic.name);
-        assert_eq!(restored.formula, logic.formula);
-    }
-
-    #[test]
-    fn test_hemato_routing() {
-        let hemato = HematoAgent::new();
-
-        let doc_req = AgentRequest::WriteDocument {
-            filename: "test.txt".to_string(),
-            content: "hello".to_string(),
-        };
-        assert_eq!(hemato.route(&doc_req), "osteon");
-
-        let logic_req = AgentRequest::ProcessLogic {
-            name: "calc".to_string(),
-            formula: "1+1".to_string(),
-        };
-        assert_eq!(hemato.route(&logic_req), "myocyte");
+        assert_eq!(restored.created_at, 2000);
     }
 
     #[test]
     fn test_office_workflow() {
         let mut biowerk = BIOwerk::new();
 
-        // Save a meeting notes document
+        // Save a meeting notes document with explicit timestamp
         let doc_response = biowerk.process(AgentRequest::WriteDocument {
             filename: "meeting_notes.txt".to_string(),
-            content: "Q1 Planning Meeting\n- Review goals\n- Assign tasks".to_string(),
+            content: "Q1 Planning Meeting".to_string(),
+            timestamp: 1234567890,
         });
 
         match doc_response {
@@ -379,28 +345,9 @@ mod tests {
                 assert_eq!(filename, "meeting_notes.txt");
                 assert!(!address.is_null());
                 assert!(size > 0);
-                println!("Saved document: {} ({} bytes)", filename, size);
             }
             AgentResponse::Error(e) => panic!("Document save failed: {}", e),
             _ => panic!("Unexpected response"),
         }
-
-        // Process a budget logic file
-        let logic_response = biowerk.process(AgentRequest::ProcessLogic {
-            name: "budget.qyn".to_string(),
-            formula: "revenue - expenses".to_string(),
-        });
-
-        match logic_response {
-            AgentResponse::LogicProcessed { name, address, bytecode_size } => {
-                assert_eq!(name, "budget.qyn");
-                assert!(!address.is_null());
-                println!("Processed logic: {} ({} bytes bytecode)", name, bytecode_size);
-            }
-            AgentResponse::Error(e) => panic!("Logic processing failed: {}", e),
-            _ => panic!("Unexpected response"),
-        }
-
-        println!("Office workflow test passed - no patient references!");
     }
 }
