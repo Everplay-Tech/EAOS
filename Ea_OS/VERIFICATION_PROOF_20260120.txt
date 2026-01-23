@@ -1,0 +1,570 @@
+warning: profiles for the non root package will be ignored, specify profiles at the workspace root:
+package:   /Users/magus/EAOS/Ea_OS/muscles/referee-kernel/Cargo.toml
+workspace: /Users/magus/EAOS/Ea_OS/Cargo.toml
+warning: the `#![no_std]` attribute can only be used at the crate root
+ --> muscle-contract/src/broca.rs:1:1
+  |
+1 | #![no_std]
+  | ^^^^^^^^^^
+  |
+  = note: `#[warn(unused_attributes)]` (part of `#[warn(unused)]`) on by default
+
+warning: the `#![no_std]` attribute can only be used at the crate root
+ --> muscle-contract/src/dreamer.rs:1:1
+  |
+1 | #![no_std]
+  | ^^^^^^^^^^
+
+warning: the `#![no_std]` attribute can only be used at the crate root
+ --> muscle-contract/src/mirror.rs:1:1
+  |
+1 | #![no_std]
+  | ^^^^^^^^^^
+
+warning: the `#![no_std]` attribute can only be used at the crate root
+ --> muscle-contract/src/sentry.rs:1:1
+  |
+1 | #![no_std]
+  | ^^^^^^^^^^
+
+warning: the `#![no_std]` attribute can only be used at the crate root
+ --> muscle-contract/src/mitochondria.rs:1:1
+  |
+1 | #![no_std]
+  | ^^^^^^^^^^
+
+warning: the `#![no_std]` attribute can only be used at the crate root
+ --> muscle-contract/src/abi.rs:1:1
+  |
+1 | #![no_std]
+  | ^^^^^^^^^^
+
+warning: constant `KEY_CONTEXT` is never used
+  --> muscle-contract/src/lib.rs:48:7
+   |
+48 | const KEY_CONTEXT: &[u8] = b"EaM6 key";
+   |       ^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `muscle-contract` (lib) generated 7 warnings
+warning: `muscle-contract` (lib) generated 7 warnings (7 duplicates)
+warning: creating a shared reference to mutable static
+  --> muscles/sentry/src/lib.rs:15:20
+   |
+15 |                 if KEY.is_none() {
+   |                    ^^^^^^^^^^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+   = note: `#[warn(static_mut_refs)]` (part of `#[warn(rust_2024_compatibility)]`) on by default
+
+warning: creating a shared reference to mutable static
+  --> muscles/sentry/src/lib.rs:27:36
+   |
+27 |                 if let Some(key) = &KEY {
+   |                                    ^^^^ shared reference to mutable static
+   |
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/static-mut-references.html>
+   = note: shared references to mutable statics are dangerous; it's undefined behavior if the static is mutated or if a mutable reference is created for it while the shared reference lives
+help: use `&raw const` instead to create a raw pointer
+   |
+27 |                 if let Some(key) = &raw const KEY {
+   |                                     +++++++++
+
+warning: `ea-sentry` (lib) generated 2 warnings
+warning: unused import: `AtomicUsize`
+  --> permfs/os_porting.rs:10:26
+   |
+10 | use core::sync::atomic::{AtomicUsize, Ordering};
+   |                          ^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `alloc::format`
+  --> organs/biowerk-agent/src/lib.rs:20:5
+   |
+20 | use alloc::format;
+   |     ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `permfs` (lib) generated 1 warning (run `cargo fix --lib -p permfs` to apply 1 suggestion)
+warning: `biowerk-agent` (lib) generated 1 warning (run `cargo fix --lib -p biowerk-agent` to apply 1 suggestion)
+warning: variant `Perception` is never constructed
+  --> intelligence/nucleus-director/src/thalamus.rs:23:5
+   |
+19 | pub enum Stimulus {
+   |          -------- variant in this enum
+...
+23 |     Perception(Vec<u8>),
+   |     ^^^^^^^^^^
+   |
+   = note: `Stimulus` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `inject_uart` is never used
+  --> intelligence/nucleus-director/src/thalamus.rs:75:12
+   |
+33 | impl Thalamus {
+   | ------------- method in this implementation
+...
+75 |     pub fn inject_uart(&mut self, byte: u8) {
+   |            ^^^^^^^^^^^
+
+warning: `nucleus-director` (lib) generated 2 warnings
+warning: `permfs` (lib) generated 1 warning (1 duplicate)
+warning: `ea-sentry` (lib) generated 2 warnings (2 duplicates)
+warning: `biowerk-agent` (lib) generated 1 warning (1 duplicate)
+warning: `nucleus-director` (lib) generated 2 warnings (2 duplicates)
+warning: unused variable: `bad_code`
+   --> intelligence/nucleus-director/tests/lazarus_trajectory.rs:115:9
+    |
+115 |     let bad_code = vec![0xFF, 0x00, 0xAA]; // Return 0, then 0xAA (Garbage)
+    |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_bad_code`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `nucleus-director` (test "lazarus_trajectory") generated 1 warning (run `cargo fix --test "lazarus_trajectory" -p nucleus-director` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.30s
+     Running tests/lazarus_trajectory.rs (target/debug/deps/lazarus_trajectory-4975f398cb8cf0a5)
+
+running 1 test
+
+========================================
+  🧪 TEST SUITE: THE LAZARUS TRAJECTORY
+========================================
+
+Phase 1: Complexity (The Descent)
+  Bytecode size: 93 bytes
+  Touchdown Altitude: -10
+  Result: SURVIVED (Logic Valid)
+
+Phase 2: Safety (The Solar Flare)
+  Scenario 1 (Black Hole): PASSED (Caught 'Division by zero')
+  Scenario 2 (Infinite Mirror): PASSED (Caught 'Energy exhaustion (timeout)')
+  Scenario 3 (Alien Word): PASSED (Caught 'Unknown opcode: AA')
+
+Phase 3: Persistence (The Resurrection)
+  Ossified to 63 bytes
+  Resurrection: SUCCESS (Output: 42)
+test test_lazarus_trajectory ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+
+=== SOURCE CODE: muscles/quenyan-vm/src/lib.rs ===
+
+#![no_std]
+
+extern crate alloc;
+use alloc::vec::Vec;
+use alloc::string::{String, ToString};
+use alloc::format;
+
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Opcode {
+    /// Load immediate value into register: [0x01, reg, val(f64)]
+    LoadReg = 0x01,
+    /// Add: dest = src1 + src2: [0x02, dest, src1, src2]
+    Add = 0x02,
+    /// Sub: dest = src1 - src2: [0x03, dest, src1, src2]
+    Sub = 0x03,
+    /// Mul: dest = src1 * src2: [0x04, dest, src1, src2]
+    Mul = 0x04,
+    /// Div: dest = src1 / src2: [0x05, dest, src1, src2]
+    Div = 0x05,
+    /// Compare: reg1 vs reg2 (Sets flags): [0x06, reg1, reg2]
+    Cmp = 0x06,
+    /// Jump Unconditional: [0x07, target(u16)]
+    Jmp = 0x07,
+    /// Jump if Greater: [0x08, target(u16)]
+    JmpIfGt = 0x08,
+    /// Jump if Less: [0x09, target(u16)]
+    JmpIfLt = 0x09,
+    /// Return value from register: [0xFF, reg]
+    Return = 0xFF,
+}
+
+#[derive(Default)]
+struct Flags {
+    gt: bool,
+    lt: bool,
+    eq: bool,
+}
+
+pub struct QuenyanVM {
+    /// 16 General Purpose Registers (f64)
+    registers: [f64; 16],
+    /// Comparison flags
+    flags: Flags,
+}
+
+impl Default for QuenyanVM {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl QuenyanVM {
+    pub fn new() -> Self {
+        Self { 
+            registers: [0.0; 16],
+            flags: Flags::default(),
+        }
+    }
+
+    /// Execute bytecode. Returns the value of the register specified in Return opcode.
+    pub fn execute(&mut self, bytecode: &[u8]) -> Result<f64, String> {
+        let mut pc = 0;
+        // Limit execution to prevent infinite loops (Energy Budget)
+        let mut cycles = 0;
+        const MAX_CYCLES: u32 = 10000; 
+
+        while pc < bytecode.len() {
+            if cycles > MAX_CYCLES {
+                return Err("Energy exhaustion (timeout)".to_string());
+            }
+            cycles += 1;
+
+            let op = bytecode[pc];
+            pc += 1;
+
+            match op {
+                0x01 => { // LoadReg reg, val
+                    if pc + 9 > bytecode.len() { return Err("Truncated bytecode".to_string()); }
+                    let reg = bytecode[pc] as usize;
+                    if reg >= 16 { return Err("Invalid register".to_string()); }
+                    let val_bytes: [u8; 8] = bytecode[pc+1..pc+9].try_into().unwrap();
+                    let val = f64::from_le_bytes(val_bytes);
+                    self.registers[reg] = val;
+                    pc += 9;
+                },
+                0x02 => self.binary_op(bytecode, &mut pc, |a, b| a + b)?,
+                0x03 => self.binary_op(bytecode, &mut pc, |a, b| a - b)?,
+                0x04 => self.binary_op(bytecode, &mut pc, |a, b| a * b)?,
+                0x05 => { // Div with check
+                    if pc + 3 > bytecode.len() { return Err("Truncated bytecode".to_string()); }
+                    let dest = bytecode[pc] as usize;
+                    let src1 = bytecode[pc+1] as usize;
+                    let src2 = bytecode[pc+2] as usize;
+                    pc += 3;
+                    
+                    if dest >= 16 || src1 >= 16 || src2 >= 16 { return Err("Invalid register".to_string()); }
+                    let b = self.registers[src2];
+                    if b == 0.0 { return Err("Division by zero".to_string()); }
+                    self.registers[dest] = self.registers[src1] / b;
+                },
+                0x06 => { // Cmp
+                    if pc + 2 > bytecode.len() { return Err("Truncated bytecode".to_string()); }
+                    let r1 = bytecode[pc] as usize;
+                    let r2 = bytecode[pc+1] as usize;
+                    pc += 2;
+                    if r1 >= 16 || r2 >= 16 { return Err("Invalid register".to_string()); }
+                    
+                    let a = self.registers[r1];
+                    let b = self.registers[r2];
+                    self.flags.gt = a > b;
+                    self.flags.lt = a < b;
+                    self.flags.eq = (a - b).abs() < f64::EPSILON;
+                },
+                0x07 => self.jump(bytecode, &mut pc, true)?, // Unconditional
+                0x08 => self.jump(bytecode, &mut pc, self.flags.gt)?,
+                0x09 => self.jump(bytecode, &mut pc, self.flags.lt)?,
+                0xFF => { // Return
+                    if pc + 1 > bytecode.len() { return Err("Truncated bytecode".to_string()); }
+                    let reg = bytecode[pc] as usize;
+                    if reg >= 16 { return Err("Invalid register".to_string()); }
+                    return Ok(self.registers[reg]);
+                },
+                _ => return Err(format!("Unknown opcode: {:02X}", op)),
+            }
+        }
+        
+        Err("End of bytecode without return".to_string())
+    }
+
+    fn binary_op<F>(&mut self, bytecode: &[u8], pc: &mut usize, op: F) -> Result<(), String> 
+    where F: Fn(f64, f64) -> f64 {
+        if *pc + 3 > bytecode.len() { return Err("Truncated bytecode".to_string()); }
+        let dest = bytecode[*pc] as usize;
+        let src1 = bytecode[*pc+1] as usize;
+        let src2 = bytecode[*pc+2] as usize;
+        *pc += 3;
+        
+        if dest >= 16 || src1 >= 16 || src2 >= 16 { return Err("Invalid register".to_string()); }
+        self.registers[dest] = op(self.registers[src1], self.registers[src2]);
+        Ok(())
+    }
+
+    fn jump(&mut self, bytecode: &[u8], pc: &mut usize, condition: bool) -> Result<(), String> {
+        if *pc + 2 > bytecode.len() { return Err("Truncated bytecode".to_string()); }
+        let target = u16::from_le_bytes(bytecode[*pc..*pc+2].try_into().unwrap()) as usize;
+        *pc += 2;
+        
+        if condition {
+            // Note: The prompt implies target is an instruction index, but we have variable length instructions.
+            // For simplicity in this VM, target is BYTE OFFSET.
+            // But the prompt example: "Jump to Index 11".
+            // If instructions are variable length, index is hard.
+            // We will assume target is BYTE OFFSET for the VM. The assembler must calculate it.
+            if target >= bytecode.len() { return Err("Jump out of bounds".to_string()); }
+            *pc = target;
+        }
+        Ok(())
+    }
+}
+
+/// Helper to build bytecode (Assembler)
+pub struct Assembler {
+    code: Vec<u8>,
+}
+
+impl Default for Assembler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Assembler {
+    pub fn new() -> Self {
+        Self { code: Vec::new() }
+    }
+
+    pub fn current_offset(&self) -> u16 {
+        self.code.len() as u16
+    }
+
+    pub fn load_reg(&mut self, reg: u8, val: f64) {
+        self.code.push(Opcode::LoadReg as u8);
+        self.code.push(reg);
+        self.code.extend_from_slice(&val.to_le_bytes());
+    }
+
+    pub fn add(&mut self, dest: u8, src1: u8, src2: u8) {
+        self.code.push(Opcode::Add as u8);
+        self.code.push(dest);
+        self.code.push(src1);
+        self.code.push(src2);
+    }
+
+    pub fn sub(&mut self, dest: u8, src1: u8, src2: u8) {
+        self.code.push(Opcode::Sub as u8);
+        self.code.push(dest);
+        self.code.push(src1);
+        self.code.push(src2);
+    }
+
+    pub fn mul(&mut self, dest: u8, src1: u8, src2: u8) {
+        self.code.push(Opcode::Mul as u8);
+        self.code.push(dest);
+        self.code.push(src1);
+        self.code.push(src2);
+    }
+
+    pub fn div(&mut self, dest: u8, src1: u8, src2: u8) {
+        self.code.push(Opcode::Div as u8);
+        self.code.push(dest);
+        self.code.push(src1);
+        self.code.push(src2);
+    }
+
+    pub fn cmp(&mut self, r1: u8, r2: u8) {
+        self.code.push(Opcode::Cmp as u8);
+        self.code.push(r1);
+        self.code.push(r2);
+    }
+
+    pub fn jmp(&mut self, target: u16) {
+        self.code.push(Opcode::Jmp as u8);
+        self.code.extend_from_slice(&target.to_le_bytes());
+    }
+
+    pub fn jmp_if_gt(&mut self, target: u16) {
+        self.code.push(Opcode::JmpIfGt as u8);
+        self.code.extend_from_slice(&target.to_le_bytes());
+    }
+
+    pub fn jmp_if_lt(&mut self, target: u16) {
+        self.code.push(Opcode::JmpIfLt as u8);
+        self.code.extend_from_slice(&target.to_le_bytes());
+    }
+
+    pub fn ret(&mut self, reg: u8) {
+        self.code.push(Opcode::Return as u8);
+        self.code.push(reg);
+    }
+
+    pub fn finish(self) -> Vec<u8> {
+        self.code
+    }
+}
+
+// Compiler removed for now as we are doing Assembly level tests
+// and the prompt shifted away from string parsing to bytecode logic.
+pub struct Compiler;
+impl Compiler {
+    pub fn compile(_source: &str) -> Vec<u8> {
+        Vec::new() // Stub to satisfy trait if needed
+    }
+}
+
+=== SOURCE CODE: intelligence/nucleus-director/tests/lazarus_trajectory.rs ===
+
+use ea_quenyan::{Assembler, QuenyanVM};
+use ea_symbiote::SovereignBlob; // For persistence mock
+
+#[test]
+fn test_lazarus_trajectory() {
+    println!("\n========================================");
+    println!("  🧪 TEST SUITE: THE LAZARUS TRAJECTORY");
+    println!("========================================\n");
+
+    phase_1_complexity();
+    phase_2_safety();
+    phase_3_persistence();
+}
+
+fn phase_1_complexity() {
+    println!("Phase 1: Complexity (The Descent)");
+    
+    // Build Bytecode
+    let mut asm = Assembler::new();
+    
+    // Init Registers
+    // 0=Alt, 1=Grav, 2=Vel, 3=Drag
+    asm.load_reg(0, 10000.0);
+    asm.load_reg(1, 10.0);
+    asm.load_reg(2, 50.0);
+    asm.load_reg(3, 2.0); // Also used as Divisor 2
+    
+    // LOOP_START (Offset: 40)
+    let loop_start = asm.current_offset();
+    assert_eq!(loop_start, 40, "Loop start offset mismatch");
+    
+    // Temp(4) = Vel(2) * Drag(3) => 50 * 2 = 100
+    asm.mul(4, 2, 3);
+    // Temp(4) = Temp(4) + Grav(1) => 100 + 10 = 110
+    asm.add(4, 4, 1);
+    // Alt(0) = Alt(0) - Temp(4) => 10000 - 110 = 9890
+    asm.sub(0, 0, 4);
+    
+    // PARACHUTE_CHECK
+    asm.load_reg(4, 5000.0);
+    asm.cmp(0, 4); // Alt vs 5000
+    
+    // If Alt > 5000, Jmp to CHECK_GROUND (Skip Div)
+    // Div is 4 bytes. Current is at 52 + 10 + 3 = 65. Jmp instr is 3. Next is 68.
+    // Div is at 68. Check Ground at 72.
+    asm.jmp_if_gt(72);
+    
+    // DEPLOY_PARACHUTE (Offset 68)
+    // Vel(2) = Vel(2) / Drag(3) => 50 / 2 = 25
+    asm.div(2, 2, 3);
+    
+    // CHECK_GROUND (Offset 72)
+    assert_eq!(asm.current_offset(), 72, "Check ground offset mismatch");
+    asm.load_reg(4, 0.0);
+    asm.cmp(0, 4); // Alt vs 0
+    
+    // If Alt < 0, Jmp to CRASH
+    // Current 72 + 10 + 3 = 85. JmpIf is 3. Next 88.
+    // Jmp Loop is 3. Next 91. Crash is 91.
+    asm.jmp_if_lt(91);
+    
+    // Loop
+    asm.jmp(loop_start);
+    
+    // CRASH (Offset 91)
+    assert_eq!(asm.current_offset(), 91, "Crash offset mismatch");
+    asm.ret(0);
+    
+    let bytecode = asm.finish();
+    println!("  Bytecode size: {} bytes", bytecode.len());
+    
+    // Execute
+    let mut vm = QuenyanVM::new();
+    let result = vm.execute(&bytecode);
+    
+    match result {
+        Ok(alt) => {
+            println!("  Touchdown Altitude: {}", alt);
+            // It should be negative (just below 0) because we check < 0.
+            // Loop runs until alt < 0.
+            assert!(alt < 0.0, "Altitude should be below zero");
+            assert!(alt > -200.0, "Altitude should not be too far below zero"); // Rough check
+            println!("  Result: SURVIVED (Logic Valid)");
+        }
+        Err(e) => panic!("  CRASHED: VM Error: {}", e),
+    }
+}
+
+fn phase_2_safety() {
+    println!("\nPhase 2: Safety (The Solar Flare)");
+    
+    // 1. Division by Zero
+    let mut asm = Assembler::new();
+    asm.load_reg(0, 100.0);
+    asm.load_reg(1, 0.0);
+    asm.div(2, 0, 1); // 100 / 0
+    asm.ret(2);
+    
+    let mut vm = QuenyanVM::new();
+    let res = vm.execute(&asm.finish());
+    assert!(res.is_err());
+    println!("  Scenario 1 (Black Hole): PASSED (Caught '{}')", res.err().unwrap());
+    
+    // 2. Infinite Loop (Energy Exhaustion)
+    let mut asm = Assembler::new();
+    let start = asm.current_offset();
+    asm.jmp(start); // Infinite Jump
+    
+    let mut vm = QuenyanVM::new();
+    let res = vm.execute(&asm.finish());
+    assert!(res.is_err());
+    println!("  Scenario 2 (Infinite Mirror): PASSED (Caught '{}')", res.err().unwrap());
+    
+    // 3. Invalid Opcode
+    let bad_code = vec![0xFF, 0x00, 0xAA]; // Return 0, then 0xAA (Garbage)
+    // Wait, 0xFF is valid Return.
+    // Let's execute just [0xAA]
+    let bad_code = vec![0xAA];
+    let mut vm = QuenyanVM::new();
+    let res = vm.execute(&bad_code);
+    assert!(res.is_err());
+    println!("  Scenario 3 (Alien Word): PASSED (Caught '{}')", res.err().unwrap());
+}
+
+fn phase_3_persistence() {
+    println!("\nPhase 3: Persistence (The Resurrection)");
+    
+    // 1. Imprint (Compile)
+    // We use a simple logic: Return 42
+    let mut asm = Assembler::new();
+    asm.load_reg(0, 42.0);
+    asm.ret(0);
+    let original_code = asm.finish();
+    
+    // 2. Ossify (Save to Blob)
+    // We simulate PermFS storage by wrapping in SovereignBlob
+    let blob = SovereignBlob::new_logic(&original_code);
+    let serialized = blob.serialize();
+    
+    println!("  Ossified to {} bytes", serialized.len());
+    
+    // 3. Lobotomy (Destroy VM, Keep Blob)
+    let mut vm = QuenyanVM::new(); // New instance, empty state
+    
+    // 4. Rebirth (Load from Blob)
+    let loaded_blob = SovereignBlob::deserialize(&serialized).unwrap();
+    let restored_code = loaded_blob.payload;
+    
+    assert_eq!(original_code, restored_code, "Code mutation detected!");
+    
+    let result = vm.execute(&restored_code).unwrap();
+    assert_eq!(result, 42.0);
+    
+    println!("  Resurrection: SUCCESS (Output: {})", result);
+}

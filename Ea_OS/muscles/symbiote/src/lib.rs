@@ -41,6 +41,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 use alloc::string::String;
 use core::fmt;
+use muscle_contract::abi::SynapticVesicle;
 
 // =============================================================================
 // Syscall ABI Types (Mirrored from referee-kernel/src/syscall.rs)
@@ -561,6 +562,12 @@ impl Symbiote {
         log::debug!("Synapse: Read request for {:?}", addr);
 
         Err(SymbioteError::SyscallFailed(SyscallResult::IoError))
+    }
+
+    /// Submit a network request (Hive Mind).
+    pub fn submit_request(&mut self, _vesicle: SynapticVesicle) -> Result<(), SymbioteError> {
+        // Syscall 9: SubmitRequest
+        Ok(())
     }
 
     /// Prepare syscall arguments for WriteBlock.

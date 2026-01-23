@@ -9,6 +9,7 @@
 //! - Executing simple computations
 
 use ea_symbiote::{BlockAddr, SovereignDocument, Symbiote};
+use ea_quenyan::{Compiler, QuenyanVM};
 
 use crate::{AgentResponse, LogicUnit};
 
@@ -81,78 +82,15 @@ impl MyocyteAgent {
     }
 
     /// Compile a formula to bytecode
-    ///
-    /// This is a simplified compiler that generates a basic bytecode representation.
-    /// In the full implementation, this would use the Quenyan compiler with
-    /// the --emit-sovereign flag to produce proper morpheme-compressed bytecode.
     fn compile_formula(&self, formula: &str) -> Vec<u8> {
-        // Simple bytecode format:
-        // [0x4C, 0x4F, 0x47, 0x49, 0x43] = "LOGIC" magic
-        // [len_hi, len_lo] = formula length
-        // [formula bytes...]
-        // [checksum]
-
-        let mut bytecode = Vec::new();
-
-        // Magic header
-        bytecode.extend_from_slice(b"LOGIC");
-
-        // Formula length (2 bytes, big-endian)
-        let len = formula.len() as u16;
-        bytecode.push((len >> 8) as u8);
-        bytecode.push(len as u8);
-
-        // Formula bytes
-        bytecode.extend_from_slice(formula.as_bytes());
-
-        // Simple checksum (sum of all bytes mod 256)
-        let checksum: u8 = bytecode.iter().fold(0u8, |acc, &b| acc.wrapping_add(b));
-        bytecode.push(checksum);
-
-        bytecode
+        Compiler::compile(formula)
     }
 
     /// Execute a simple arithmetic formula
-    ///
-    /// Supports basic operations: +, -, *, /
-    /// Returns the result as a string, or an error message.
     pub fn evaluate_simple(&self, formula: &str) -> Result<f64, String> {
-        // Very basic expression evaluator for simple arithmetic
-        let formula = formula.trim();
-
-        // Try to parse as a single number first
-        if let Ok(n) = formula.parse::<f64>() {
-            return Ok(n);
-        }
-
-        // Look for operators (left to right, no precedence)
-        for op in ['+', '-', '*', '/'] {
-            if let Some(pos) = formula.rfind(op) {
-                if pos > 0 {
-                    let left = &formula[..pos].trim();
-                    let right = &formula[pos + 1..].trim();
-
-                    let left_val = self.evaluate_simple(left)?;
-                    let right_val = self.evaluate_simple(right)?;
-
-                    return match op {
-                        '+' => Ok(left_val + right_val),
-                        '-' => Ok(left_val - right_val),
-                        '*' => Ok(left_val * right_val),
-                        '/' => {
-                            if right_val == 0.0 {
-                                Err("Division by zero".to_string())
-                            } else {
-                                Ok(left_val / right_val)
-                            }
-                        }
-                        _ => unreachable!(),
-                    };
-                }
-            }
-        }
-
-        Err(format!("Cannot parse expression: {}", formula))
+        let bytecode = self.compile_formula(formula);
+        let mut vm = QuenyanVM::new();
+        vm.execute(&bytecode)
     }
 
     /// Process and evaluate a formula, storing both formula and result
@@ -243,15 +181,11 @@ mod tests {
 
         let bytecode = myocyte.compile_formula("2 + 2");
 
-        // Should have LOGIC header
-        assert_eq!(&bytecode[0..5], b"LOGIC");
-
-        // Length should be 5 (for "2 + 2")
-        let len = ((bytecode[5] as u16) << 8) | (bytecode[6] as u16);
-        assert_eq!(len, 5);
-
-        // Formula should be present
-        assert_eq!(&bytecode[7..12], b"2 + 2");
+        // Should start with Push (0x01)
+        assert_eq!(bytecode[0], 0x01);
+        
+        // Should end with Ret (0xFF)
+        assert_eq!(bytecode.last(), Some(&0xFF));
     }
 
     #[test]

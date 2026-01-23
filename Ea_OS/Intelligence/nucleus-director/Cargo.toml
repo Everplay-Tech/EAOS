@@ -28,9 +28,10 @@ ed25519-dalek = { workspace = true, default-features = false }
 blake3 = { workspace = true, default-features = false }
 ea-broca = { path = "../../muscles/broca", default-features = false }
 ea-dreamer = { path = "../../muscles/dreamer", default-features = false }
-ea-mirror = { path = "../../muscles/mirror", default-features = false }
+ea-quenyan = { path = "../../muscles/quenyan-vm", default-features = false }
 ea-sentry = { path = "../../muscles/sentry", default-features = false }
 ea-mitochondria = { path = "../../muscles/mitochondria", default-features = false }
+ea-mirror = { path = "../../muscles/mirror", default-features = false }
 
 [dev-dependencies]
 ea-cardio = { path = "../../organs/cardio" }

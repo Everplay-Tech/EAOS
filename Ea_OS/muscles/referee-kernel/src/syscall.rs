@@ -44,6 +44,10 @@ impl BlockAddr {
     }
 }
 
+use muscle_contract::abi::SynapticVesicle;
+
+// ...
+
 /// System call numbers for EAOS kernel interface.
 #[repr(u64)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -66,6 +70,8 @@ pub enum SyscallNumber {
     GetTime = 7,
     /// Log message to audit trail
     AuditLog = 8,
+    /// Submit network request (Hive Mind)
+    SubmitRequest = 9,
 }
 
 impl SyscallNumber {
@@ -80,6 +86,7 @@ impl SyscallNumber {
             6 => Some(Self::FreePages),
             7 => Some(Self::GetTime),
             8 => Some(Self::AuditLog),
+            9 => Some(Self::SubmitRequest),
             _ => None,
         }
     }
@@ -233,6 +240,24 @@ pub fn syscall_dispatch(
         }
         SyscallNumber::GetTime => {
             // Return TSC value (simplified)
+            SyscallResult::Success as i64
+        }
+        SyscallNumber::AuditLog => {
+            // Placeholder for audit logging
+            SyscallResult::Success as i64
+        }
+        SyscallNumber::SubmitRequest => {
+            let vesicle_ptr = arg1 as *const SynapticVesicle;
+            if vesicle_ptr.is_null() {
+                return SyscallResult::InvalidBuffer as i64;
+            }
+            
+            // Safety: Read vesicle from user space
+            let vesicle = unsafe { *vesicle_ptr };
+            
+            // Push to outbox for scheduler to transmit
+            crate::outbox::push(vesicle);
+            
             SyscallResult::Success as i64
         }
         _ => SyscallResult::InvalidSyscall as i64,

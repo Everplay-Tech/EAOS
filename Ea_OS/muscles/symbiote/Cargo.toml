@@ -20,6 +20,7 @@ alloc = []
 blake3 = { version = "1.5", default-features = false }
 log = { version = "0.4", default-features = false }
 hex = { version = "0.4", default-features = false, features = ["alloc"] }
+muscle-contract = { path = "../../muscle-contract", default-features = false }
 
 [dev-dependencies]
 proptest = "1.0"

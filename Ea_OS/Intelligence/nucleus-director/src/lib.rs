@@ -309,6 +309,10 @@ impl NucleusDirector {
     pub fn biowerk(&self) -> &BIOwerk {
         &self.biowerk
     }
+
+    pub fn biowerk_mut(&mut self) -> &mut BIOwerk {
+        &mut self.biowerk
+    }
 }
 
 // ============================================================================ 
@@ -352,6 +356,7 @@ use ea_mitochondria::regulate;
 use ea_broca::process_speech;
 use ea_mirror::reflect;
 use muscle_contract::broca::IntentOp;
+use muscle_contract::abi::SynapticVesicle;
 use muscle_contract::mirror::{MirrorOp, MirrorRequest, SafetyLevel};
 use muscle_contract::sentry::{SentryOp, SentryRequest};
 use muscle_contract::mitochondria::{MitochondriaOp, EnergyRequest, EnergyLevel};
@@ -451,10 +456,34 @@ pub extern "C" fn boot_entry(params: *const BootParameters) -> ! {
              }
              
              match req.intent {
-                 IntentOp::Survey => {
-                     // LIST
-                     let _ = director.process(DirectorRequest::ListDocuments);
-                 }
+                            IntentOp::Survey => {
+                                let _ = director.process(DirectorRequest::ListDocuments);
+                            }
+                            IntentOp::Harvest => {
+                                let target_id = req.target_id;
+                                let mut payload_data = alloc::vec::Vec::new();
+                                payload_data.extend_from_slice(b"Harvest ");
+                                payload_data.extend_from_slice(format!("{}", target_id).as_bytes());
+                                
+                                let hash = blake3::hash(&payload_data);
+                                let sign_res = guard(SentryRequest {
+                                    op: SentryOp::SignHash,
+                                    payload: *hash.as_bytes(),
+                                });
+                                
+                                if sign_res.status == 0 {
+                                    let mut full_payload = alloc::vec::Vec::new();
+                                    full_payload.extend_from_slice(&sign_res.signature);
+                                    full_payload.extend_from_slice(&payload_data);
+                                    
+                                    let vesicle = SynapticVesicle::new(0, now, &full_payload);
+                                    let _ = director.biowerk_mut().synapse_mut().submit_request(vesicle);
+                                    
+                                    if let Some(ref mut v) = visual {
+                                        v.draw_text(20, 140, "Transmitting...", Color::SYNAPSE);
+                                    }
+                                }
+                            }
                  IntentOp::Recall => {
                      // READ (using target_id as block addr? No, Director uses filename usually)
                      // For now, just log intent

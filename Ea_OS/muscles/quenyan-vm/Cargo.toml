@@ -1,0 +1,12 @@
+[package]
+name = "ea-quenyan"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ea Foundation"]
+description = "Quenyan - Reflex Logic VM"
+
+[dependencies]
+# No external deps to ensure no_std purity
+
+[lib]
+crate-type = ["rlib"]

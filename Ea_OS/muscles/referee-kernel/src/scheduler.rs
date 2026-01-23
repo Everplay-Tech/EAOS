@@ -343,6 +343,18 @@ pub fn run_scheduler_with_net(
                 unsafe {
                     tick_arachnid_tcp(driver, &mut sockets, iface, socket_handle);
                 }
+                
+                // Poll Outbox (Hive Mind Transmission)
+                if let Some(vesicle) = crate::outbox::pop() {
+                     uart.log("HIVE", "Transmitting...");
+                     let socket = sockets.get_mut::<TcpSocket>(socket_handle);
+                     if socket.can_send() {
+                         // Send payload
+                         // In Phase 1, we send raw bytes.
+                         // Security Note: Payload is already encrypted/signed by Nucleus/Sentry.
+                         let _ = socket.send_slice(&vesicle.payload[..vesicle.payload_size as usize]);
+                     }
+                }
             }
         } else {
             unsafe {
