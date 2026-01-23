@@ -32,6 +32,7 @@ ea-quenyan = { path = "../../muscles/quenyan-vm", default-features = false }
 ea-sentry = { path = "../../muscles/sentry", default-features = false }
 ea-mitochondria = { path = "../../muscles/mitochondria", default-features = false }
 ea-mirror = { path = "../../muscles/mirror", default-features = false }
+heapless = "0.7"
 
 [dev-dependencies]
 ea-cardio = { path = "../../organs/cardio" }

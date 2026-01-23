@@ -344,22 +344,19 @@ fn get_kernel_time() -> u64 {
 }
 
 mod thalamus;
+
 mod font;
+
 mod visual_cortex;
+
+mod endocrine;
 
 use thalamus::{Thalamus, Stimulus};
 use visual_cortex::{VisualCortex, Color};
-// use ed25519_dalek::SigningKey;
-// use blake3::Hash;
+use endocrine::EndocrineSystem;
+use muscle_contract::abi::Pheromone;
 use ea_sentry::guard;
-use ea_mitochondria::regulate;
-use ea_broca::process_speech;
-use ea_mirror::reflect;
-use muscle_contract::broca::IntentOp;
-use muscle_contract::abi::SynapticVesicle;
-use muscle_contract::mirror::{MirrorOp, MirrorRequest, SafetyLevel};
 use muscle_contract::sentry::{SentryOp, SentryRequest};
-use muscle_contract::mitochondria::{MitochondriaOp, EnergyRequest, EnergyLevel};
 
 // ...
 
@@ -376,20 +373,17 @@ pub extern "C" fn boot_entry(params: *const BootParameters) -> ! {
         &*params
     };
 
-    // Initialize the Sovereign Director
+    // Initialize Organs
     let mut director = NucleusDirector::new();
     let mut thalamus = Thalamus::new(params);
+    let mut endocrine = EndocrineSystem::new();
     
     // Initialize Visual Cortex (The Retina)
     let mut visual = VisualCortex::new(params);
     if let Some(ref mut v) = visual {
         v.clear(Color::VOID);
         v.draw_text(20, 20, "EAOS Nucleus v1.0", Color::LIFE);
-        v.draw_text(20, 40, "Sensory Cortex: ONLINE", Color::SYNAPSE);
-        v.draw_text(20, 50, "Language Center (Broca): ACTIVE", Color::SYNAPSE);
-        v.draw_text(20, 60, "Mirror Neurons: ACTIVE", Color::SYNAPSE);
-        v.draw_text(20, 70, "Sentry: GUARDING", Color::SYNAPSE);
-        v.draw_text(20, 80, "Mitochondria: ENERGIZED", Color::SYNAPSE);
+        v.draw_text(20, 40, "Event Loop: DOUBLE BUFFERED", Color::SYNAPSE);
     }
     
     // Initialize Sentry with Master Key
@@ -397,136 +391,72 @@ pub extern "C" fn boot_entry(params: *const BootParameters) -> ! {
         op: SentryOp::Initialize,
         payload: params.master_key,
     });
+    
+    endocrine.secrete(Pheromone::Inert); // Kickstart
 
-    // Nucleus Event Loop
+    // Nucleus Event Loop (The Choir)
     loop {
-        // A. Tick: Update biological time
-        let now = get_kernel_time();
+        // 1. Systole (Cycle Pheromones)
+        endocrine.cycle();
+        let mut signals = alloc::vec::Vec::new();
+        signals.extend_from_slice(endocrine.sense());
         
-        // Report Metabolic Usage
-        let energy = regulate(EnergyRequest {
-            op: MitochondriaOp::ReportUsage,
-            muscle_id: 0,
-            cycles: 100, // Cost of being alive
-        });
+        // 2. Diastole (Organs React to Circulation)
         
-        if energy.level == EnergyLevel::Exhausted {
-             if let Some(ref mut v) = visual {
-                 v.draw_text(20, 120, "FATIGUE: Throttling...", Color::ALERT);
-             }
-             // Deep rest
-             #[cfg(not(feature = "std"))]
-             for _ in 0..1000 { unsafe { core::arch::asm!("pause"); } }
-        }
-        
-        // Visual Heartbeat
-        if let Some(ref mut v) = visual {
-            let pulse = if (now / 1000) % 2 == 0 { Color::ALERT } else { Color::DORMANT }; // Assuming now is TSC/micros
-            // Draw small square in top right
-            v.draw_rect(v.width - 30, 20, 10, 10, pulse);
-        }
-
-        // B. Sense: The Thalamus acts as the filter
-        let stimulus = thalamus.fetch_next_stimulus();
-
-        // C. Think: Process the stimulus or dream (idle processing)
-        if let Some(Stimulus::Volition(cmd_bytes)) = stimulus {
-             // Echo command to screen
-             if let Some(ref mut v) = visual {
-                 v.draw_text(20, 100, "CMD: ", Color::TEXT);
-                 if let Ok(s) = alloc::str::from_utf8(&cmd_bytes) {
-                     v.draw_text(60, 100, s, Color::LIFE);
-                 }
-             }
-             
-             // D. Interpret: Broca (The Language Center)
-             let req = process_speech(cmd_bytes.as_ptr(), cmd_bytes.len());
-             
-             // E. Reflect: Mirror (Consequence Engine)
-             let safety = reflect(MirrorRequest {
-                 op: MirrorOp::SimulateIntent,
-                 intent_type: req.intent as u8,
-                 target_id: req.target_id,
-             });
-             
-             if safety.level == SafetyLevel::Caution {
-                 if let Some(ref mut v) = visual {
-                     v.draw_text(20, 120, "CAUTION: Consequence Predicted", Color::ALERT);
-                 }
-             }
-             
-             match req.intent {
-                            IntentOp::Survey => {
-                                let _ = director.process(DirectorRequest::ListDocuments);
-                            }
-                            IntentOp::Harvest => {
-                                let target_id = req.target_id;
-                                let mut payload_data = alloc::vec::Vec::new();
-                                payload_data.extend_from_slice(b"Harvest ");
-                                payload_data.extend_from_slice(format!("{}", target_id).as_bytes());
-                                
-                                let hash = blake3::hash(&payload_data);
-                                let sign_res = guard(SentryRequest {
-                                    op: SentryOp::SignHash,
-                                    payload: *hash.as_bytes(),
-                                });
-                                
-                                if sign_res.status == 0 {
-                                    let mut full_payload = alloc::vec::Vec::new();
-                                    full_payload.extend_from_slice(&sign_res.signature);
-                                    full_payload.extend_from_slice(&payload_data);
-                                    
-                                    let vesicle = SynapticVesicle::new(0, now, &full_payload);
-                                    let _ = director.biowerk_mut().synapse_mut().submit_request(vesicle);
-                                    
-                                    if let Some(ref mut v) = visual {
-                                        v.draw_text(20, 140, "Transmitting...", Color::SYNAPSE);
-                                    }
-                                }
-                            }
-                 IntentOp::Recall => {
-                     // READ (using target_id as block addr? No, Director uses filename usually)
-                     // For now, just log intent
-                 }
-                 IntentOp::Memorize => {
-                     // SAVE
-                     let name_len = req.payload_len as usize;
-                     if let Ok(name) = alloc::str::from_utf8(&req.payload[..name_len]) {
-                         let _ = director.process(DirectorRequest::WriteDocument {
-                             filename: name.to_string(),
-                             content: "Content pending...".to_string(),
-                         });
-                     }
-                 }
-                 IntentOp::Aphasia => {
-                     if let Some(ref mut v) = visual {
-                         v.draw_text(20, 120, "Error: Aphasia (Syntax Error)", Color::ALERT);
-                     }
-                 }
-                 _ => {}
-             }
-        } else {
-            // Dream / Heartbeat
-            director.process(DirectorRequest::CardioHeartbeat);
-            
-            // F. Dream: Integrity Check
-            use muscle_contract::dreamer::{DreamerOp, DreamerRequest};
-            let dream_req = DreamerRequest {
-                op: DreamerOp::VerifyRange,
-                start_block: 0, 
-                count: 1,
-            };
-            let dummy_block = [0u8; 4096]; // Placeholder for FS read
-            let result = ea_dreamer::dream_step(dream_req, &dummy_block);
-            
-            if result.errors_found > 0 {
-                 if let Some(ref mut v) = visual {
-                     v.draw_text(20, 100, "Nightmare: Corruption Detected", Color::ALERT);
-                 }
+        // A. Visual Cortex (Perception)
+        for signal in &signals {
+            if let Some(ref mut v) = visual {
+                match signal {
+                    Pheromone::SomaticInput(byte) => {
+                        v.draw_text(20, 100, "Input: Sensed", Color::LIFE);
+                    }
+                    Pheromone::ConceptFormed(val) => {
+                        v.draw_text(20, 120, "Logic: Computed", Color::SYNAPSE);
+                    }
+                    Pheromone::OsteonCalcified => {
+                        v.draw_text(20, 140, "SAVED", Color::LIFE);
+                    }
+                    Pheromone::Adrenaline(code) => {
+                        v.draw_text(20, 160, "PANIC", Color::ALERT);
+                    }
+                    _ => {}
+                }
             }
         }
+        
+        // B. Myocyte (Cognition)
+        for signal in &signals {
+            if let Pheromone::SomaticInput(b's') = signal {
+                // 's' triggers simulation
+                if let Ok(res) = director.biowerk().myocyte.evaluate_simple("2 + 2") {
+                    endocrine.secrete(Pheromone::ConceptFormed(res));
+                }
+            }
+        }
+        
+        // C. Osteon (Memory)
+        for signal in &signals {
+            if let Pheromone::ConceptFormed(_) = signal {
+                // Save the thought
+                let _ = director.process(DirectorRequest::WriteDocument {
+                    filename: "thought.qyn".to_string(),
+                    content: "4.0".to_string(),
+                });
+                endocrine.secrete(Pheromone::OsteonCalcified);
+            }
+        }
+        
+        // 3. Secretion (Input Gathering)
+        // Thalamus pushes new sensory data for NEXT tick
+        if let Some(stimulus) = thalamus.fetch_next_stimulus() {
+             if let Stimulus::Volition(bytes) = stimulus {
+                 for b in bytes {
+                     endocrine.secrete(Pheromone::SomaticInput(b));
+                 }
+             }
+        }
 
-        // E. Rest: Yield to kernel
+        // F. Rest: Yield to kernel
         #[cfg(not(feature = "std"))]
         unsafe {
             core::arch::asm!("syscall", in("rax") 3u64); // SyscallNumber::Yield

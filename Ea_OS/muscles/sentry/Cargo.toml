@@ -8,6 +8,7 @@ description = "Sentry - Cryptographic Keymaster"
 [dependencies]
 muscle-contract = { path = "../../muscle-contract", default-features = false }
 ed25519-dalek = { workspace = true, default-features = false }
+spin = { version = "0.9", default-features = false, features = ["mutex", "spin_mutex"] }
 
 [lib]
 crate-type = ["rlib"]
