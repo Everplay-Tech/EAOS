@@ -134,6 +134,10 @@ pub enum SyscallNumber {
     GetTime = 7,
     /// Log message to audit trail
     AuditLog = 8,
+    /// Submit network request (Hive Mind)
+    SubmitRequest = 9,
+    /// Poll network input (Arachnid)
+    PollNetwork = 10,
 }
 
 /// Syscall result codes.
@@ -568,6 +572,33 @@ impl Symbiote {
     pub fn submit_request(&mut self, _vesicle: SynapticVesicle) -> Result<(), SymbioteError> {
         // Syscall 9: SubmitRequest
         Ok(())
+    }
+
+    /// Poll network for visceral input (Arachnid)
+    pub fn poll_network(&mut self) -> Result<Vec<u8>, SymbioteError> {
+        let mut buffer = Vec::with_capacity(1024);
+        buffer.resize(1024, 0);
+
+        #[cfg(all(target_arch = "x86_64", not(feature = "std")))]
+        unsafe {
+            let res: i64;
+            core::arch::asm!(
+                "syscall",
+                in("rax") 10u64,
+                in("rdi") buffer.as_mut_ptr(),
+                in("rsi") buffer.len(),
+                out("rax") res,
+                out("rcx") _,
+                out("r11") _,
+                options(nostack)
+            );
+            if res > 0 {
+                buffer.truncate(res as usize);
+                return Ok(buffer);
+            }
+        }
+        
+        Ok(Vec::new())
     }
 
     /// Prepare syscall arguments for WriteBlock.

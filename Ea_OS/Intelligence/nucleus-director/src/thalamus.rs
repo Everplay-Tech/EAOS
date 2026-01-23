@@ -7,6 +7,8 @@ use alloc::collections::VecDeque;
 use core::sync::atomic::{AtomicBool, Ordering};
 use muscle_contract::BootParameters;
 
+use ea_symbiote::Symbiote;
+
 // 1. THE SYNAPSE (Shared Memory Flag)
 // In a real system, this would be a pointer to a specific memory address shared with the Referee.
 // For now, we simulate it or expect it to be passed in BootParameters.
@@ -26,46 +28,48 @@ pub enum Stimulus {
 // 3. THE THALAMUS (Multiplexer)
 pub struct Thalamus {
     uart_nerve: VecDeque<u8>, 
-    // optic_nerve: BioStreamReader, // TODO: Implement BioStreamReader
-    afferent_signal: &'static AtomicBool, // Placeholder for shared flag
+    afferent_signal: &'static AtomicBool,
+    synapse: Symbiote,
 }
 
 impl Thalamus {
-    pub fn new(_params: &BootParameters) -> Self {
-        // In a real implementation, we would map the UART buffer and BioStream from params.
-        // For now, we initialize empty.
+    pub fn new(params: &BootParameters) -> Self {
+        // Map Afferent Signal
         static DUMMY_SIGNAL: AtomicBool = AtomicBool::new(false);
+        let signal = if params.afferent_signal_addr != 0 {
+            unsafe { &*(params.afferent_signal_addr as *const AtomicBool) }
+        } else {
+            &DUMMY_SIGNAL
+        };
         
         Self {
             uart_nerve: VecDeque::with_capacity(128),
-            afferent_signal: &DUMMY_SIGNAL,
+            afferent_signal: signal,
+            synapse: Symbiote::new(),
         }
     }
 
     /// The "Gating" function.
     /// Returns the most critical stimulus, suppressing noise if Volition is active.
     pub fn fetch_next_stimulus(&mut self) -> Option<Stimulus> {
-        // A. Check the Reflex Arc (Optimization)
-        // If the nerve hasn't fired and we have no pending conscious tasks, return.
-        if !self.afferent_signal.load(Ordering::Relaxed) && self.uart_nerve.is_empty() {
-            // Check optic nerve (lower priority)
-            // if let Some(data) = self.optic_nerve.read_latest() {
-            //     return Some(Stimulus::Perception(data));
-            // }
-            return None; 
-        }
-
-        // B. Somatic Override (Conscious Volition)
-        // In a real system, we'd read from the shared UART ring buffer here.
-        if !self.uart_nerve.is_empty() {
-            let mut cmd = Vec::new();
-            while let Some(byte) = self.uart_nerve.pop_front() {
-                cmd.push(byte);
+        // A. Somatic Override (Conscious Volition)
+        if self.afferent_signal.load(Ordering::Relaxed) || !self.uart_nerve.is_empty() {
+            // Check real UART (simulated via inject_uart for now)
+            if !self.uart_nerve.is_empty() {
+                let mut cmd = Vec::new();
+                while let Some(byte) = self.uart_nerve.pop_front() {
+                    cmd.push(byte);
+                }
+                self.afferent_signal.store(false, Ordering::Relaxed);
+                return Some(Stimulus::Volition(cmd));
             }
-            
-            // Acknowledge the signal to reset the reflex
-            self.afferent_signal.store(false, Ordering::Relaxed);
-            return Some(Stimulus::Volition(cmd));
+        }
+        
+        // B. Visceral Input (Network)
+        if let Ok(data) = self.synapse.poll_network() {
+            if !data.is_empty() {
+                return Some(Stimulus::Perception(data));
+            }
         }
 
         None

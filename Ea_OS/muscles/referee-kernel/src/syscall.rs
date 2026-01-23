@@ -72,6 +72,8 @@ pub enum SyscallNumber {
     AuditLog = 8,
     /// Submit network request (Hive Mind)
     SubmitRequest = 9,
+    /// Poll network input (Arachnid)
+    PollNetwork = 10,
 }
 
 impl SyscallNumber {
@@ -87,6 +89,7 @@ impl SyscallNumber {
             7 => Some(Self::GetTime),
             8 => Some(Self::AuditLog),
             9 => Some(Self::SubmitRequest),
+            10 => Some(Self::PollNetwork),
             _ => None,
         }
     }
@@ -259,6 +262,36 @@ pub fn syscall_dispatch(
             crate::outbox::push(vesicle);
             
             SyscallResult::Success as i64
+        }
+        SyscallNumber::PollNetwork => {
+            let buf_ptr = arg1 as *mut u8;
+            let buf_len = arg2 as usize;
+            
+            if buf_ptr.is_null() || buf_len == 0 {
+                return SyscallResult::InvalidBuffer as i64;
+            }
+            
+            let stream = unsafe { crate::arachnid::get_stream() };
+            let available = stream.available() as usize;
+            
+            if available == 0 {
+                return 0;
+            }
+            
+            let to_read = available.min(buf_len);
+            let tail = stream.read_tail.load(Ordering::Acquire);
+            let capacity = stream.capacity as usize;
+            
+            let user_slice = unsafe { core::slice::from_raw_parts_mut(buf_ptr, to_read) };
+            
+            for i in 0..to_read {
+                let idx = (tail as usize + i) % capacity;
+                user_slice[i] = unsafe { core::ptr::read_volatile(stream.data.as_ptr().add(idx)) };
+            }
+            
+            stream.read_tail.store(tail.wrapping_add(to_read as u32), Ordering::Release);
+            
+            to_read as i64
         }
         _ => SyscallResult::InvalidSyscall as i64,
     }

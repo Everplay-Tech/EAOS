@@ -449,9 +449,14 @@ pub extern "C" fn boot_entry(params: *const BootParameters) -> ! {
         // 3. Secretion (Input Gathering)
         // Thalamus pushes new sensory data for NEXT tick
         if let Some(stimulus) = thalamus.fetch_next_stimulus() {
-             if let Stimulus::Volition(bytes) = stimulus {
-                 for b in bytes {
-                     endocrine.secrete(Pheromone::SomaticInput(b));
+             match stimulus {
+                 Stimulus::Volition(bytes) => {
+                     for b in bytes {
+                         endocrine.secrete(Pheromone::SomaticInput(b));
+                     }
+                 }
+                 Stimulus::Perception(bytes) => {
+                     endocrine.secrete(Pheromone::VisceralInput(bytes.len()));
                  }
              }
         }
