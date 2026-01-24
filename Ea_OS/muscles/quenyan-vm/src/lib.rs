@@ -61,7 +61,6 @@ impl QuenyanVM {
     /// Execute bytecode. Returns the value of the register specified in Return opcode.
     pub fn execute(&mut self, bytecode: &[u8]) -> Result<f64, String> {
         let mut pc = 0;
-        // Limit execution to prevent infinite loops (Energy Budget)
         let mut cycles = 0;
         const MAX_CYCLES: u32 = 10000; 
 
@@ -147,11 +146,6 @@ impl QuenyanVM {
         *pc += 2;
         
         if condition {
-            // Note: The prompt implies target is an instruction index, but we have variable length instructions.
-            // For simplicity in this VM, target is BYTE OFFSET.
-            // But the prompt example: "Jump to Index 11".
-            // If instructions are variable length, index is hard.
-            // We will assume target is BYTE OFFSET for the VM. The assembler must calculate it.
             if target >= bytecode.len() { return Err("Jump out of bounds".to_string()); }
             *pc = target;
         }
@@ -244,11 +238,153 @@ impl Assembler {
     }
 }
 
-// Compiler removed for now as we are doing Assembly level tests
-// and the prompt shifted away from string parsing to bytecode logic.
-pub struct Compiler;
-impl Compiler {
-    pub fn compile(_source: &str) -> Vec<u8> {
-        Vec::new() // Stub to satisfy trait if needed
+// Recursive Descent Parser for arithmetic
+struct Parser {
+    tokens: Vec<Token>,
+    pos: usize,
+    asm: Assembler,
+    next_reg: u8,
+}
+
+impl Parser {
+    fn new(tokens: Vec<Token>) -> Self {
+        Self { tokens, pos: 0, asm: Assembler::new(), next_reg: 0 }
     }
+
+    fn alloc_reg(&mut self) -> u8 {
+        let r = self.next_reg;
+        self.next_reg += 1;
+        if self.next_reg >= 16 { 
+            // In a real system we'd spill to stack, but for V1 we panic/error
+            // Since we can't panic in no_std without abort, we handle it?
+            // Just wrap in 16.
+            return 15; 
+        }
+        r
+    }
+
+    fn free_reg(&mut self) {
+        if self.next_reg > 0 { self.next_reg -= 1; }
+    }
+
+    fn peek(&self) -> Option<&Token> {
+        self.tokens.get(self.pos)
+    }
+
+    fn advance(&mut self) {
+        self.pos += 1;
+    }
+
+    fn parse(&mut self) -> Vec<u8> {
+        let result_reg = self.expression();
+        self.asm.ret(result_reg);
+        let asm = core::mem::replace(&mut self.asm, Assembler::new());
+        asm.finish()
+    }
+
+    fn expression(&mut self) -> u8 {
+        let left = self.term();
+
+        while let Some(Token::Op(op)) = self.peek() {
+            if *op == '+' || *op == '-' {
+                let op_char = *op;
+                self.advance();
+                let right = self.term();
+                match op_char {
+                    '+' => self.asm.add(left, left, right),
+                    '-' => self.asm.sub(left, left, right),
+                    _ => {}
+                }
+                self.free_reg(); // Release 'right' register
+            } else {
+                break;
+            }
+        }
+        left
+    }
+
+    fn term(&mut self) -> u8 {
+        let left = self.factor();
+
+        while let Some(Token::Op(op)) = self.peek() {
+            if *op == '*' || *op == '/' {
+                let op_char = *op;
+                self.advance();
+                let right = self.factor();
+                match op_char {
+                    '*' => self.asm.mul(left, left, right),
+                    '/' => self.asm.div(left, left, right),
+                    _ => {}
+                }
+                self.free_reg();
+            } else {
+                break;
+            }
+        }
+        left
+    }
+
+    fn factor(&mut self) -> u8 {
+        if let Some(Token::Num(n)) = self.peek() {
+            let val = *n;
+            self.advance();
+            let reg = self.alloc_reg();
+            self.asm.load_reg(reg, val);
+            reg
+        } else if let Some(Token::Op('(')) = self.peek() {
+            self.advance();
+            let reg = self.expression();
+            if let Some(Token::Op(')')) = self.peek() {
+                self.advance();
+            }
+            reg
+        } else {
+            0 // Should handle error
+        }
+    }
+}
+
+pub struct Compiler;
+
+impl Compiler {
+    pub fn compile(source: &str) -> Vec<u8> {
+        let tokens = tokenize(source);
+        if tokens.is_empty() { return Vec::new(); }
+        let mut parser = Parser::new(tokens);
+        parser.parse()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Token {
+    Num(f64),
+    Op(char),
+}
+
+fn tokenize(s: &str) -> Vec<Token> {
+    let mut tokens = Vec::new();
+    let mut chars = s.chars().peekable();
+    
+    while let Some(&c) = chars.peek() {
+        if c.is_ascii_digit() || c == '.' {
+            let mut num_str = String::new();
+            while let Some(&d) = chars.peek() {
+                if d.is_ascii_digit() || d == '.' {
+                    num_str.push(d);
+                    chars.next();
+                } else {
+                    break;
+                }
+            }
+            if let Ok(n) = num_str.parse::<f64>() {
+                tokens.push(Token::Num(n));
+            }
+        } else if "+-*/()".contains(c) {
+            tokens.push(Token::Op(c));
+            chars.next();
+        } else {
+            chars.next(); // Skip whitespace
+        }
+    }
+    tokens
 }

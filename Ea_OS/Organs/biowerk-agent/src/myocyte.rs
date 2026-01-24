@@ -181,11 +181,13 @@ mod tests {
 
         let bytecode = myocyte.compile_formula("2 + 2");
 
-        // Should start with Push (0x01)
+        // Should start with Push (LoadReg 0x01)
         assert_eq!(bytecode[0], 0x01);
         
-        // Should end with Ret (0xFF)
-        assert_eq!(bytecode.last(), Some(&0xFF));
+        // Should end with Ret (0xFF) + Reg
+        let len = bytecode.len();
+        assert!(len >= 2);
+        assert_eq!(bytecode[len - 2], 0xFF);
     }
 
     #[test]
