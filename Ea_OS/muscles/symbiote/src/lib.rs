@@ -138,6 +138,8 @@ pub enum SyscallNumber {
     SubmitRequest = 9,
     /// Poll network input (Arachnid)
     PollNetwork = 10,
+    /// Read system statistics (Antibody)
+    ReadStats = 11,
 }
 
 /// Syscall result codes.
@@ -599,6 +601,30 @@ impl Symbiote {
         }
         
         Ok(Vec::new())
+    }
+
+    /// Read system statistics (Antibody)
+    pub fn read_stats(&mut self) -> Result<[u64; 4], SymbioteError> {
+        let mut stats = [0u64; 4];
+        
+        #[cfg(all(target_arch = "x86_64", not(feature = "std")))]
+        unsafe {
+            let res: i64;
+            core::arch::asm!(
+                "syscall",
+                in("rax") 11u64,
+                in("rdi") stats.as_mut_ptr(),
+                in("rsi") 0,
+                out("rax") res,
+                out("rcx") _,
+                out("r11") _,
+                options(nostack)
+            );
+            if res < 0 {
+                return Err(SymbioteError::SyscallFailed(SyscallResult::IoError));
+            }
+        }
+        Ok(stats)
     }
 
     /// Prepare syscall arguments for WriteBlock.

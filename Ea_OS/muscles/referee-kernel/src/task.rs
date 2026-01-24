@@ -11,10 +11,12 @@ pub struct Task {
     pub rsp: u64, // Saved Stack Pointer
     pub stack: Vec<u8>,
     pub is_alive: bool,
+    pub priority: u8,
+    pub budget: u8,
 }
 
 impl Task {
-    pub fn new(id: u64, entry: u64, arg: u64, trampoline: u64) -> Self {
+    pub fn new(id: u64, entry: u64, arg: u64, trampoline: u64, priority: u8) -> Self {
         let stack_size = 32 * 1024; // 32KB
         let mut stack = vec![0u8; stack_size];
         
@@ -69,6 +71,8 @@ impl Task {
             rsp: sp,
             stack,
             is_alive: true,
+            priority,
+            budget: priority,
         }
     }
 }

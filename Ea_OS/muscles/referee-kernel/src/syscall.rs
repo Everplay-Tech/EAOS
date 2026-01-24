@@ -74,6 +74,8 @@ pub enum SyscallNumber {
     SubmitRequest = 9,
     /// Poll network input (Arachnid)
     PollNetwork = 10,
+    /// Read system statistics (Antibody)
+    ReadStats = 11,
 }
 
 impl SyscallNumber {
@@ -90,6 +92,7 @@ impl SyscallNumber {
             8 => Some(Self::AuditLog),
             9 => Some(Self::SubmitRequest),
             10 => Some(Self::PollNetwork),
+            11 => Some(Self::ReadStats),
             _ => None,
         }
     }
@@ -231,7 +234,7 @@ pub fn syscall_dispatch(
             // Dispatch to scheduler
             let entry = arg1;
             let arg = arg2;
-            crate::scheduler::spawn(entry, arg);
+            crate::scheduler::spawn(entry, arg, 1); // Default Priority 1
             SyscallResult::Success as i64
         }
         SyscallNumber::Yield => {
@@ -294,6 +297,20 @@ pub fn syscall_dispatch(
             stream.read_tail.store(tail.wrapping_add(to_read as u32), Ordering::Release);
             
             to_read as i64
+        }
+        SyscallNumber::ReadStats => {
+            let buf_ptr = arg1 as *mut u64;
+            if buf_ptr.is_null() {
+                return SyscallResult::InvalidBuffer as i64;
+            }
+            
+            unsafe {
+                *buf_ptr.add(0) = SYSCALL_STATS.total_calls.load(Ordering::Relaxed);
+                *buf_ptr.add(1) = SYSCALL_STATS.read_calls.load(Ordering::Relaxed);
+                *buf_ptr.add(2) = SYSCALL_STATS.write_calls.load(Ordering::Relaxed);
+                *buf_ptr.add(3) = SYSCALL_STATS.spawn_calls.load(Ordering::Relaxed);
+            }
+            SyscallResult::Success as i64
         }
         _ => SyscallResult::InvalidSyscall as i64,
     }

@@ -1,11 +1,11 @@
 #![no_std]
 
 extern crate alloc;
-use alloc::vec::Vec;
 use alloc::string::String;
 use muscle_contract::abi::Pheromone;
+use ea_symbiote::Symbiote;
 
-/// Antibody Muscle: The Auto-immune Fuzzer
+/// Antibody Muscle: The Auto-immune Fuzzer and Auditor
 pub struct Antibody {
     seed: u32,
 }
@@ -41,5 +41,21 @@ impl Antibody {
             1 => String::from("( ( ( ( 1 ) ) )"), // Unbalanced parens
             _ => String::from("9999999999999999999999"), // Overflow attempt
         }
+    }
+
+    /// Active Heuristic Intrusion Detection
+    /// Reads kernel stats and checks for anomalies.
+    pub fn audit_system(&mut self, symbiote: &mut Symbiote) -> Pheromone {
+        if let Ok(stats) = symbiote.read_stats() {
+            // Stats: [total, read, write, spawn]
+            let writes = stats[2];
+            let reads = stats[1];
+            
+            // Heuristic: Ransomware behavior (Massive writes, few reads)
+            if writes > 100 && writes > reads * 10 {
+                return Pheromone::Adrenaline(0xFF); // Panic/Lockdown
+            }
+        }
+        Pheromone::Inert
     }
 }

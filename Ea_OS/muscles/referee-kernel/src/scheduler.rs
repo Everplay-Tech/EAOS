@@ -73,11 +73,11 @@ extern "C" {
     pub fn task_trampoline();
 }
 
-pub fn spawn(entry: u64, arg: u64) {
+pub fn spawn(entry: u64, arg: u64, priority: u8) {
     unsafe {
         let id = TASKS.len() as u64;
         let trampoline = task_trampoline as usize as u64;
-        TASKS.push(Task::new(id, entry, arg, trampoline));
+        TASKS.push(Task::new(id, entry, arg, trampoline, priority));
     }
 }
 
@@ -375,8 +375,8 @@ pub fn run_scheduler_with_net(
 
     // Spawn Nucleus
     if let Some(cell) = &cells[0] {
-        spawn(cell.entry_point, &boot_params as *const _ as u64);
-        uart.log("SCHEDULER", "Nucleus spawned as Task 0");
+        spawn(cell.entry_point, &boot_params as *const _ as u64, 10);
+        uart.log("SCHEDULER", "Nucleus spawned as Task 0 (Priority 10)");
     }
 
     uart.log("INFO", "Phase 6: Ready for First Breath. Awaiting ignition...");
@@ -423,18 +423,25 @@ pub fn run_scheduler_with_net(
         }
 
         // ================================================================
-        // Multitasking: Switch to Current Task
+        // Multitasking: Switch to Current Task (Adrenaline Weighted)
         // ================================================================
         unsafe {
             if !TASKS.is_empty() {
-                let current = &TASKS[CURRENT_TASK_IDX];
+                // Adrenaline Logic: Check Budget
+                let current = &mut TASKS[CURRENT_TASK_IDX];
+                
+                if current.budget > 0 {
+                    current.budget -= 1;
+                } else {
+                    // Budget exhausted, reset and switch
+                    current.budget = current.priority;
+                    CURRENT_TASK_IDX = (CURRENT_TASK_IDX + 1) % TASKS.len();
+                }
+                
+                let next_task = &TASKS[CURRENT_TASK_IDX];
                 
                 // Switch Context (Save Scheduler, Load Task)
-                context_switch(&mut SCHEDULER_RSP, current.rsp);
-                
-                // Returned from Task (Yield)
-                // Select Next
-                CURRENT_TASK_IDX = (CURRENT_TASK_IDX + 1) % TASKS.len();
+                context_switch(&mut SCHEDULER_RSP, next_task.rsp);
             }
         }
 
