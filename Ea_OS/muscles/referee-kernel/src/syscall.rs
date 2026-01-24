@@ -228,13 +228,15 @@ pub fn syscall_dispatch(
             }
         }
         SyscallNumber::SpawnTask => {
-            let _task_id = arg1;
-            let _entry_point = arg2;
             // Dispatch to scheduler
+            let entry = arg1;
+            let arg = arg2;
+            crate::scheduler::spawn(entry, arg);
             SyscallResult::Success as i64
         }
         SyscallNumber::Yield => {
             // Return to scheduler
+            crate::scheduler::yield_task();
             SyscallResult::Success as i64
         }
         SyscallNumber::Exit => {

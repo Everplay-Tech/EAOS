@@ -30,10 +30,71 @@ use smoltcp::iface::{Config, Interface, SocketSet, SocketHandle, SocketStorage};
 use smoltcp::socket::tcp::{Socket as TcpSocket, SocketBuffer as TcpSocketBuffer};
 use smoltcp::wire::{EthernetAddress, IpEndpoint, Ipv4Address};
 use smoltcp::time::Instant;
+use crate::task::{Task, TaskId};
 
 /// TCP socket buffer sizes
 const TCP_RX_BUFFER_SIZE: usize = 4096;
 const TCP_TX_BUFFER_SIZE: usize = 1024;
+
+// Multitasking Globals
+static mut TASKS: Vec<Task> = Vec::new();
+static mut CURRENT_TASK_IDX: usize = 0;
+static mut SCHEDULER_RSP: u64 = 0;
+
+core::arch::global_asm!(r#"
+.global context_switch
+context_switch:
+    push rbp
+    push rbx
+    push r12
+    push r13
+    push r14
+    push r15
+    mov [rdi], rsp
+    mov rsp, rsi
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rbx
+    pop rbp
+    ret
+
+.global task_trampoline
+task_trampoline:
+    mov rdi, r13
+    call r12
+    mov rax, 4
+    syscall
+"#);
+
+extern "C" {
+    fn context_switch(old_rsp: *mut u64, new_rsp: u64);
+    pub fn task_trampoline();
+}
+
+pub fn spawn(entry: u64, arg: u64) {
+    unsafe {
+        let id = TASKS.len() as u64;
+        let trampoline = task_trampoline as usize as u64;
+        TASKS.push(Task::new(id, entry, arg, trampoline));
+    }
+}
+
+pub fn yield_task() {
+    unsafe {
+        if TASKS.is_empty() { return; }
+        let current = &mut TASKS[CURRENT_TASK_IDX];
+        context_switch(&mut current.rsp, SCHEDULER_RSP);
+    }
+}
+
+pub fn current_task_id() -> u64 {
+    unsafe {
+        if TASKS.is_empty() { return 0; }
+        TASKS[CURRENT_TASK_IDX].id.0
+    }
+}
 
 // ============================================================================
 // Phase 6: Tick Functions with Persistent Organs
@@ -232,10 +293,7 @@ pub fn run_scheduler_with_net(
     master_key: &[u8; 32],
     framebuffer: Option<&Framebuffer>,
 ) -> ! {
-    let mut index = 0;
-    let mut execution_count: u64 = 0;
-
-    uart.log("INFO", "Scheduler starting round-robin execution");
+    uart.log("INFO", "Scheduler starting Multitasking Execution");
     uart.log("INFO", "ARACHNID Spider: ARMED");
 
     // Extract framebuffer info if available
@@ -245,8 +303,6 @@ pub fn run_scheduler_with_net(
             PixelFormat::Bgr => 1,
             _ => 2, // Bitmask/Unsupported
         };
-        // fb.base is *mut u32
-        // We need physical address. In UEFI identity map, pointer value is physical address.
         (fb.base() as u64, fb.size_bytes() as u64, fb.width as u32, fb.height as u32, fb.stride as u32, fmt)
     } else {
         (0, 0, 0, 0, 0, 0)
@@ -317,6 +373,12 @@ pub fn run_scheduler_with_net(
         uart.log("IVSHMEM", "Optic Nerve ACTIVE");
     }
 
+    // Spawn Nucleus
+    if let Some(cell) = &cells[0] {
+        spawn(cell.entry_point, &boot_params as *const _ as u64);
+        uart.log("SCHEDULER", "Nucleus spawned as Task 0");
+    }
+
     uart.log("INFO", "Phase 6: Ready for First Breath. Awaiting ignition...");
 
     // ========================================================================
@@ -350,8 +412,6 @@ pub fn run_scheduler_with_net(
                      let socket = sockets.get_mut::<TcpSocket>(socket_handle);
                      if socket.can_send() {
                          // Send payload
-                         // In Phase 1, we send raw bytes.
-                         // Security Note: Payload is already encrypted/signed by Nucleus/Sentry.
                          let _ = socket.send_slice(&vesicle.payload[..vesicle.payload_size as usize]);
                      }
                 }
@@ -363,40 +423,22 @@ pub fn run_scheduler_with_net(
         }
 
         // ================================================================
-        // Execute muscle cells
+        // Multitasking: Switch to Current Task
         // ================================================================
-        if let Some(cell) = &cells[index % cells.len()] {
-            if !cell.validate_canary() {
-                uart.log("FATAL", "Stack canary corrupted - system halted");
-                break;
-            }
-
-            execution_count += 1;
-
-            // Phase 6.5: VASCULAR INSTRUMENTATION - periodic stats
-            if execution_count % 5000 == 0 {
-                let rx = get_rx_count();
-                let tx = get_tx_count();
-                if rx > 0 || tx > 0 {
-                    uart.log("VASCULAR", "RX/TX packet pulse detected");
-                }
-            }
-
-            unsafe {
-                let func: extern "C" fn(*const BootParameters) = core::mem::transmute(cell.entry_point);
-                func(&boot_params as *const _);
+        unsafe {
+            if !TASKS.is_empty() {
+                let current = &TASKS[CURRENT_TASK_IDX];
+                
+                // Switch Context (Save Scheduler, Load Task)
+                context_switch(&mut SCHEDULER_RSP, current.rsp);
+                
+                // Returned from Task (Yield)
+                // Select Next
+                CURRENT_TASK_IDX = (CURRENT_TASK_IDX + 1) % TASKS.len();
             }
         }
 
-        index += 1;
-
-        // Small delay to prevent busyloop (1ms)
-        bt.stall(1000);
-    }
-
-    uart.log("FATAL", "Scheduler halted due to error");
-
-    loop {
-        bt.stall(10_000_000);
+        // Small delay to prevent busyloop
+        bt.stall(100);
     }
 }

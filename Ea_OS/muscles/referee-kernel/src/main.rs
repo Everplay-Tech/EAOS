@@ -17,13 +17,9 @@ mod storage;
 mod graphics;
 mod font;
 mod input;
+mod outbox;
 mod pci;
-mod pci_modern;
-mod pci_ivshmem;
-mod virtio_modern;
-mod virtio_phy;
-mod interrupts;
-mod arachnid;
+mod task;
 
 use crate::uart::Uart;
 use crate::capability::ChaosCapability;
