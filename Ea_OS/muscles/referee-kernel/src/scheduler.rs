@@ -112,6 +112,7 @@ unsafe fn tick_arachnid_tcp(
     sockets: &mut SocketSet<'_>,
     iface: &mut Interface,
     socket_handle: SocketHandle,
+    uart: &mut Uart,
 ) {
     // ========================================================================
     // Read Control Overrides from Tactile Deck
@@ -170,6 +171,27 @@ unsafe fn tick_arachnid_tcp(
 
         // Poll the interface - this processes ARP, IP, TCP
         let _ = iface.poll(timestamp, &mut phy, sockets);
+    }
+
+    // ========================================================================
+    // Drive Receptor (TCP Server)
+    // ========================================================================
+    if let Some(srv_handle) = NETWORK.server_handle {
+        let srv_socket = sockets.get_mut::<TcpSocket>(srv_handle);
+        if !srv_socket.is_active() && !srv_socket.is_listening() {
+            let _ = srv_socket.listen(crate::arachnid::HIVE_SERVER_PORT);
+        }
+        if srv_socket.may_recv() {
+            let mut buf = [0u8; 512];
+            match srv_socket.recv_slice(&mut buf) {
+                Ok(len) if len > 0 => {
+                    uart.log("RECEPTOR", "Accepting connection - inhaling bytes");
+                    SPIDER.poll(&buf[..len], get_stream(), 0.0);
+                    crate::uart::AFFERENT_SIGNAL.store(true, core::sync::atomic::Ordering::SeqCst);
+                }
+                _ => {}
+            }
+        }
     }
 
     // ========================================================================
@@ -344,6 +366,15 @@ pub fn run_scheduler_with_net(
     );
     let socket_handle = sockets.add(tcp_socket);
 
+    // Create TCP SERVER socket (The Receptor)
+    let mut server_rx_buffer = vec![0u8; TCP_RX_BUFFER_SIZE];
+    let mut server_tx_buffer = vec![0u8; TCP_TX_BUFFER_SIZE];
+    let server_socket = TcpSocket::new(
+        TcpSocketBuffer::new(&mut server_rx_buffer[..]),
+        TcpSocketBuffer::new(&mut server_tx_buffer[..]),
+    );
+    let server_handle = sockets.add(server_socket);
+
     // Initialize the Network Interface (The Heart)
     let mut iface: Option<Interface> = None;
 
@@ -359,6 +390,11 @@ pub fn run_scheduler_with_net(
         unsafe {
             NETWORK.init(driver.mac);
             NETWORK.socket_handle = Some(socket_handle);
+            NETWORK.server_handle = Some(server_handle);
+            
+            // Set server to listen mode
+            let socket = sockets.get_mut::<TcpSocket>(server_handle);
+            let _ = socket.listen(crate::arachnid::HIVE_SERVER_PORT);
         }
 
         uart.log("INFO", "Phase 6: Vital organs initialized");
@@ -403,7 +439,7 @@ pub fn run_scheduler_with_net(
         if let Some(ref mut driver) = net_driver {
             if let Some(ref mut iface) = iface {
                 unsafe {
-                    tick_arachnid_tcp(driver, &mut sockets, iface, socket_handle);
+                    tick_arachnid_tcp(driver, &mut sockets, iface, socket_handle, uart);
                 }
                 
                 // Poll Outbox (Hive Mind Transmission)

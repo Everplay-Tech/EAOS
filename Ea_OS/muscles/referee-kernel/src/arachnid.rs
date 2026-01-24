@@ -744,6 +744,9 @@ impl TokenBucket {
 const TCP_RX_BUF_SIZE: usize = 4096;
 const TCP_TX_BUF_SIZE: usize = 4096;
 
+/// Port for inter-node Hive communication
+pub const HIVE_SERVER_PORT: u16 = 9000;
+
 /// Maximum sockets in the socket set
 const MAX_SOCKETS: usize = 4;
 
@@ -753,8 +756,10 @@ const MAX_SOCKETS: usize = 4;
 pub struct NetworkManager {
     /// smoltcp interface configuration
     config: Option<Config>,
-    /// TCP socket handle (when connected)
+    /// TCP socket handle (client)
     pub socket_handle: Option<SocketHandle>,
+    /// TCP server handle (The Receptor)
+    pub server_handle: Option<SocketHandle>,
     /// Connection state
     connected: bool,
     /// Target endpoint for current harvest
@@ -773,6 +778,7 @@ impl NetworkManager {
         Self {
             config: None,
             socket_handle: None,
+            server_handle: None,
             connected: false,
             target: None,
             request_sent: false,
@@ -819,6 +825,7 @@ impl NetworkManager {
         self.connected = false;
         self.target = None;
         self.socket_handle = None;
+        self.server_handle = None;
         self.request_sent = false;
         self.bytes_received = 0;
     }
