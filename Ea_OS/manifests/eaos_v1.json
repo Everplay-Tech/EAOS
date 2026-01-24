@@ -1,0 +1,30 @@
+{
+  "name": "Eä Operating System",
+  "version": "1.0.0",
+  "codename": "Sovereign Pod",
+  "epoch": "2026-01-20",
+  "organs": [
+    "Nucleus Director",
+    "Referee Kernel",
+    "BIOwerk Agent",
+    "Cardio Monitor",
+    "Prism Defense"
+  ],
+  "muscles": [
+    "Broca (Language)",
+    "Myocyte (Logic)",
+    "Osteon (Storage)",
+    "Sentry (Crypto)",
+    "Mirror (Sim)",
+    "Mitochondria (Governor)",
+    "Dreamer (Integrity)",
+    "Quenyan (Compiler)"
+  ],
+  "capabilities": {
+    "network": "TCP/IP (Arachnid)",
+    "storage": "PermFS (Braid)",
+    "logic": "Quenyan VM",
+    "multitasking": "Cooperative/Preemptive"
+  },
+  "status": "STABLE"
+}
