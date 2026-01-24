@@ -20,6 +20,7 @@ mod input;
 mod outbox;
 mod pci;
 mod task;
+mod pc_speaker;
 
 use crate::uart::Uart;
 use crate::capability::ChaosCapability;
@@ -70,6 +71,15 @@ fn efi_main(_image: Handle, mut st: SystemTable<Boot>) -> Status {
     }
 
     uart.log("INFO", "Ea referee v3.0 awakens - production ready");
+    
+    unsafe {
+        use crate::pc_speaker::SPEAKER;
+        uart.log("AUDIO", "Singing the Song of Creation (A440)");
+        SPEAKER.beep(440, 50_000_000);
+    }
+    
+    // Initialize Network Outbox
+    outbox::init();
 
     // ========================================================================
     // Phase 6.5: Initialize RDTSC Monotonic Timer
