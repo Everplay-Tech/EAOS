@@ -605,7 +605,7 @@ impl Symbiote {
 
     /// Read system statistics (Antibody)
     pub fn read_stats(&mut self) -> Result<[u64; 4], SymbioteError> {
-        let mut stats = [0u64; 4];
+        let stats = [0u64; 4];
         
         #[cfg(all(target_arch = "x86_64", not(feature = "std")))]
         unsafe {

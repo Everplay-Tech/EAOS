@@ -330,8 +330,8 @@ pub extern "C" fn permfs_bridge_init(
 #[no_mangle]
 pub extern "C" fn permfs_bridge_read(
     _handle: BridgeHandle,
-    addr_high: u128,
-    addr_low: u128,
+    _addr_high: u128,
+    _addr_low: u128,
     buffer: *mut u8,
 ) -> i64 {
     if buffer.is_null() {
@@ -346,8 +346,8 @@ pub extern "C" fn permfs_bridge_read(
 #[no_mangle]
 pub extern "C" fn permfs_bridge_write(
     _handle: BridgeHandle,
-    addr_high: u128,
-    addr_low: u128,
+    _addr_high: u128,
+    _addr_low: u128,
     buffer: *const u8,
 ) -> i64 {
     if buffer.is_null() {

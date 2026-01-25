@@ -851,7 +851,7 @@ impl<P: KeyProvider> IhpContext<P> {
 )]
 pub fn derive_profile_key(
     provider: &dyn MasterKeyProvider,
-    server_profile_id: ServerProfileId,
+    _server_profile_id: ServerProfileId,
     server_env_hash: &ServerEnvHash,
     labels: &CryptoDomainLabels,
 ) -> Result<ProfileKey, IhpError> {

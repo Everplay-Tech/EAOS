@@ -17,7 +17,6 @@ pub mod myocyte;
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
-use alloc::format;
 use ea_symbiote::{BlobType, SovereignDocument, Symbiote, BlockAddr};
 use serde::{Deserialize, Serialize};
 
