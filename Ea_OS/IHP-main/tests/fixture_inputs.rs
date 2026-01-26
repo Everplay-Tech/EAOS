@@ -16,7 +16,7 @@ pub fn generate_fixture_capsule_hex() -> Result<String, IhpError> {
         app_build_fingerprint: "build:fixture".into(),
         tpm_quote: None,
     };
-    let env_hash = compute_server_env_hash(&sep);
+    let env_hash = compute_server_env_hash(&sep)?;
     let provider = InMemoryKeyProvider::new(MASTER_KEY);
     let network_context = IhpNetworkContext {
         rtt_bucket: 7,

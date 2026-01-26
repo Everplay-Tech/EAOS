@@ -79,6 +79,7 @@ pub enum IhpError {
     KeyDerivation,
     InvalidNonceLength,
     InvalidTimestamp,
+    SerializationFailed,
 }
 
 impl IhpError {
@@ -98,6 +99,7 @@ impl IhpError {
             IhpError::InvalidNonceLength | IhpError::InvalidTimestamp => {
                 TelemetryCode::ConfigRejected
             }
+            IhpError::SerializationFailed => TelemetryCode::CodecError,
         }
     }
 }
@@ -117,6 +119,7 @@ impl fmt::Display for IhpError {
             IhpError::KeyDerivation => "hkdf expansion failed",
             IhpError::InvalidNonceLength => "nonce length mismatch",
             IhpError::InvalidTimestamp => "timestamp out of range",
+            IhpError::SerializationFailed => "serialization failed",
         };
         write!(f, "{msg}")
     }

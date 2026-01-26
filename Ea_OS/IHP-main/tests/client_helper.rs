@@ -13,7 +13,7 @@ use tokio::task::JoinHandle;
 const MASTER_KEY_A: [u8; ihp::KEY_BYTES] = *b"ihp master key material 32bytes!";
 const TLS_EXPORTER_A: [u8; ihp::KEY_BYTES] = *b"tls exporter key material stub!!";
 const MASTER_KEY_B: [u8; ihp::KEY_BYTES] = *b"different master key for ihp***!";
-const TLS_EXPORTER_B: [u8; ihp::KEY_BYTES] = *b"different tls exporter stub!!";
+const TLS_EXPORTER_B: [u8; ihp::KEY_BYTES] = *b"different tls exporter stub+++++";
 
 #[tokio::test]
 async fn stopped_flow_succeeds() {
@@ -22,7 +22,7 @@ async fn stopped_flow_succeeds() {
 
     let base_url = format!("http://{addr}");
     let profile = fetch_ihp_profile(&base_url).await.expect("profile");
-    let k_profile = derive_profile_bytes(&sep, MASTER_KEY_A, profile.server_profile_id);
+    let k_profile = derive_profile(&sep, MASTER_KEY_A, profile.server_profile_id);
 
     let capsule = ihp::build_capsule_for_password(
         &profile,
@@ -59,7 +59,7 @@ async fn moving_to_different_environment_rejects_capsule() {
     let base_a = format!("http://{addr_a}");
     let base_b = format!("http://{addr_b}");
     let profile_a = fetch_ihp_profile(&base_a).await.expect("profile a");
-    let k_profile_a = derive_profile_bytes(&sep_a, MASTER_KEY_A, profile_a.server_profile_id);
+    let k_profile_a = derive_profile(&sep_a, MASTER_KEY_A, profile_a.server_profile_id);
 
     let capsule = ihp::build_capsule_for_password(
         &profile_a,
@@ -92,7 +92,7 @@ async fn tampering_in_transit_is_rejected() {
     let (addr, handle) = start_server(sep.clone(), MASTER_KEY_A, TLS_EXPORTER_A, 21).await;
     let base_url = format!("http://{addr}");
     let profile = fetch_ihp_profile(&base_url).await.expect("profile");
-    let k_profile = derive_profile_bytes(&sep, MASTER_KEY_A, profile.server_profile_id);
+    let k_profile = derive_profile(&sep, MASTER_KEY_A, profile.server_profile_id);
 
     let mut capsule = ihp::build_capsule_for_password(
         &profile,
@@ -132,17 +132,15 @@ async fn tampering_in_transit_is_rejected() {
     handle.abort();
 }
 
-fn derive_profile_bytes(
+fn derive_profile(
     sep: &ServerEnvironmentProfile,
     master_key: [u8; ihp::KEY_BYTES],
     server_profile_id: ServerProfileId,
-) -> [u8; ihp::KEY_BYTES] {
+) -> ihp::ProfileKey {
     let env_hash = compute_server_env_hash(sep).expect("env hash");
     let labels = ihp::CryptoDomainLabels::default();
     let provider = ihp::InMemoryKeyProvider::new(master_key);
-    let profile =
-        derive_profile_key(&provider, server_profile_id, &env_hash, &labels).expect("profile");
-    *profile.expose()
+    derive_profile_key(&provider, server_profile_id, &env_hash, &labels).expect("profile")
 }
 
 fn auth_body(profile: &IhpServerProfile, capsule: &ihp::IhpCapsule) -> serde_json::Value {
