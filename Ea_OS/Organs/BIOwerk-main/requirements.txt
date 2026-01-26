@@ -46,6 +46,6 @@ opentelemetry-instrumentation-asyncpg==0.48b0
 opentelemetry-instrumentation-redis==0.48b0
 opentelemetry-instrumentation-sqlalchemy==0.48b0
 opentelemetry-exporter-otlp==1.27.0
-opentelemetry-exporter-jaeger==1.27.0
+# opentelemetry-exporter-jaeger is deprecated, use OTLP exporter instead
 opentelemetry-exporter-prometheus==0.48b0
 opentelemetry-semantic-conventions==0.48b0
