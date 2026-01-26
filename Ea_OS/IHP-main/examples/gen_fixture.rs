@@ -7,7 +7,7 @@ use ihp::{
     CapsuleTimestamp, ClientNonce, CryptoDomainLabels, DEFAULT_PROTOCOL_VERSION, IhpConfig,
     IhpNetworkContext, InMemoryKeyProvider, NONCE_LEN, PasswordMaterial, ServerEnvironmentProfile,
     ServerProfileId, compute_server_env_hash, derive_profile_key, derive_session_key,
-    encrypt_capsule, serialize_capsule,
+    encrypt_capsule,
 };
 
 fn main() -> Result<(), ihp::IhpError> {
@@ -51,7 +51,7 @@ fn main() -> Result<(), ihp::IhpError> {
         CapsuleTimestamp::new(1_700_000_000)?,
     )?;
 
-    let bytes = serialize_capsule(&capsule)?;
+    let bytes = bincode::serialize(&capsule).map_err(|_| ihp::IhpError::SerializationFailed)?;
     let hex = bytes
         .iter()
         .map(|b| format!("{:02x}", b))

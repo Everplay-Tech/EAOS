@@ -3,7 +3,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::Router;
 use base64::{Engine as _, engine::general_purpose::STANDARD};
-use ihp::server::{ServerBootstrap, ServerState, build_router};
+use ihp::server::{ServerBootstrap, ServerState, build_router, build_router_with_fixed_tls_key};
 use ihp::{
     CapsuleTimestamp, ClientNonce, CryptoDomainLabels, DEFAULT_PROTOCOL_VERSION, IhpCapsule,
     IhpConfig, IhpNetworkContext, InMemoryKeyProvider, NONCE_LEN, PasswordMaterial,
@@ -97,7 +97,7 @@ fn build_capsule(
     };
     let k_session = derive_session_key(
         &k_profile,
-        &tls_exporter_key,
+        &tls_exporter_stub,
         &client_nonce,
         &network_context,
         server_profile_id,

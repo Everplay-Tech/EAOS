@@ -1,10 +1,10 @@
 use ihp::*;
 
-const MASTER_KEY: [u8; 32] = *b"master key material for ihp proto*";
+const MASTER_KEY: [u8; 32] = *b"master key material for ihp pro!";
 const TLS_EXPORTER_KEY: &[u8] = b"tls exporter key material";
 const CLIENT_NONCE: [u8; NONCE_LEN] = [7u8; NONCE_LEN];
 const PAYLOAD: &[u8] = b"fixture payload";
-const TIMESTAMP: u64 = 1_700_000_000;
+const TIMESTAMP: i64 = 1_700_000_000;
 const SERVER_PROFILE_ID: ServerProfileId = ServerProfileId(42);
 
 pub fn generate_fixture_capsule_hex() -> Result<String, IhpError> {
@@ -22,28 +22,32 @@ pub fn generate_fixture_capsule_hex() -> Result<String, IhpError> {
         rtt_bucket: 7,
         path_hint: 120,
     };
+    let labels = CryptoDomainLabels::default();
     let client_nonce = ClientNonce::new(CLIENT_NONCE);
-    let k_profile = provider.profile_key(SERVER_PROFILE_ID, &env_hash, &CryptoSuite::default())?;
-    let k_session = provider.session_key(
+    let k_profile = derive_profile_key(&provider, SERVER_PROFILE_ID, &env_hash, &labels)?;
+    let k_session = derive_session_key(
         &k_profile,
         TLS_EXPORTER_KEY,
         &client_nonce,
         &network_context,
         SERVER_PROFILE_ID,
-        &CryptoSuite::default(),
+        &labels,
     )?;
+    let password_material = PasswordMaterial::new(PAYLOAD.to_vec())?;
+    let timestamp = CapsuleTimestamp::new(TIMESTAMP)?;
     let capsule = encrypt_capsule(
+        DEFAULT_PROTOCOL_VERSION,
         &config,
         99,
         client_nonce,
         SERVER_PROFILE_ID,
         network_context,
-        env_hash,
+        &env_hash,
         &k_session,
-        &BoundedPayload::new(PAYLOAD.to_vec(), config.max_plaintext_len)?,
-        CapsuleTimestamp::new(TIMESTAMP)?,
+        &password_material,
+        timestamp,
     )?;
 
-    let bytes = serialize_capsule(&capsule)?;
+    let bytes = bincode::serialize(&capsule).map_err(|_| IhpError::SerializationFailed)?;
     Ok(bytes.iter().map(|b| format!("{:02x}", b)).collect())
 }

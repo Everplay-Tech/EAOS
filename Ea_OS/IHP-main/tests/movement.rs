@@ -15,8 +15,8 @@ use ihp::{
 use reqwest::Client;
 use tokio::task::JoinHandle;
 
-const MASTER_KEY_PRIMARY: [u8; ihp::KEY_BYTES] = *b"ihp primary master key material!!!";
-const MASTER_KEY_SECONDARY: [u8; ihp::KEY_BYTES] = *b"ihp secondary master key material!!";
+const MASTER_KEY_PRIMARY: [u8; ihp::KEY_BYTES] = *b"ihp primary master key materi!!";
+const MASTER_KEY_SECONDARY: [u8; ihp::KEY_BYTES] = *b"ihp secondary master key mat!!";
 const TLS_EXPORTER_STUB: [u8; ihp::KEY_BYTES] = *b"tls exporter key material stub!!";
 
 #[tokio::test]
