@@ -20,7 +20,7 @@ fn main() -> Result<(), ihp::IhpError> {
         tpm_quote: None,
     };
     let env_hash = compute_server_env_hash(&sep)?;
-    let provider = InMemoryKeyProvider::new(*b"ihp master key material 32bytes!");
+    let provider = InMemoryKeyProvider::new(*b"master key material for ihp pro!");
     let labels = CryptoDomainLabels::default();
     let network_context = IhpNetworkContext {
         rtt_bucket: 7,

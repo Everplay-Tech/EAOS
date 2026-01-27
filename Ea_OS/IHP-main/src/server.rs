@@ -159,7 +159,6 @@ pub fn build_router_with_fallback_tls_key(state: ServerState) -> Router {
 ///
 /// This function is public for testing purposes. In production, use TLS middleware
 /// to extract the exporter key from the actual TLS connection.
-#[cfg(test)]
 pub fn build_router_with_fixed_tls_key(
     state: ServerState,
     fixed_key: Option<[u8; crate::KEY_BYTES]>,
@@ -167,9 +166,9 @@ pub fn build_router_with_fixed_tls_key(
     use axum::middleware;
     use axum::extract::Request;
     use tower::ServiceBuilder;
-    
+
     let fixed_key = fixed_key.map(TlsExporterKey);
-    
+
     async fn add_tls_key(
         mut req: Request,
         next: axum::middleware::Next,
@@ -190,46 +189,13 @@ pub fn build_router_with_fixed_tls_key(
         }
         next.run(req).await
     }
-    
+
     let shared = Arc::new(state);
     Router::new()
         .route("/ihp/profile", get(get_profile))
         .route("/ihp/auth", post(post_auth))
         .layer(ServiceBuilder::new()
             .layer(middleware::from_fn(move |req, next| add_tls_key(req, next, fixed_key))))
-        .with_state(shared)
-}
-
-#[cfg(not(test))]
-pub fn build_router_with_fixed_tls_key(
-    state: ServerState,
-    _fixed_key: Option<[u8; crate::KEY_BYTES]>,
-) -> Router {
-    use axum::middleware;
-    use axum::extract::Request;
-    use tower::ServiceBuilder;
-    
-    async fn add_fallback_tls_key(
-        mut req: Request,
-        next: axum::middleware::Next,
-    ) -> axum::response::Response {
-        // Check if TLS exporter key already exists (from TLS middleware)
-        if req.extensions().get::<TlsExporterKey>().is_none() {
-            // Generate random key as fallback (development only)
-            // WARNING: This is not secure for production - sessions are not bound to TLS connection
-            let mut key = [0u8; crate::KEY_BYTES];
-            OsRng.fill_bytes(&mut key);
-            req.extensions_mut().insert(TlsExporterKey(key));
-        }
-        next.run(req).await
-    }
-    
-    let shared = Arc::new(state);
-    Router::new()
-        .route("/ihp/profile", get(get_profile))
-        .route("/ihp/auth", post(post_auth))
-        .layer(ServiceBuilder::new()
-            .layer(middleware::from_fn(add_fallback_tls_key)))
         .with_state(shared)
 }
 
@@ -268,8 +234,7 @@ async fn post_auth(
             )
         }
         Err(code) => {
-            let _ = code;
-            eprintln!("IHP capsule decryption failed: invalid_credentials");
+            eprintln!("IHP capsule decryption failed: {code}");
             (
                 StatusCode::UNAUTHORIZED,
                 Json(CapsuleResponse {
