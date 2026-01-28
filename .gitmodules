@@ -1,3 +1,6 @@
 [submodule "Ea_OS/permfs"]
 	path = Ea_OS/permfs
 	url = https://github.com/E-TECH-PLAYTECH/permfs.git
+[submodule "Ea_OS/Intelligence/Dr-Lex"]
+	path = Ea_OS/Intelligence/Dr-Lex
+	url = https://github.com/E-TECH-PLAYTECH/Dr-Lex.git
