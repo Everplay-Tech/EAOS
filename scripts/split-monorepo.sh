@@ -262,7 +262,7 @@ cleanup_split_branches() {
     fi
     
     # Find all split/* branches and delete them
-    for branch in $(git branch --list 'split/*' | sed 's/^[* ] //'); do
+    git branch --list 'split/*' | sed 's/^[* ] //' | while read -r branch; do
         log_info "Deleting branch: ${branch}"
         git branch -D "${branch}"
     done

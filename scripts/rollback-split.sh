@@ -97,25 +97,17 @@ cleanup_failed_split() {
     log_info "Cleaning up after failed split..."
     
     # Remove split branches
-    local split_branches=$(git branch --list 'split/*' | sed 's/^[* ] //')
-    if [[ -n "$split_branches" ]]; then
-        log_info "Removing split branches..."
-        for branch in $split_branches; do
-            log_info "  Deleting: ${branch}"
-            git branch -D "${branch}"
-        done
-    fi
+    git branch --list 'split/*' | sed 's/^[* ] //' | while read -r branch; do
+        log_info "  Deleting: ${branch}"
+        git branch -D "${branch}"
+    done
     
-    # Remove temporary remotes
+    # Remove temporary remotes (created by split-monorepo.sh)
     log_info "Checking for temporary remotes..."
-    local temp_remotes=$(git remote | grep -E '\-(remote|origin)$' || true)
-    if [[ -n "$temp_remotes" ]]; then
-        log_info "Removing temporary remotes..."
-        for remote in $temp_remotes; do
-            log_info "  Removing: ${remote}"
-            git remote remove "${remote}"
-        done
-    fi
+    git remote | grep -E '^[a-z-]+-remote$' | while read -r remote; do
+        log_info "  Removing: ${remote}"
+        git remote remove "${remote}"
+    done
     
     log_success "Cleanup completed"
 }
@@ -207,7 +199,7 @@ if [[ $# -gt 0 ]]; then
             echo ""
             echo "This script will:"
             echo "  1. List available backup branches"
-            echo "  2. Let you select which backup to restore"
+            echo "  2. Select which backup to restore"
             echo "  3. Create a new branch from the backup"
             echo "  4. Optionally clean up split branches and remotes"
             exit 0

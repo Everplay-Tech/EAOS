@@ -81,10 +81,13 @@ remote_repo_exists() {
     
     if command -v gh &> /dev/null; then
         gh repo view "${GITHUB_ORG}/${repo_name}" &> /dev/null
-    else
+    elif command -v curl &> /dev/null; then
         # Fallback to curl if gh is not available
         local http_code=$(curl -s -o /dev/null -w "%{http_code}" "https://github.com/${GITHUB_ORG}/${repo_name}")
         [[ "$http_code" == "200" ]]
+    else
+        log_warning "Neither 'gh' nor 'curl' available, skipping remote repo check"
+        return 2  # Unknown status
     fi
 }
 
@@ -108,7 +111,12 @@ verify_component() {
     if remote_repo_exists "${target_repo}"; then
         record_check "pass" "Repository ${GITHUB_ORG}/${target_repo} exists"
     else
-        record_check "fail" "Repository ${GITHUB_ORG}/${target_repo} NOT found"
+        local exit_code=$?
+        if [[ $exit_code -eq 2 ]]; then
+            log_warning "Repository check skipped (missing gh/curl)"
+        else
+            record_check "fail" "Repository ${GITHUB_ORG}/${target_repo} NOT found"
+        fi
     fi
     
     # Check 3: Submodule should be initialized
@@ -138,7 +146,8 @@ verify_component() {
 check_split_branches() {
     log_info "Checking for leftover split branches..."
     
-    local split_branches=$(git branch --list 'split/*' | wc -l)
+    local split_branches
+    split_branches=$(git branch --list 'split/*' | wc -l | tr -d ' ')
     
     if [[ $split_branches -eq 0 ]]; then
         record_check "pass" "No leftover split branches"
@@ -153,7 +162,8 @@ check_split_branches() {
 check_backup_branches() {
     log_info "Checking for backup branches..."
     
-    local backup_branches=$(git branch --list 'backup/pre-split-*' | wc -l)
+    local backup_branches
+    backup_branches=$(git branch --list 'backup/pre-split-*' | wc -l | tr -d ' ')
     
     if [[ $backup_branches -gt 0 ]]; then
         log_success "Found ${backup_branches} backup branch(es) for rollback"
