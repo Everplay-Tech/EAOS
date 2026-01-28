@@ -1,0 +1,3 @@
+[submodule "Ea_OS/permfs"]
+	path = Ea_OS/permfs
+	url = https://github.com/E-TECH-PLAYTECH/permfs.git
