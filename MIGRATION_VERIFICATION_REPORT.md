@@ -101,18 +101,18 @@ members = [
 
 **Issue:** If these components are converted to submodules, the workspace configuration needs updating to reference them properly or remove them if they should be independent.
 
-### 6. ✅ Dr-Lex Empty Directory (PARTIAL MIGRATION FAILURE)
+### 6. ❌ Dr-Lex Empty Directory (PARTIAL MIGRATION FAILURE)
 **Path:** `Ea_OS/Intelligence/Dr-Lex`
 **Status:** Directory exists but is completely empty.
 **Evidence:** This suggests the migration script was run but failed partway through.
 
-### 7. ✅ No Leftover Split Branches
+### 7. ⚠️ No Leftover Split Branches
 No `split/*` branches were found in the repository.
 
 ### 8. ⚠️ No Backup Branches
 No `backup/pre-split-*` branches were found, which means there's no automated rollback point.
 
-### 9. ✅ Working Directory Clean
+### 9. ⚠️ Working Directory Clean
 The git working directory is clean with no uncommitted changes.
 
 ## History Preservation Verification
@@ -217,7 +217,7 @@ For the 2 existing repos (hyperbolic-chamber, referee-kernel):
 | 8. Submodules initialized | ❌ FAIL | No submodules to initialize |
 | 9. Build passes | ❌ NOT TESTED | Cannot test until migration complete |
 
-**OVERALL STATUS: FAILED (2/9 requirements passed)**
+**OVERALL STATUS: FAILED (1/9 requirements fully passed, 2/9 partially passed)**
 
 ## Conclusion
 
