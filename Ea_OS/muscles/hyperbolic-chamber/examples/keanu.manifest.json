@@ -1,0 +1,80 @@
+{
+  "name": "keanu-chronicle",
+  "version": "1.0.0",
+  "modes": {
+    "full": {
+      "requirements": {
+        "os": ["windows>=10", "macos>=13", "linux>=5"],
+        "cpu_arch": ["x64", "arm64"],
+        "ram_gb": 8
+      },
+      "steps": {
+        "windows": [
+          { "run": "winget install --id PostgreSQL.PostgreSQL --source winget" },
+          { "run": "winget install --id OpenJS.NodeJS.LTS" },
+          { "download": { "url": "https://example.com/keanu.zip", "dest": "artifacts/keanu.zip" } },
+          { "extract": { "archive": "artifacts/keanu.zip", "dest": "keanu" } },
+          {
+            "template_config": {
+              "source": "config/app.env.template",
+              "dest": "keanu/.env",
+              "vars": { "APP_NAME": "keanu-chronicle", "PORT": "3000" }
+            }
+          },
+          { "run": "cd keanu && npm install && npm run build" }
+        ],
+        "macos": [
+          { "run": "brew install postgresql@16 node" },
+          { "download": { "url": "https://example.com/keanu.zip", "dest": "artifacts/keanu.zip" } },
+          { "extract": { "archive": "artifacts/keanu.zip", "dest": "keanu" } },
+          {
+            "template_config": {
+              "source": "config/app.env.template",
+              "dest": "keanu/.env",
+              "vars": { "APP_NAME": "keanu-chronicle", "PORT": "3000" }
+            }
+          },
+          { "run": "cd keanu && npm install && npm run build" }
+        ],
+        "linux": [
+          { "run": "sudo apt-get update" },
+          { "run": "sudo apt-get install -y postgresql nodejs npm" },
+          { "download": { "url": "https://example.com/keanu.zip", "dest": "artifacts/keanu.zip" } },
+          { "extract": { "archive": "artifacts/keanu.zip", "dest": "keanu" } },
+          {
+            "template_config": {
+              "source": "config/app.env.template",
+              "dest": "keanu/.env",
+              "vars": { "APP_NAME": "keanu-chronicle", "PORT": "3000" }
+            }
+          },
+          { "run": "cd keanu && npm install && npm run build" }
+        ]
+      }
+    },
+    "light": {
+      "requirements": {
+        "os": ["windows>=8.1", "macos>=12", "linux>=4.15"],
+        "ram_gb": 4
+      },
+      "steps": {
+        "windows": [
+          { "run": "winget install --id OpenJS.NodeJS.LTS" },
+          { "run": "git clone https://github.com/example/keanu.git" },
+          { "run": "cd keanu && npm install && npm run dev -- --no-chronicle" }
+        ],
+        "macos": [
+          { "run": "brew install node" },
+          { "run": "git clone https://github.com/example/keanu.git" },
+          { "run": "cd keanu && npm install && npm run dev -- --no-chronicle" }
+        ],
+        "linux": [
+          { "run": "sudo apt-get update" },
+          { "run": "sudo apt-get install -y nodejs npm" },
+          { "run": "git clone https://github.com/example/keanu.git" },
+          { "run": "cd keanu && npm install && npm run dev -- --no-chronicle" }
+        ]
+      }
+    }
+  }
+}

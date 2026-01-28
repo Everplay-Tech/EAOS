@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://enzyme-installer.dev/schemas/manifest.json",
+  "title": "Enzyme Installer Manifest",
+  "description": "Schema for enzyme-installer application manifests",
+  "type": "object",
+  "required": ["name", "version", "modes"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Application name",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "description": "Application version",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+"
+    },
+    "modes": {
+      "type": "object",
+      "description": "Installation modes",
+      "additionalProperties": {
+        "$ref": "#/$defs/mode"
+      },
+      "minProperties": 1
+    },
+    "signature": {
+      "type": "string",
+      "description": "Base64-encoded Ed25519 signature for manifest verification",
+      "pattern": "^[A-Za-z0-9+/=]{86,88}$",
+      "minLength": 86,
+      "maxLength": 88
+    }
+  },
+  "$defs": {
+    "mode": {
+      "type": "object",
+      "required": ["steps"],
+      "properties": {
+        "requirements": {
+          "$ref": "#/$defs/requirements"
+        },
+        "steps": {
+          "type": "object",
+          "description": "Platform-specific steps",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/step"
+            },
+            "minItems": 1
+          },
+          "minProperties": 1
+        },
+        "runtime_env": {
+          "$ref": "#/$defs/runtime_env"
+        }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "properties": {
+        "os": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(windows|macos|linux)(>=([0-9]+\\.?)+)?$"
+          }
+        },
+        "cpu_arch": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["x64", "arm64", "x86"]
+          }
+        },
+        "ram_gb": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "step": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["run"],
+          "properties": {
+            "run": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["download"],
+          "properties": {
+            "download": {
+              "$ref": "#/$defs/download_step"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["extract"],
+          "properties": {
+            "extract": {
+              "$ref": "#/$defs/extract_step"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["template_config"],
+          "properties": {
+            "template_config": {
+              "$ref": "#/$defs/template_config_step"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "download_step": {
+      "type": "object",
+      "required": ["url", "dest"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "dest": {
+          "type": "string",
+          "description": "Destination path (relative)"
+        },
+        "expected_sha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$",
+          "description": "Expected SHA-256 hash (hexadecimal)"
+        },
+        "expected_size": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Expected file size in bytes"
+        },
+        "timeout_secs": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Download timeout in seconds"
+        }
+      },
+      "additionalProperties": false
+    },
+    "extract_step": {
+      "type": "object",
+      "required": ["archive", "dest"],
+      "properties": {
+        "archive": {
+          "type": "string",
+          "description": "Path to archive file (relative)"
+        },
+        "dest": {
+          "type": "string",
+          "description": "Destination directory (relative)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "template_config_step": {
+      "type": "object",
+      "required": ["source", "dest", "vars"],
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "Template file path (relative)"
+        },
+        "dest": {
+          "type": "string",
+          "description": "Output file path (relative)"
+        },
+        "vars": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Template variables"
+        }
+      },
+      "additionalProperties": false
+    },
+    "runtime_env": {
+      "type": "object",
+      "required": ["type", "root"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["node_local", "python_venv"]
+        },
+        "root": {
+          "type": "string",
+          "description": "Root directory for runtime environment"
+        },
+        "node": {
+          "$ref": "#/$defs/node_runtime"
+        },
+        "python": {
+          "$ref": "#/$defs/python_runtime"
+        }
+      },
+      "additionalProperties": false
+    },
+    "node_runtime": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Node.js version (e.g., '20.11.0')"
+        },
+        "install_strategy": {
+          "type": "string",
+          "enum": ["local_bundle_or_global", "local_only"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "python_runtime": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Python version (e.g., '3.11')"
+        },
+        "install_strategy": {
+          "type": "string",
+          "enum": ["venv_or_global", "local_only"]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
