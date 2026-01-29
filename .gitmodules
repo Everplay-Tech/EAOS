@@ -4,3 +4,6 @@
 [submodule "Ea_OS/Intelligence/Dr-Lex"]
 	path = Ea_OS/Intelligence/Dr-Lex
 	url = https://github.com/E-TECH-PLAYTECH/Dr-Lex.git
+[submodule "Ea_OS/muscles/hyperbolic-chamber"]
+	path = Ea_OS/muscles/hyperbolic-chamber
+	url = https://github.com/E-TECH-PLAYTECH/hyperbolic-chamber.git
